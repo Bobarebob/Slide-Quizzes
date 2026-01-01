@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Colonization of Land - Interactive Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            overflow: hidden;
+        }
+        
+        .slide {
+            display: none;
+            padding: 40px;
+            min-height: 700px;
+        }
+        
+        .slide.active {
+            display: block;
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-header {
+            text-align: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4da6ff;
+        }
+        
+        .slide-title {
+            font-size: 2.8em;
+            color: #4da6ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .slide-period {
+            font-size: 1.4em;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+        
+        .slide-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        
+        .text-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #ffa64d;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-content {
+            font-size: 1.1em;
+            line-height: 1.7;
+            color: #d0d0d0;
+        }
+        
+        .section-content ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .section-content li {
+            padding: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .section-content li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #4da6ff;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .section-content strong {
+            color: #ffa64d;
+        }
+        
+        .image-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .image-box {
+            background: rgba(20, 20, 35, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .image-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 2px solid rgba(77, 166, 255, 0.2);
+        }
+        
+        .image-caption {
+            font-size: 0.95em;
+            color: #b0b0b0;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .key-fact {
+            background: rgba(255, 193, 7, 0.15);
+            border-left: 4px solid #ffc107;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .key-fact-title {
+            font-weight: bold;
+            color: #ffc107;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .extinction-warning {
+            background: rgba(220, 53, 69, 0.15);
+            border-left: 4px solid #dc3545;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .extinction-warning-title {
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 40px;
+            background: rgba(20, 20, 35, 0.8);
+            border-top: 2px solid rgba(77, 166, 255, 0.3);
+        }
+        
+        .nav-button {
+            padding: 14px 35px;
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+        }
+        
+        .nav-button:hover {
+            background: linear-gradient(135deg, #357abd 0%, #2563a8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5);
+        }
+        
+        .nav-button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .slide-counter {
+            font-size: 1.2em;
+            color: #4da6ff;
+            font-weight: 600;
+        }
+        
+        .timeline-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(20, 20, 35, 0.5);
+        }
+        
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(77, 166, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .timeline-dot:hover {
+            background: rgba(77, 166, 255, 0.6);
+            transform: scale(1.2);
+        }
+        
+        .timeline-dot.active {
+            background: #4da6ff;
+            transform: scale(1.4);
+            box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);
+            border-color: #fff;
+        }
+        
+        .intro-content {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .intro-icon {
+            font-size: 5em;
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .intro-text {
+            font-size: 1.3em;
+            color: #d0d0d0;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 1024px) {
+            .slide-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .slide {
+                padding: 25px;
+            }
+            
+            .slide-title {
+                font-size: 2em;
+            }
+            
+            .navigation {
+                padding: 20px 25px;
+            }
+        }
+    
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            z-index: 9999;
+        }
+        
+        .login-screen.hidden {
+            display: none;
+        }
+        
+        .login-box {
+            background: rgba(30, 30, 50, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .login-box h2 {
+            color: #4da6ff;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .login-box p {
+            color: #b0b0b0;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: rgba(20, 20, 35, 0.8);
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1.1em;
+        }
+        
+        .login-box input:focus {
+            outline: none;
+            border-color: #4da6ff;
+            box-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .login-box button:hover {
+            background: linear-gradient(135deg, #357abd 0%, #2563a8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5);
+        }
+        
+        .student-info {
+            background: rgba(20, 20, 35, 0.9);
+            padding: 15px 40px;
+            border-bottom: 2px solid rgba(77, 166, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .student-name {
+            color: #4da6ff;
+            font-size: 1.1em;
+        }
+        
+        .student-score {
+            color: #ffa64d;
+            font-size: 1.1em;
+        }
+
+
+        
+        /* KEPLER SILVER BUTTONS */
+        .navigation .nav-button {
+            background: linear-gradient(145deg, #b8c6db 0%, #8fa3bd 50%, #6b8299 100%) !important;
+            color: #1a1a2e !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+        }
+        .navigation .nav-button:hover:not(:disabled) {
+            transform: translateY(-5px) !important;
+            background: linear-gradient(145deg, #c8d6eb 0%, #9fb3cd 50%, #7b92a9 100%) !important;
+        }
+
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h2>🌍 Welcome to the Evolution of Terrestrial Life</h2>
+            <p>Please enter your information to begin the interactive journey</p>
+            <input type="text" id="studentName" required>
+            <input type="text" id="studentID" required>
+            <input type="password" id="studentPassword" required>
+            <div id="loginError" style="color: #ff6b6b; margin-top: 10px; display: none; text-align: center;"></div>
+            <button onclick="startQuiz()">Start Journey</button>
+        </div>
+    </div>
+
+
+    <div class="container" style="display: none;" id="mainContent">
+        <!-- Student Info Bar -->
+        <div class="student-info">
+            <div class="student-name">Student: <span id="displayName"></span></div>
+            <div class="student-score">Score: <span id="displayScore">0</span> / <span id="totalQuestions">10</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="color: #ff0000; margin-right: 10px; font-weight: bold; display: none;"></span>
+                Time: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+
+        <!-- Title Slide -->
+        <div class="slide active" data-slide="0">
+            <div class="slide-header">
+                <h1 class="slide-title">The Colonization of Land</h1>
+                <p class="slide-period">An Interactive Journey Through 500 Million Years</p>
+            </div>
+            <div class="intro-content">
+                <div class="intro-icon">🌍</div>
+                <div class="intro-text">
+                    From barren rock to living planet—witness the epic transformation<br>
+                    as life conquered Earth's terrestrial surface
+                </div>
+                <div class="key-fact" style="text-align: left; max-width: 900px; margin: 40px auto;">
+                    <div class="key-fact-title">🔬 What You'll Discover:</div>
+                    <ul style="margin-top: 15px; font-size: 1.1em;">
+                        <li style="padding-left: 25px; position: relative;">
+                            <span style="position: absolute; left: 0; color: #ffc107;">→</span>
+                            How plants and animals conquered the land
+                        </li>
+                        <li style="padding-left: 25px; position: relative; margin-top: 10px;">
+                            <span style="position: absolute; left: 0; color: #ffc107;">→</span>
+                            The critical role of oxygen and the ozone layer
+                        </li>
+                        <li style="padding-left: 25px; position: relative; margin-top: 10px;">
+                            <span style="position: absolute; left: 0; color: #ffc107;">→</span>
+                            Revolutionary innovations that enabled terrestrial life
+                        </li>
+                        <li style="padding-left: 25px; position: relative; margin-top: 10px;">
+                            <span style="position: absolute; left: 0; color: #ffc107;">→</span>
+                            Mass extinctions and spectacular recoveries
+                        </li>
+                        <li style="padding-left: 25px; position: relative; margin-top: 10px;">
+                            <span style="position: absolute; left: 0; color: #ffc107;">→</span>
+                            The rise from simple organisms to complex ecosystems
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 1: Ordovician-Silurian -->
+        <div class="slide" data-slide="1">
+            <div class="slide-header">
+                <h1 class="slide-title">The Pioneers</h1>
+                <p class="slide-period">Ordovician-Silurian Period (500-420 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🦠 First Life on Land</h3>
+                        <div class="section-content">
+                            <p>The earliest terrestrial life was microscopic:</p>
+                            <ul>
+                                <li><strong>~500 Ma:</strong> Cyanobacteria and lichens form crusts on rocks</li>
+                                <li><strong>~470 Ma:</strong> First bryophytes (primitive mosses) appear</li>
+                                <li><strong>~450 Ma:</strong> Fungi develop mycorrhizal partnerships with plants</li>
+                                <li><strong>~430 Ma:</strong> Cooksonia - first vascular plants with water-conducting tissues</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🕷️ Early Animals</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>~428 Ma:</strong> Millipedes and scorpions venture onto land</li>
+                                <li>Fed on decaying plant material and each other</li>
+                                <li>Required moist environments to survive</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="key-fact">
+                        <div class="key-fact-title">🌫️ Atmospheric Conditions:</div>
+                        Oxygen: ~10-15% (lower than today's 21%). The ozone layer was strengthening, making the surface habitable but still challenging.
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/cooksonia.jpeg" alt="Cooksonia">
+                        <div class="image-caption">Cooksonia - the first plant with vascular tissues (2-6 cm tall)</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/early lichen.jpeg" alt="Early lichen on rock">
+                        <div class="image-caption">Lichens pioneered the weathering of rocks into soil</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 1: What was the first type of vascular plant to appear on land?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(1, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q1" id="q1_0" style="margin-right: 15px;">
+                        <label for="q1_0" style="cursor: pointer; font-size: 1.05em;">Bryophytes (mosses)</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(1, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q1" id="q1_1" style="margin-right: 15px;">
+                        <label for="q1_1" style="cursor: pointer; font-size: 1.05em;">Cooksonia</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(1, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q1" id="q1_2" style="margin-right: 15px;">
+                        <label for="q1_2" style="cursor: pointer; font-size: 1.05em;">Ferns</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(1, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q1" id="q1_3" style="margin-right: 15px;">
+                        <label for="q1_3" style="cursor: pointer; font-size: 1.05em;">Conifers</label>
+                    </div>
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Devonian -->
+        <div class="slide" data-slide="2">
+            <div class="slide-header">
+                <h1 class="slide-title">The First Forests</h1>
+                <p class="slide-period">Devonian Period (420-360 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌲 Plant Revolution</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Club mosses (Lycophytes)</strong> reach 1 meter tall</li>
+                                <li><strong>True ferns</strong> evolve with complex leaves (megaphylls)</li>
+                                <li><strong>~385 Ma: First forests!</strong> Archaeopteris trees grew to 30 meters</li>
+                                <li>Early seed plants (progymnosperms) appear</li>
+                                <li>Deep root systems (>1m depth) create true soil</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦎 Animals Emerge</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li>Insects diversify and some develop early flight</li>
+                                <li><strong>375 Ma: Tiktaalik</strong> - transitional "fishapod" with limb-like fins</li>
+                                <li><strong>365 Ma: First tetrapods</strong> walk on land (Acanthostega, Ichthyostega)</li>
+                                <li>Spiders hunt in the undergrowth</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="key-fact">
+                        <div class="key-fact-title">🌬️ Why Now?</div>
+                        Oxygen levels continued rising, and the ozone layer was now strong enough to protect complex life from UV radiation. Deep roots accelerated rock weathering.
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/archaeopteris-tree.jpeg" alt="Archaeopteris forest">
+                        <div class="image-caption">Archaeopteris - Earth's first tree, forming forests 30m tall</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/tiktaalik.jpeg" alt="Tiktaalik">
+                        <div class="image-caption">Tiktaalik - the "fishapod" showing water-to-land transition</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 2: What was revolutionary about Archaeopteris trees?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(2, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q2" id="q2_0" style="margin-right: 15px;">
+                        <label for="q2_0" style="cursor: pointer; font-size: 1.05em;">They were the first flowering plants</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(2, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q2" id="q2_1" style="margin-right: 15px;">
+                        <label for="q2_1" style="cursor: pointer; font-size: 1.05em;">They had deep root systems (>1m) that created true soil</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(2, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q2" id="q2_2" style="margin-right: 15px;">
+                        <label for="q2_2" style="cursor: pointer; font-size: 1.05em;">They were the first plants to photosynthesize</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(2, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q2" id="q2_3" style="margin-right: 15px;">
+                        <label for="q2_3" style="cursor: pointer; font-size: 1.05em;">They reproduced with seeds</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Carboniferous -->
+        <div class="slide" data-slide="3">
+            <div class="slide-header">
+                <h1 class="slide-title">The Coal Forests</h1>
+                <p class="slide-period">Carboniferous Period (360-299 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌴 Giant Plants</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Giant lycophytes:</strong> Lepidodendron "scale trees" grew 50 meters tall</li>
+                                <li><strong>Tree ferns:</strong> Up to 20 meters high</li>
+                                <li><strong>Giant horsetails:</strong> Calamites reached 18 meters</li>
+                                <li>Seed ferns and early gymnosperms with cones</li>
+                                <li><strong>These swamp forests became today's coal deposits!</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦗 Giant Animals</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Meganeura:</strong> Dragonfly with 70 cm wingspan!</li>
+                                <li><strong>Arthropleura:</strong> Millipedes 2.5 meters long</li>
+                                <li>Amphibians radiate - crocodile-like predators</li>
+                                <li><strong>~325 Ma: AMNIOTIC EGG!</strong> Freedom from water for reproduction</li>
+                                <li>First reptiles (Hylonomus) and synapsids (Archaeothyris)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="key-fact">
+                        <div class="key-fact-title">💨 Oxygen Peak!</div>
+                        Atmospheric oxygen reached 35% (vs. 21% today). This supercharged atmosphere enabled giant insects and arthropods through simple diffusion-based respiration.
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/lepidodendron-forest.jpeg" alt="Lepidodendron forest">
+                        <div class="image-caption">Lepidodendron - giant club moss "scale trees" 50m tall dominated swamps</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Giant Dragonfly.jpeg" alt="Meganeura">
+                        <div class="image-caption">Meganeura - giant dragonfly with 70cm wingspan, enabled by high O₂</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 3: What atmospheric oxygen level during the Carboniferous enabled giant insects?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(3, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q3" id="q3_0" style="margin-right: 15px;">
+                        <label for="q3_0" style="cursor: pointer; font-size: 1.05em;">15%</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(3, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q3" id="q3_1" style="margin-right: 15px;">
+                        <label for="q3_1" style="cursor: pointer; font-size: 1.05em;">21% (same as today)</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(3, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q3" id="q3_2" style="margin-right: 15px;">
+                        <label for="q3_2" style="cursor: pointer; font-size: 1.05em;">35%</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(3, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q3" id="q3_3" style="margin-right: 15px;">
+                        <label for="q3_3" style="cursor: pointer; font-size: 1.05em;">50%</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Permian -->
+        <div class="slide" data-slide="4">
+            <div class="slide-header">
+                <h1 class="slide-title">Supercontinent Pangaea</h1>
+                <p class="slide-period">Permian Period (299-252 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌲 Gymnosperms Dominate</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Conifers, cycads, and ginkgos</strong> adapted to drier climate</li>
+                                <li>Seed ferns (Glossopteris) abundant</li>
+                                <li>Lycophytes and horsetails decline dramatically</li>
+                                <li>Seeds proved superior to spores in arid environments</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦴 Synapsids Rule</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Gorgonopsids:</strong> Saber-toothed predators up to 3.5 meters</li>
+                                <li><strong>Herbivores:</strong> Moschops, Scutosaurus (large, barrel-chested)</li>
+                                <li>Reptiles diversify, dinosaur ancestors (archosaurs) appear</li>
+                                <li>First beetles evolve</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="extinction-warning">
+                        <div class="extinction-warning-title">⚠️ End-Permian Extinction (252 Ma):</div>
+                        The worst mass extinction in Earth's history! Massive volcanic eruptions (Siberian Traps) released CO₂, causing global warming, ocean acidification, and anoxia. <strong>96% of all species extinct.</strong>
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Fern.jpeg" alt="Glossopteris seed fern">
+                        <div class="image-caption">Seed ferns dominated Permian landscapes</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Gorgon.jpeg" alt="Gorgonopsid">
+                        <div class="image-caption">Gorgonopsid - saber-toothed synapsid, apex predator of the Permian</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 4: What caused the End-Permian extinction that killed 96% of species?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(4, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q4" id="q4_0" style="margin-right: 15px;">
+                        <label for="q4_0" style="cursor: pointer; font-size: 1.05em;">An asteroid impact</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(4, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q4" id="q4_1" style="margin-right: 15px;">
+                        <label for="q4_1" style="cursor: pointer; font-size: 1.05em;">Ice age glaciation</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(4, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q4" id="q4_2" style="margin-right: 15px;">
+                        <label for="q4_2" style="cursor: pointer; font-size: 1.05em;">Massive volcanic eruptions (Siberian Traps)</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(4, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q4" id="q4_3" style="margin-right: 15px;">
+                        <label for="q4_3" style="cursor: pointer; font-size: 1.05em;">A supernova explosion</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Triassic -->
+        <div class="slide" data-slide="5">
+            <div class="slide-header">
+                <h1 class="slide-title">Recovery & Revolution</h1>
+                <p class="slide-period">Triassic Period (252-201 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌲 Plants Recover</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li>Gymnosperms continue dominance - conifers, cycads, ginkgos</li>
+                                <li>Ferns persist in understory</li>
+                                <li>Pangaea interior becomes extremely arid</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦕 Age of Reptiles Begins</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>~230 Ma: DINOSAURS EMERGE!</strong> Initially small bipedal predators (Eoraptor, Herrerasaurus)</li>
+                                <li><strong>~228 Ma: Pterosaurs</strong> take to the skies</li>
+                                <li>Crocodilians diversify rapidly</li>
+                                <li><strong>~225 Ma: FIRST MAMMALS!</strong> Tiny, shrew-like, nocturnal insectivores</li>
+                                <li>Insects with complete metamorphosis diversify</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="key-fact">
+                        <div class="key-fact-title">🔄 Reorganization:</div>
+                        Life recovered but looked very different. Synapsids declined (except the mammal lineage), while archosaurs rose to dominance—setting the stage for the Age of Dinosaurs.
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Small Dino.jpeg" alt="Early dinosaur">
+                        <div class="image-caption">Early Triassic dinosaur - small agile predator (~2-3m long)</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Small Mammal.jpeg" alt="Early mammal">
+                        <div class="image-caption">Early mammal - tiny, shrew-sized, nocturnal insectivore</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 5: When did the first dinosaurs appear?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(5, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q5" id="q5_0" style="margin-right: 15px;">
+                        <label for="q5_0" style="cursor: pointer; font-size: 1.05em;">~300 Ma</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(5, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q5" id="q5_1" style="margin-right: 15px;">
+                        <label for="q5_1" style="cursor: pointer; font-size: 1.05em;">~230 Ma</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(5, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q5" id="q5_2" style="margin-right: 15px;">
+                        <label for="q5_2" style="cursor: pointer; font-size: 1.05em;">~150 Ma</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(5, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q5" id="q5_3" style="margin-right: 15px;">
+                        <label for="q5_3" style="cursor: pointer; font-size: 1.05em;">~66 Ma</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Jurassic -->
+        <div class="slide" data-slide="6">
+            <div class="slide-header">
+                <h1 class="slide-title">Age of Giant Dinosaurs</h1>
+                <p class="slide-period">Jurassic Period (201-145 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌲 Gymnosperms at Peak</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li>Vast conifer forests cover the continents</li>
+                                <li>Cycads and ginkgos widespread</li>
+                                <li>Bennettitaleans (extinct seed plants)</li>
+                                <li>Ferns abundant in forest understory</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦕 Dinosaurs Dominate</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Sauropods:</strong> Brachiosaurus, Diplodocus (30+ meters long, 80+ tons!)</li>
+                                <li><strong>Theropods:</strong> Allosaurus - apex predators (9m long)</li>
+                                <li><strong>Ornithischians:</strong> Stegosaurus with iconic plates</li>
+                                <li><strong>~150 Ma: FIRST BIRDS!</strong> Archaeopteryx evolved from theropods</li>
+                                <li>Pterosaurs reach large sizes (Pteranodon)</li>
+                                <li>Mammals remain small, mostly nocturnal</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Large Dino.jpeg" alt="Sauropod dinosaur">
+                        <div class="image-caption">Giant sauropod - among the largest land animals ever (up to 30m long)</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Arc Bird.jpeg" alt="Archaeopteryx">
+                        <div class="image-caption">Archaeopteryx - transitional form between dinosaurs and birds</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 6: Which organism represents the transition between dinosaurs and birds?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(6, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q6" id="q6_0" style="margin-right: 15px;">
+                        <label for="q6_0" style="cursor: pointer; font-size: 1.05em;">Pteranodon</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(6, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q6" id="q6_1" style="margin-right: 15px;">
+                        <label for="q6_1" style="cursor: pointer; font-size: 1.05em;">Archaeopteryx</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(6, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q6" id="q6_2" style="margin-right: 15px;">
+                        <label for="q6_2" style="cursor: pointer; font-size: 1.05em;">Velociraptor</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(6, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q6" id="q6_3" style="margin-right: 15px;">
+                        <label for="q6_3" style="cursor: pointer; font-size: 1.05em;">Brachiosaurus</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Cretaceous -->
+        <div class="slide" data-slide="7">
+            <div class="slide-header">
+                <h1 class="slide-title">The Flowering Plant Revolution</h1>
+                <p class="slide-period">Cretaceous Period (145-66 Million Years Ago)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌸 Angiosperms Transform Earth</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>~140-130 Ma: Flowering plants appear!</strong></li>
+                                <li>Explosive diversification - grasses, flowering trees (oak, maple, magnolia)</li>
+                                <li><strong>Co-evolution with insects:</strong> Bees, butterflies, moths diversify as pollinators</li>
+                                <li>Fruits enable animal-mediated seed dispersal</li>
+                                <li>By Late Cretaceous, angiosperms dominate most environments</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦖 Dinosaurs at Peak Diversity</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>T. rex, Triceratops, Hadrosaurs</strong> - incredible diversity</li>
+                                <li>Mammals diversify (placentals, marsupials, monotremes)</li>
+                                <li>Birds diversify significantly</li>
+                                <li>Social insects: ants (168 Ma), bees</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="extinction-warning">
+                        <div class="extinction-warning-title">☄️ End-Cretaceous Extinction (66 Ma):</div>
+                        Chicxulub asteroid impact (10 km wide) + Deccan volcanic eruptions. <strong>Non-avian dinosaurs, pterosaurs, and 75% of species extinct.</strong> Opened the door for mammal dominance.
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Magnolia Realistic.jpeg" alt="Magnolia flower">
+                        <div class="image-caption">Magnolia - among the earliest flowering plants, relatively unchanged since Cretaceous</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/T Rex.jpeg" alt="Tyrannosaurus rex">
+                        <div class="image-caption">Tyrannosaurus rex - apex predator of Late Cretaceous, up to 12m long</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 7: What was revolutionary about flowering plants (angiosperms)?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(7, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q7" id="q7_0" style="margin-right: 15px;">
+                        <label for="q7_0" style="cursor: pointer; font-size: 1.05em;">They were the first plants to photosynthesize</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(7, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q7" id="q7_1" style="margin-right: 15px;">
+                        <label for="q7_1" style="cursor: pointer; font-size: 1.05em;">They could survive in extreme cold</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(7, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q7" id="q7_2" style="margin-right: 15px;">
+                        <label for="q7_2" style="cursor: pointer; font-size: 1.05em;">They co-evolved with insect pollinators, accelerating diversification</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(7, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q7" id="q7_3" style="margin-right: 15px;">
+                        <label for="q7_3" style="cursor: pointer; font-size: 1.05em;">They could grow underwater</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Cenozoic -->
+        <div class="slide" data-slide="8">
+            <div class="slide-header">
+                <h1 class="slide-title">Age of Mammals & Humans</h1>
+                <p class="slide-period">Cenozoic Era (66 Million Years Ago - Present)</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">🌾 Angiosperms Dominate</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li>Modern plant families established (Paleogene)</li>
+                                <li><strong>~23 Ma: Grasslands expand</strong> globally (savannas, prairies, steppes)</li>
+                                <li>Climate cooling drives grassland dominance</li>
+                                <li>Grasses co-evolve with grazing mammals</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🦘 Mammals Explode in Diversity</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Within 10 Ma, mammals fill all major niches</strong></li>
+                                <li>Primates emerge (~55 Ma), whales evolve (~50 Ma)</li>
+                                <li>Horses, elephants, bats, carnivores - all modern groups appear</li>
+                                <li><strong>~6-7 Ma: Hominin lineage</strong> splits from other apes in Africa</li>
+                                <li><strong>~300,000 years ago: Homo sapiens</strong> evolves in Africa</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="key-fact">
+                        <div class="key-fact-title">🧊 Ice Ages & Human Evolution:</div>
+                        The Quaternary (2.6 Ma-present) saw repeated glaciations. Megafauna (mammoths, giant sloths, saber-toothed cats) thrived until humans arrived. Agriculture began 11,700 years ago (Holocene).
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Early Savannah.jpeg" alt="Grassland savanna">
+                        <div class="image-caption">Grasslands transformed landscapes in Miocene, drove mammal evolution</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Early Human.jpeg" alt="Early human">
+                        <div class="image-caption">Homo sapiens - modern humans evolved ~300,000 years ago in Africa</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 8: When did Homo sapiens evolve?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(8, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q8" id="q8_0" style="margin-right: 15px;">
+                        <label for="q8_0" style="cursor: pointer; font-size: 1.05em;">~3 million years ago</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(8, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q8" id="q8_1" style="margin-right: 15px;">
+                        <label for="q8_1" style="cursor: pointer; font-size: 1.05em;">~1 million years ago</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(8, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q8" id="q8_2" style="margin-right: 15px;">
+                        <label for="q8_2" style="cursor: pointer; font-size: 1.05em;">~300,000 years ago</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(8, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q8" id="q8_3" style="margin-right: 15px;">
+                        <label for="q8_3" style="cursor: pointer; font-size: 1.05em;">~50,000 years ago</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Atmospheric Context -->
+        <div class="slide" data-slide="9">
+            <div class="slide-header">
+                <h1 class="slide-title">The Atmospheric Foundation</h1>
+                <p class="slide-period">Why Oxygen & Ozone Made Everything Possible</p>
+            </div>
+            <div class="slide-content">
+                <div class="text-content">
+                    <div class="section">
+                        <h3 class="section-title">💨 The Oxygen Revolution</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>3.5 Ga:</strong> Cyanobacteria begin producing oxygen via photosynthesis</li>
+                                <li><strong>2.4 Ga:</strong> Great Oxidation Event - oxygen accumulates in atmosphere</li>
+                                <li><strong>2.0 Ga:</strong> Ozone layer forms, blocking deadly UV radiation</li>
+                                <li><strong>470 Ma:</strong> Oxygen/ozone sufficient for land colonization</li>
+                                <li><strong>360-299 Ma:</strong> Carboniferous oxygen peak (35%)</li>
+                                <li><strong>299 Ma-present:</strong> Stabilizes around 21%</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <h3 class="section-title">🌍 Global Transformations</h3>
+                        <div class="section-content">
+                            <ul>
+                                <li><strong>Volcanic eruptions:</strong> Released nutrients, CO₂, but also caused extinctions</li>
+                                <li><strong>Continental drift:</strong> Pangaea assembly/breakup drove climate change</li>
+                                <li><strong>Asteroid impacts:</strong> Cleared ecological niches for new radiations</li>
+                                <li><strong>Climate cycles:</strong> Ice ages and greenhouse periods drove adaptation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="image-box">
+                        <img src="images/Blue Atmosphere Space.jpeg" alt="Earth's oxygen-rich atmosphere">
+                        <div class="image-caption">Earth's oxygen-rich atmosphere - the foundation for complex life</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="images/Prehistoric Voalcano.jpeg" alt="Volcanic eruption">
+                        <div class="image-caption">Volcanic eruptions shaped Earth's atmosphere and drove evolution</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 9: What was the primary factor that enabled life to colonize land?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(9, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q9" id="q9_0" style="margin-right: 15px;">
+                        <label for="q9_0" style="cursor: pointer; font-size: 1.05em;">Warmer global temperatures</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(9, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q9" id="q9_1" style="margin-right: 15px;">
+                        <label for="q9_1" style="cursor: pointer; font-size: 1.05em;">Oxygen accumulation and ozone layer formation</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(9, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q9" id="q9_2" style="margin-right: 15px;">
+                        <label for="q9_2" style="cursor: pointer; font-size: 1.05em;">The formation of the Moon</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(9, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q9" id="q9_3" style="margin-right: 15px;">
+                        <label for="q9_3" style="cursor: pointer; font-size: 1.05em;">Volcanic activity</label>
+                    </div>
+                    
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Summary -->
+        <div class="slide" data-slide="10">
+            <div class="slide-header">
+                <h1 class="slide-title">The Big Picture</h1>
+                <p class="slide-period">Key Factors in Land Colonization</p>
+            </div>
+            <div style="padding: 20px;">
+                <div class="section">
+                    <h3 class="section-title">🔑 Major Evolutionary Innovations</h3>
+                    <div class="section-content">
+                        <ul>
+                            <li><strong>Endosymbiosis (2.0 Ga):</strong> Mitochondria enabled complex eukaryotic cells with efficient energy production</li>
+                            <li><strong>Vascular tissues (430 Ma):</strong> Xylem and phloem allowed plants to grow tall and transport water/nutrients efficiently</li>
+                            <li><strong>Seeds (385 Ma):</strong> Protected embryos with food reserves, freed plants from water-dependent reproduction</li>
+                            <li><strong>Amniotic egg (325 Ma):</strong> Self-contained egg with protective membranes freed animals from aquatic reproduction</li>
+                            <li><strong>Flowers (140 Ma):</strong> Co-evolution with pollinators accelerated angiosperm diversity explosively</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3 class="section-title">🌍 Geologic Drivers of Evolution</h3>
+                    <div class="section-content">
+                        <ul>
+                            <li><strong>Continental cycles:</strong> Supercontinent assembly (Pangaea) caused arid interiors; breakup created diverse habitats</li>
+                            <li><strong>Mass extinctions:</strong> End-Permian (252 Ma) killed 96%; End-Cretaceous (66 Ma) ended dinosaurs</li>
+                            <li><strong>Volcanic eruptions:</strong> Siberian Traps, Deccan Traps - massive CO₂ release and global climate disruption</li>
+                            <li><strong>Bolide impacts:</strong> Chicxulub asteroid (66 Ma) cleared ecological space for mammal radiation</li>
+                            <li><strong>Climate oscillations:</strong> Snowball Earth, ice ages, greenhouse periods drove continuous adaptation</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="key-fact" style="margin-top: 35px;">
+                    <div class="key-fact-title">🌟 The Epic Story:</div>
+                    Life's colonization of land was a 500-million-year epic driven by atmospheric transformation, evolutionary innovation, and geologic upheaval. Each crisis created opportunity. Each extinction opened new niches. From microscopic bacterial crusts to 50-meter trees to conscious beings contemplating their origins—this is the grandest story Earth has to tell. And it all started with oxygen.
+                </div>
+                
+                <div style="text-align: center; margin-top: 40px;">
+                    <img src="images/Asteroid Impact.jpeg" alt="Asteroid impact" style="max-width: 80%; border-radius: 12px; border: 2px solid rgba(77, 166, 255, 0.3);">
+                    <p style="color: #b0b0b0; font-style: italic; margin-top: 15px;">The Chicxulub impact 66 million years ago - ending one era, beginning another</p>
+                </div>
+            </div>
+        
+
+            <!-- Quiz Section -->
+            <div class="quiz-section" style="background: rgba(255, 193, 7, 0.1); border: 2px solid #ffc107; border-radius: 12px; padding: 25px; margin-top: 30px;">
+                <div class="quiz-question" style="font-size: 1.2em; color: #ffc107; font-weight: bold; margin-bottom: 20px;">
+                    ❓ Quiz Question 10: Which innovation freed animals from water-dependent reproduction?
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" onclick="handleQuizAnswer(10, 0)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q10" id="q10_0" style="margin-right: 15px;">
+                        <label for="q10_0" style="cursor: pointer; font-size: 1.05em;">External gills</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(10, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q10" id="q10_1" style="margin-right: 15px;">
+                        <label for="q10_1" style="cursor: pointer; font-size: 1.05em;">The amniotic egg</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(10, 2)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q10" id="q10_2" style="margin-right: 15px;">
+                        <label for="q10_2" style="cursor: pointer; font-size: 1.05em;">Live birth</label>
+                    </div>
+                    <div class="quiz-option" onclick="handleQuizAnswer(10, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease;">
+                        <input type="radio" name="q10" id="q10_3" style="margin-right: 15px;">
+                        <label for="q10_3" style="cursor: pointer; font-size: 1.05em;">Metamorphosis</label>
+                    </div>
+                </div>
+                <div class="quiz-feedback" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+
+        <!-- Thank You Slide -->
+        <div class="slide" data-slide="11">
+            <div class="slide-header">
+                <h1 class="slide-title">🎉 Congratulations!</h1>
+                <p class="slide-period">Quiz Complete</p>
+            </div>
+            <div class="intro-content">
+                <div class="intro-icon">✨</div>
+                <div class="intro-text">You've completed the Evolution of Terrestrial Life quiz!</div>
+                <div class="key-fact" style="text-align: center; max-width: 700px; margin: 40px auto;">
+                    <div class="key-fact-title" style="font-size: 2.5em; color: #ffa64d; margin: 30px 0;">
+                        Final Score: <span id="finalScore">0</span> / <span id="finalMaxScore">10</span>
+                    </div>
+                    <p style="font-size: 1.3em; margin-top: 30px; color: #d0d0d0;">Thank you for exploring Earth's journey!</p>
+                </div>
+                <div style="margin-top: 50px; text-align: center;">
+                    <img src="images/Wild_Flowers.jpeg" alt="Wildflowers" style="max-width: 700px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(77, 166, 255, 0.4);">
+                    <p style="margin-top: 15px; font-style: italic; color: #b0b0b0;">From barren rock to blooming meadows</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="navigation">
+            <button class="nav-button" id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+            <div class="slide-counter">
+                <span id="currentSlide">1</span> / <span id="totalSlides">12</span>
+            </div>
+            <button class="nav-button" id="nextBtn" onclick="changeSlide(1)">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator" id="timelineIndicator"></div>
+    </div>
+
+    
+    <script>
+        // VERSION: 2025-11-30-TIMER-FIX
+        // Firebase configuration - REPLACE WITH YOUR CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyApEcj1Gt_AgK9853JGWsyPuWuX1RyRQQA",
+            authDomain: "astronomy-course.firebaseapp.com",
+            projectId: "astronomy-course",
+            storageBucket: "astronomy-course.firebasestorage.app",
+            messagingSenderId: "84123424550",
+            appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Password for the quiz (hardcoded)
+        const QUIZ_PASSWORD = "feather";
+
+        // Quiz configuration (loaded from Firebase)
+        let quizConfig = {
+            className: null,
+            quizName: null,
+            databaseId: null,
+            loginDescriptors: {
+                name: 'Student Name',
+                id: 'Student ID',
+                pass: 'Quiz Password'
+            },
+            restrictions: {
+                timeLimit: 0,
+                lowTimeWarning: 0,
+                startDate: '',
+                startTime: '',
+                stopDate: '',
+                stopTime: '',
+                attemptsAllowed: 0,
+                pointsPerQuestion: 'equal'
+            }
+        };
+
+        // Student data
+        let studentData = {
+            name: '',
+            studentID: '',
+            sessionId: '',
+            startTime: null,
+            answers: {},
+            score: 0
+        };
+        
+        // Timer variables
+        let timerInterval = null;
+        let timeRemainingSeconds = 0;
+        let timerEndTime = null; // Timestamp when timer should end
+        let warningShown = {3: false, 2: false, 1: false};
+        
+        // Load quiz configuration from Firebase on page load
+        window.addEventListener('load', async () => {
+            try {
+                // Query for active database by password
+                const dbSnapshot = await db.collection('databases')
+                    .where('password', '==', QUIZ_PASSWORD)
+                    .where('active', '==', true)
+                    .limit(1)
+                    .get();
+                
+                if (dbSnapshot.empty) {
+                    console.error('No active database found for this quiz password');
+                    document.getElementById('loginError').textContent = 'Quiz is not currently active. Please contact your instructor.';
+                    document.getElementById('loginError').style.display = 'block';
+                    return;
+                }
+                
+                const activeDb = dbSnapshot.docs[0].data();
+                quizConfig.className = activeDb.className;
+                quizConfig.quizName = activeDb.quizName;
+                quizConfig.databaseId = dbSnapshot.docs[0].id;
+                
+                console.log('Quiz configuration loaded:', quizConfig);
+                
+                // Load quiz settings (login descriptors and restrictions)
+                const settingsDoc = await db.collection('quizSettings')
+                    .doc(`${quizConfig.className}_${quizConfig.quizName}`)
+                    .get();
+                
+                if (settingsDoc.exists) {
+                    const settings = settingsDoc.data();
+                    console.log('Settings document found:', settings);
+                    if (settings.loginDescriptors) {
+                        quizConfig.loginDescriptors = settings.loginDescriptors;
+                        // Update login form placeholders
+                        document.getElementById('studentName').placeholder = settings.loginDescriptors.name || 'Enter your full name';
+                        document.getElementById('studentID').placeholder = settings.loginDescriptors.id || 'Enter your Student ID Number (7 digits)';
+                        document.getElementById('studentPassword').placeholder = settings.loginDescriptors.pass || 'Enter class password';
+                        console.log('Login descriptors loaded:', settings.loginDescriptors);
+                    } else {
+                        console.log('No loginDescriptors in settings document');
+                        // Set default placeholders
+                        document.getElementById('studentName').placeholder = 'Enter your full name';
+                        document.getElementById('studentID').placeholder = 'Enter your Student ID Number (7 digits)';
+                        document.getElementById('studentPassword').placeholder = 'Enter class password';
+                    }
+                    if (settings.restrictions) {
+                        quizConfig.restrictions = settings.restrictions;
+                        console.log('Quiz restrictions loaded:', quizConfig.restrictions);
+                    }
+                    if (settings.idValidation) {
+                        quizConfig.idValidation = settings.idValidation;
+                        console.log('ID validation loaded:', quizConfig.idValidation);
+                    }
+                } else {
+                    console.log('No settings document found for:', `${quizConfig.className}_${quizConfig.quizName}`);
+                    // Set default placeholders if no settings document exists
+                    document.getElementById('studentName').placeholder = 'Enter your full name';
+                    document.getElementById('studentID').placeholder = 'Enter your Student ID Number (7 digits)';
+                    document.getElementById('studentPassword').placeholder = 'Enter class password';
+                }
+                
+            } catch (error) {
+                console.error('Error loading quiz configuration:', error);
+                document.getElementById('loginError').textContent = 'Error loading quiz settings: ' + error.message;
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+
+        async function startQuiz() {
+            const name = document.getElementById('studentName').value.trim();
+            const studentID = document.getElementById('studentID').value.trim();
+            const password = document.getElementById('studentPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
+            
+            if (!name) {
+                errorDiv.textContent = 'Please enter your name';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Validate Student ID based on configured rules
+            if (!studentID) {
+                errorDiv.textContent = 'Please enter your Student ID';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                const validation = quizConfig.idValidation;
+                let isValid = false;
+                let errorMessage = 'Invalid Student ID format';
+                
+                if (validation.type === 'digits') {
+                    const numDigits = parseInt(validation.value);
+                    const regex = new RegExp(`^\\d{${numDigits}}$`);
+                    isValid = regex.test(studentID);
+                    errorMessage = `Student ID must be exactly ${numDigits} digits`;
+                } else if (validation.type === 'startsWith') {
+                    isValid = studentID.startsWith(validation.value);
+                    errorMessage = `Student ID must start with "${validation.value}"`;
+                } else if (validation.type === 'regex') {
+                    try {
+                        const regex = new RegExp(validation.value);
+                        isValid = regex.test(studentID);
+                        errorMessage = 'Student ID does not match required format';
+                    } catch (e) {
+                        console.error('Invalid regex pattern:', e);
+                        isValid = true; // Allow if regex is invalid
+                    }
+                }
+                
+                if (!isValid) {
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+            
+            if (password !== QUIZ_PASSWORD) {
+                errorDiv.textContent = 'Incorrect password. Please contact your instructor.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Check if quiz configuration is loaded
+            if (!quizConfig.className || !quizConfig.quizName) {
+                errorDiv.textContent = 'Quiz configuration not loaded. Please refresh the page.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Enforce date/time restrictions
+            const now = new Date();
+            if (quizConfig.restrictions.startDate && quizConfig.restrictions.startTime) {
+                const startDateTime = new Date(`${quizConfig.restrictions.startDate}T${quizConfig.restrictions.startTime}`);
+                if (now < startDateTime) {
+                    errorDiv.textContent = `Quiz is not available yet. It will open on ${quizConfig.restrictions.startDate} at ${quizConfig.restrictions.startTime}.`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+            
+            if (quizConfig.restrictions.stopDate && quizConfig.restrictions.stopTime) {
+                const stopDateTime = new Date(`${quizConfig.restrictions.stopDate}T${quizConfig.restrictions.stopTime}`);
+                if (now > stopDateTime) {
+                    errorDiv.textContent = `Quiz has closed. The deadline was ${quizConfig.restrictions.stopDate} at ${quizConfig.restrictions.stopTime}.`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+            
+            // Check number of attempts
+            if (quizConfig.restrictions.attemptsAllowed > 0) {
+                try {
+                    const attemptsSnapshot = await db.collection('students')
+                        .where('studentID', '==', studentID)
+                        .where('quizPassword', '==', QUIZ_PASSWORD)
+                        .get();
+                    
+                    const attemptNumber = attemptsSnapshot.size + 1;
+                    
+                    if (attemptsSnapshot.size >= quizConfig.restrictions.attemptsAllowed) {
+                        errorDiv.textContent = `You have already used all ${quizConfig.restrictions.attemptsAllowed} attempt(s) for this quiz.`;
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    
+                    // Display attempt number
+                    document.getElementById('attemptNumber').textContent = attemptNumber;
+                    document.getElementById('attemptDisplay').style.display = 'block';
+                } catch (error) {
+                    console.error('Error checking attempts:', error);
+                }
+            }
+            
+            studentData.name = name;
+            studentData.studentID = studentID;
+            studentData.sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            studentData.startTime = firebase.firestore.Timestamp.now();
+            
+            db.collection('students').doc(studentData.sessionId).set({
+                name: studentData.name,
+                studentID: studentData.studentID,
+                className: quizConfig.className,
+                quizName: quizConfig.quizName,
+                quizPassword: QUIZ_PASSWORD,
+                databaseId: quizConfig.databaseId,
+                startTime: studentData.startTime,
+                answers: {},
+                score: 0,
+                completed: false
+            }).then(() => {
+                console.log('Session started successfully');
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('displayName').textContent = name + ' (' + studentData.studentID + ')';
+                
+                // Set total points based on points per question
+                const pointsPerQuestion = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
+                const totalPoints = 10 * pointsPerQuestion;
+                if (pointsPerQuestion === 0.5) {
+                    document.getElementById('totalQuestions').textContent = totalPoints.toFixed(1);
+                } else {
+                    document.getElementById('totalQuestions').textContent = totalPoints;
+                }
+                
+                // Start timer if time limit is set
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    startTimer(quizConfig.restrictions.timeLimit);
+                }
+            }).catch((error) => {
+                console.error('Error starting session:', error);
+                errorDiv.textContent = 'Error connecting to database: ' + error.message;
+                errorDiv.style.display = 'block';
+            });
+        }
+
+    </script>
+
+<script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        // Initialize
+        document.getElementById('totalSlides').textContent = totalSlides;
+        createTimelineIndicator();
+        updateSlideDisplay();
+        
+        function createTimelineIndicator() {
+            const indicator = document.getElementById('timelineIndicator');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'timeline-dot';
+                dot.onclick = () => goToSlide(i);
+                indicator.appendChild(dot);
+            }
+        }
+        
+        function changeSlide(direction) {
+            if (currentSlide === 10 && direction > 0) {
+                // Auto-submit without confirm
+                if (db) {
+                    db.collection('students').doc(studentData.sessionId).update({
+                        completed: true,
+                        completedTime: firebase.firestore.Timestamp.now()
+                    }).catch(e => console.log(e));
+                }
+                document.getElementById('finalScore').textContent = studentData.score;
+                // Set max score based on points per question
+                const pointsPerQuestion = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
+                const totalPoints = 10 * pointsPerQuestion;
+                if (pointsPerQuestion === 0.5) {
+                    document.getElementById('finalMaxScore').textContent = totalPoints.toFixed(1);
+                } else {
+                    document.getElementById('finalMaxScore').textContent = totalPoints;
+                }
+                currentSlide = 11;
+                updateSlideDisplay();
+                // updateTimelineIndicator(); // Function doesn't exist, removed to prevent error
+                // Stop the timer when quiz is complete
+                console.log('Quiz complete - stopping timer. timerInterval:', timerInterval);
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                // Always hide timer display
+                const timerDisplay = document.getElementById('timerDisplay');
+                if (timerDisplay) {
+                    timerDisplay.style.display = 'none';
+                }
+                return;
+            }
+            currentSlide += direction;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            if (currentSlide < 0) currentSlide = 0;
+            updateSlideDisplay();
+        }
+        
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlideDisplay();
+        }
+        
+        function updateSlideDisplay() {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            
+            // Update slides
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+            
+            // Update counter
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+            
+            // Update buttons
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            
+            // Change button text on slide 10 and 11
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentSlide === 10) {
+                nextBtn.textContent = 'Submit';
+                nextBtn.style.background = 'linear-gradient(145deg, #a8d5ba 0%, #7cbd8f 50%, #5ca872 100%)';
+                nextBtn.style.color = '#1a3a1a';
+            } else if (currentSlide === 11) {
+                nextBtn.textContent = 'Completed';
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.textContent = 'Next →';
+                nextBtn.style.background = '';
+                nextBtn.style.color = '';
+                nextBtn.disabled = false;
+            }
+
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+            
+            // Update timeline indicator
+            const dots = document.querySelectorAll('.timeline-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+    
+        
+        // Quiz questions with correct answers
+        const quizQuestions = {
+            1: { correct: 1, explanation: "Cooksonia (~430 Ma) was the first vascular plant with water-conducting tissues." },
+            2: { correct: 1, explanation: "Archaeopteris developed deep root systems exceeding 1 meter depth, creating true soil." },
+            3: { correct: 2, explanation: "Atmospheric oxygen reached 35%, enabling giant insects through simple diffusion." },
+            4: { correct: 2, explanation: "The Siberian Traps eruptions released massive CO₂, causing global warming and ocean acidification." },
+            5: { correct: 1, explanation: "The first dinosaurs appeared around 230 million years ago in the Late Triassic period." },
+            6: { correct: 1, explanation: "Archaeopteryx (~150 Ma) was a feathered dinosaur showing clear transitional features." },
+            7: { correct: 2, explanation: "Angiosperms co-evolved with pollinators, leading to explosive diversification." },
+            8: { correct: 2, explanation: "Homo sapiens evolved approximately 300,000 years ago in Africa." },
+            9: { correct: 1, explanation: "Oxygen accumulation and ozone layer formation blocked UV radiation, enabling terrestrial life." },
+            10: { correct: 1, explanation: "The amniotic egg (~325 Ma) freed vertebrates from needing water for reproduction." }
+        };
+        
+        function handleQuizAnswer(slideNumber, optionIndex) {
+            const question = quizQuestions[slideNumber];
+            const isCorrect = optionIndex === question.correct;
+            
+            // Save answer to student data
+            if (!studentData.answers[slideNumber]) {
+                studentData.answers[slideNumber] = {
+                    selected: optionIndex,
+                    correct: isCorrect,
+                    timestamp: firebase.firestore.Timestamp.now()
+                };
+                
+                if (isCorrect) {
+                    const pointsPerQuestion = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
+                    studentData.score += pointsPerQuestion;
+                    
+                    // Format score display based on points per question
+                    if (pointsPerQuestion === 0.5) {
+                        document.getElementById('displayScore').textContent = studentData.score.toFixed(1);
+                    } else {
+                        document.getElementById('displayScore').textContent = Math.round(studentData.score);
+                    }
+                }
+                
+                // Update Firebase
+                db.collection('students').doc(studentData.sessionId).update({
+                    answers: studentData.answers,
+                    score: studentData.score,
+                    lastUpdated: firebase.firestore.Timestamp.now()
+                }).catch((error) => {
+                    console.error('Error saving answer:', error);
+                });
+            }
+            
+            // Update UI
+            const slideDiv = document.querySelectorAll('.slide')[slideNumber];
+            const options = slideDiv.querySelectorAll('.quiz-option');
+            options.forEach((opt, idx) => {
+                opt.style.pointerEvents = 'none';
+                if (idx === question.correct) {
+                    opt.style.background = 'rgba(76, 175, 80, 0.3)';
+                    opt.style.borderColor = '#4caf50';
+                } else if (idx === optionIndex && !isCorrect) {
+                    opt.style.background = 'rgba(244, 67, 54, 0.3)';
+                    opt.style.borderColor = '#f44336';
+                }
+            });
+            
+            // Show feedback
+            const feedbackDiv = slideDiv.querySelector('.quiz-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.style.display = 'block';
+                if (isCorrect) {
+                    feedbackDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                    feedbackDiv.style.border = '1px solid #4caf50';
+                    feedbackDiv.style.color = '#81c784';
+                    feedbackDiv.innerHTML = '✓ Correct! ' + question.explanation;
+                } else {
+                    feedbackDiv.style.background = 'rgba(244, 67, 54, 0.2)';
+                    feedbackDiv.style.border = '1px solid #f44336';
+                    feedbackDiv.style.color = '#e57373';
+                    feedbackDiv.innerHTML = '✗ Incorrect. ' + question.explanation;
+                }
+            }
+        }
+        
+        // Timer functions - Uses timestamp-based calculation to work on iOS/mobile
+        function startTimer(minutes) {
+            // Calculate end time as a timestamp
+            timerEndTime = Date.now() + (minutes * 60 * 1000);
+            document.getElementById('timerDisplay').style.display = 'block';
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                // Calculate remaining time based on current time vs end time
+                const now = Date.now();
+                const remainingMs = timerEndTime - now;
+                timeRemainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+                
+                updateTimerDisplay();
+                
+                // Check for warnings - trigger at X:01 to show "X minutes left"
+                if (timeRemainingSeconds <= 181 && timeRemainingSeconds > 179 && !warningShown[3]) {
+                    showTimeWarning(3);
+                    warningShown[3] = true;
+                } else if (timeRemainingSeconds <= 121 && timeRemainingSeconds > 119 && !warningShown[2]) {
+                    showTimeWarning(2);
+                    warningShown[2] = true;
+                } else if (timeRemainingSeconds <= 61 && timeRemainingSeconds > 59 && !warningShown[1]) {
+                    showTimeWarning(1);
+                    warningShown[1] = true;
+                }
+                
+                // Auto-submit when time runs out
+                if (timeRemainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    autoSubmitQuiz();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemainingSeconds / 60);
+            const seconds = timeRemainingSeconds % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const timeElement = document.getElementById('timeRemaining');
+            timeElement.textContent = timeString;
+        }
+        
+        function showTimeWarning(minutes) {
+            const warningElement = document.getElementById('timeWarningMessage');
+            
+            // Show warning message
+            if (minutes === 3) {
+                warningElement.textContent = 'Three minutes left';
+            } else if (minutes === 2) {
+                warningElement.textContent = 'Two minutes left';
+            } else if (minutes === 1) {
+                warningElement.textContent = 'One minute left';
+            }
+            
+            warningElement.style.display = 'inline';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                warningElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function autoSubmitQuiz() {
+            // Mark quiz as completed
+            db.collection('students').doc(studentData.sessionId).update({
+                completed: true,
+                completedTime: firebase.firestore.Timestamp.now(),
+                autoSubmitted: true
+            }).catch(e => console.log(e));
+            
+            // Navigate to final score slide
+            document.getElementById('finalScore').textContent = studentData.score;
+            // Set max score based on points per question
+            const pointsPerQuestion = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
+            const totalPoints = 10 * pointsPerQuestion;
+            if (pointsPerQuestion === 0.5) {
+                document.getElementById('finalMaxScore').textContent = totalPoints.toFixed(1);
+            } else {
+                document.getElementById('finalMaxScore').textContent = totalPoints;
+            }
+            currentSlide = 11;
+            updateSlideDisplay();
+            // updateTimelineIndicator(); // Function doesn't exist, removed to prevent error
+            
+            // Hide timer display
+            const timerDisplay = document.getElementById('timerDisplay');
+            if (timerDisplay) {
+                timerDisplay.style.display = 'none';
+            }
+            
+            alert('Time is up! Your quiz has been automatically submitted.');
+        }
+
+    </script>
+</body>
+</html>

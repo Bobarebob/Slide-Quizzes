@@ -1,1 +1,1 @@
-Slide Quiz for Colonization of Life on Land on Earth.
+Slide Quiz for Colonization of Life on Land on Earth

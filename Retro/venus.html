@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus Retrograde Motion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin: 30px 0 40px;
+        }
+
+        h1 {
+            color: #4da6ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+        }
+
+        .subtitle {
+            color: #ffa64d;
+            font-size: 1.3em;
+            margin-top: 10px;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-links a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: rgba(77, 166, 255, 0.2);
+            color: #4da6ff;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(77, 166, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .law-section {
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(77, 166, 255, 0.2);
+        }
+
+        .law-description {
+            margin: 20px 0;
+            font-size: 1.05em;
+            line-height: 1.8;
+        }
+
+        .canvas-container {
+            background: rgba(10, 10, 26, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 5px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4da6ff 0%, #0066cc 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5);
+        }
+
+        .highlight {
+            color: #ffa64d;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: rgba(77, 166, 255, 0.1);
+            border-left: 4px solid #4da6ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        footer {
+            text-align: center;
+            margin: 50px 0 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    
+        /* Audio Player Styles */
+        .audio-player {
+            background: rgba(77, 166, 255, 0.15);
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .audio-player h3 {
+            color: #4da6ff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .audio-controls button {
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+            min-width: 100px;
+        }
+
+        .audio-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5);
+            background: linear-gradient(135deg, #357abd 0%, #2a5f99 100%);
+        }
+
+        .audio-controls button:active {
+            transform: translateY(0);
+        }
+
+        .audio-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    
+        .audio-caption {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: rgba(10, 10, 26, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .caption-text {
+            color: #e0e0e0;
+            font-size: 1em;
+            line-height: 1.6;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .caption-text.active {
+            color: #4da6ff;
+        }
+
+    
+
+
+    
+.nav-button {
+    padding: 14px 35px;
+    background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+    color: #999;
+}
+
+
+        .student-info {
+            background: rgba(20, 20, 35, 0.9);
+            padding: 15px 40px;
+            border-bottom: 2px solid rgba(77, 166, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .student-name {
+            color: #4da6ff;
+            font-size: 1.1em;
+        }
+        
+        .student-score {
+            color: #ffa64d;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .student-attempt {
+            color: #9d9dff;
+            font-size: 1em;
+        }
+        
+        .student-timer {
+            color: #4dffb8;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Student Info Banner -->
+    <div class="student-info" id="studentBanner" style="display: none;">
+        <div class="student-name">Student: <span id="displayName"></span> (<span id="displayID"></span>)</div>
+        <div class="student-score">Score: <span id="displayScore">0</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display: none;">
+            <span id="timeWarningMessage" style="color: #ff4444; margin-right: 10px; font-weight: bold; display: none;"></span>
+            Time Remaining: <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Planetary Retrograde Motion - Venus</h1>
+            <div class="subtitle">An Illusion Created by Venus Having a Different Orbital Speed Than Earth</div>
+        </div>
+
+        
+        <!-- Audio Player -->
+        <div class="audio-player">
+            <h3>🎧 Instructions</h3>
+            <audio id="pageAudio" preload="auto">
+                <source src="retrograde-venus.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <div class="audio-controls">
+                <button id="startBtn" onclick="startAudio()">Start</button>
+                <button id="stopBtn" onclick="stopAudio()">Stop</button>
+                <button id="resumeBtn" onclick="resumeAudio()">Resume</button>
+            </div>
+            <div class="audio-caption">
+                <div id="captionText" class="caption-text"></div>
+            </div>
+        </div>
+
+
+        <div class="law-section">
+            <div class="law-description">
+                <p>As Venus orbits the Sun faster than Earth (on an inside track), there are times when Venus "laps" Earth. During these periods, <span class="highlight">Venus appears to move backward (clockwise or retrograde motion)</span> relative to the background stars, even though both planets are always moving forward (counterclockwise) around the Sun.</p>
+                <p>Venus's retrograde motion occurs during inferior conjunction - when Venus passes between Earth and the Sun. The retrograde is visible in the solar glare except at the exact moment of inferior conjunction when the sight line passes through the Sun's center. The colored dot on the star ring shows where Venus (yellowish-white) appears to be in the night sky at different times during Venus's orbit.</p>
+            </div>
+            <div class="canvas-container">
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 20px; min-width: 200px;">
+                        <div style="background: rgba(77, 166, 255, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(77, 166, 255, 0.3); text-align: center;">
+                            <div style="font-weight: bold; margin-bottom: 8px; color: #4da6ff;">Orbital Periods</div>
+                            <div style="font-size: 0.9em; line-height: 1.6;">
+                                Venus: <span style="color: #FFC649;">0.62 years</span><br>
+                                Earth: <span style="color: #4da6ff;">1.00 year</span>
+                            </div>
+                        </div>
+                        <div class="controls" style="flex-direction: column; gap: 10px;">
+                            <button onclick="toggleAnimation()" style="width: 100%;">Pause/Resume</button>
+                            <button id="speedButton" onclick="slowDown()" style="width: 100%;">Slow Down</button>
+                            <button onclick="resetAnimation()" style="width: 100%;">Reset</button>
+                            <button onclick="toggleFullscreen()" style="width: 100%;">Fullscreen</button>
+                        </div>
+                        <div class="legend" style="flex-direction: column; align-items: center; gap: 12px; width: 100%;">
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #00FF00;"></div>
+                                <span>Prograde (CCW)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: #FF0000;"></div>
+                                <span>Retrograde (CW)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="canvasRetrograde" width="1000" height="720"></canvas>
+                </div>
+            </div>
+            <div class="info-box">
+                💡 Watch as Venus (yellowish-white) catches up to and passes Earth (blue) on the inside track. Venus's retrograde motion happens during inferior conjunction when Venus passes between Earth and Sun - the yellow line and marker remain visible in the solar glare except at the exact moment the line passes through the Sun's center. The dot disappears during superior conjunction (Venus behind the Sun). Notice how the dot changes from green (prograde) to red (retrograde) and back to green as Venus laps Earth!
+            </div>
+        </div>
+
+        
+        <!-- Quiz Section -->
+        <div class="quiz-container" style="margin-top: 50px; padding: 30px; background: rgba(255, 193, 7, 0.05); border: 2px solid #ffc107; border-radius: 12px;">
+            <h2 style="color: #ffc107; font-size: 2em; margin-bottom: 30px; text-align: center;">📝 Quiz Questions</h2>
+
+            <!-- Question 1 -->
+            <div class="quiz-question-block" style="margin-bottom: 35px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px;">
+                <div class="question-text" style="font-size: 1.2em; color: #e0e0e0; margin-bottom: 20px; font-weight: 500;">
+                    <strong>Question 1:</strong> In terms of speed, which planet moves slower in its orbit, Venus or Earth? You can use the internet to discover the answer to this question.
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" data-question="1" data-option="0" onclick="handleQuizAnswer(5, 0, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>A)</strong> Venus
+                    </div>
+                    <div class="quiz-option" data-question="1" data-option="1" onclick="handleQuizAnswer(5, 1, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>B)</strong> Earth
+                    </div>
+                    <div class="quiz-option" data-question="1" data-option="2" onclick="handleQuizAnswer(5, 2, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>C)</strong> They move at the same speed
+                    </div>
+                </div>
+                <div class="quiz-feedback" id="feedback-1" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="quiz-question-block" style="margin-bottom: 35px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px;">
+                <div class="question-text" style="font-size: 1.2em; color: #e0e0e0; margin-bottom: 20px; font-weight: 500;">
+                    <strong>Question 2:</strong> When in its orbit does Venus exhibit retrograde motion as seen by an Earthbound observer? You can use the internet to discover the answer to this question.
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" data-question="2" data-option="0" onclick="handleQuizAnswer(6, 0, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>A)</strong> When Venus is in Opposition to Earth
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="1" onclick="handleQuizAnswer(6, 1, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>B)</strong> When Venus is in Superior Conjunction with Earth
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="2" onclick="handleQuizAnswer(6, 2, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>C)</strong> It seems to happen at arbitrary times
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="3" onclick="handleQuizAnswer(6, 3, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>D)</strong> When Venus is in Inferior Conjunction with Earth
+                    </div>
+                </div>
+                <div class="quiz-feedback" id="feedback-2" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+        const canvas = document.getElementById('canvasRetrograde');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 1000;
+        canvas.height = 720;
+        
+        // Shift center to the right to make room for left sidebar
+        const centerX = canvas.width / 2 + 50;
+        const centerY = canvas.height / 2;
+        
+        // Planet configurations - Venus inside Earth's orbit
+        const venusConfig = {
+            distance: 130,  // Venus closer to Sun
+            angle: Math.PI, // Start at left
+            color: '#FFC649',
+            size: 11,
+            period: 0.62,
+            name: 'Venus'
+        };
+        
+        const earthConfig = {
+            distance: 180,  // Earth farther from Sun
+            angle: Math.PI, // Start at same position
+            color: '#4A90E2',
+            size: 12,
+            period: 1.0,
+            name: 'Earth'
+        };
+        
+        // Star ring configuration - many more stars for cloud effect
+        const starRingRadius = 320;
+        const numStars = 800; // Many stars for cloud effect
+        const stars = [];
+        
+        // Initialize stars
+        for (let i = 0; i < numStars; i++) {
+            const angle = (Math.PI * 2 * i) / numStars + (Math.random() - 0.5) * 0.05;
+            const radiusVariation = (Math.random() - 0.5) * 60;
+            const radius = starRingRadius + radiusVariation;
+            stars.push({
+                x: centerX + radius * Math.cos(angle),
+                y: centerY + radius * Math.sin(angle),
+                size: Math.random() * 1.2 + 0.3,
+                opacity: Math.random() * 0.4 + 0.3
+            });
+        }
+        
+        // Current Venus position marker - ONLY ONE DOT
+        let currentMarker = null;
+        let frameCount = 0;
+        let animating = true;
+        let animationSpeed = 1.0; // 1.0 = normal speed (10 sec/orbit), 0.67 = slow (15 sec/orbit)
+        
+        // For detecting retrograde motion
+        let lastVenusAngle = null;
+        
+        function calculateApparentVenusPosition() {
+            // Position of Venus
+            const venusX = centerX + venusConfig.distance * Math.cos(venusConfig.angle);
+            const venusY = centerY + venusConfig.distance * Math.sin(venusConfig.angle);
+            
+            // Position of Earth
+            const earthX = centerX + earthConfig.distance * Math.cos(earthConfig.angle);
+            const earthY = centerY + earthConfig.distance * Math.sin(earthConfig.angle);
+            
+            // Direction from Earth to Venus
+            const dx = venusX - earthX;
+            const dy = venusY - earthY;
+            const angle = Math.atan2(dy, dx);
+            
+            // Calculate closest distance from Sun to the Earth-Venus line
+            const lineLength = Math.sqrt(dx * dx + dy * dy);
+            const dotProduct = -(earthX - centerX) * dx - (earthY - centerY) * dy;
+            const t = Math.max(0, Math.min(1, dotProduct / (lineLength * lineLength)));
+            
+            const closestX = earthX + t * dx;
+            const closestY = earthY + t * dy;
+            const distToSunCenter = Math.sqrt((closestX - centerX) ** 2 + (closestY - centerY) ** 2);
+            
+            // Determine if Venus is behind or in front of Sun relative to Earth
+            // Check angles from Sun to Venus and Sun to Earth
+            const sunToVenusAngle = Math.atan2(venusY - centerY, venusX - centerX);
+            const sunToEarthAngle = Math.atan2(earthY - centerY, earthX - centerX);
+            
+            // Normalize angle difference
+            let angleDiff = sunToVenusAngle - sunToEarthAngle;
+            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            
+            // Calculate direct Earth-Venus distance
+            const earthVenusDistance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Minimum Earth-Venus distance occurs at inferior conjunction
+            // Venus orbit: 130px, Earth orbit: 180px
+            // Minimum distance: 180 - 130 = 50px
+            // Use 51px threshold (2% above minimum) for minimal but visible blanking
+            const inferiorConjunctionThreshold = 51;
+            
+            // SUPERIOR CONJUNCTION: Venus and Earth on opposite sides of Sun (angles ~180° apart)
+            const isSuperiorConjunction = Math.abs(Math.abs(angleDiff) - Math.PI) < 0.52; // Within 30 degrees of opposite
+            
+            // INFERIOR CONJUNCTION: Earth-Venus distance is near minimum
+            const isInferiorConjunction = earthVenusDistance < inferiorConjunctionThreshold;
+            
+            let visible = true;
+            
+            if (isSuperiorConjunction) {
+                // SUPERIOR CONJUNCTION: Venus on FAR side of Sun (behind it)
+                // Hide whenever line touches Sun's EDGE (radius 30px)
+                if (distToSunCenter < 30) {
+                    visible = false;
+                }
+            } else if (isInferiorConjunction) {
+                // INFERIOR CONJUNCTION: Venus and Earth are very close (near minimum distance)
+                // This means Venus is between Earth and Sun
+                // Blank the red dot during this period
+                visible = false;
+            }
+            // Otherwise visible
+            
+            return {
+                angle: angle,
+                visible: visible,
+                venusX: venusX,
+                venusY: venusY,
+                earthX: earthX,
+                earthY: earthY
+            };
+        }
+        
+        function getMotionType(currentAngle, previousAngle) {
+            if (previousAngle === null) return 'initial';
+            
+            // Normalize angles
+            let diff = currentAngle - previousAngle;
+            
+            // Handle angle wrapping
+            if (diff > Math.PI) diff -= 2 * Math.PI;
+            if (diff < -Math.PI) diff += 2 * Math.PI;
+            
+            // CORRECTED: Negative diff means moving CCW (prograde)
+            // Positive diff means moving CW (retrograde)
+            if (Math.abs(diff) < 0.001) return 'stationary';
+            return diff < 0 ? 'prograde' : 'retrograde';
+        }
+        
+        function drawStarRing() {
+            // Draw cloudy star ring - many small stars for smear effect
+            stars.forEach((star, index) => {
+                // Twinkling effect
+                const twinkle = Math.sin(frameCount * 0.05 + index * 0.1) * 0.15;
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity + twinkle})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw very faint ring outline
+            ctx.strokeStyle = 'rgba(100, 100, 150, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, starRingRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        function drawCurrentMarker() {
+            if (!currentMarker || !currentMarker.visible) return;
+            
+            // Scintillating effect
+            const scintillate = Math.sin(frameCount * 0.1) * 0.3 + 0.7;
+            
+            // Draw the single dot - larger and more prominent
+            ctx.fillStyle = currentMarker.color.replace('1)', `${scintillate})`);
+            ctx.beginPath();
+            ctx.arc(currentMarker.x, currentMarker.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Outer glow
+            const gradient = ctx.createRadialGradient(currentMarker.x, currentMarker.y, 0, currentMarker.x, currentMarker.y, 16);
+            gradient.addColorStop(0, currentMarker.color.replace('1)', `${0.6})`));
+            gradient.addColorStop(1, currentMarker.color.replace('1)', '0)'));
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(currentMarker.x, currentMarker.y, 16, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Arrow TANGENT to the star ring (perpendicular to radius)
+            // The radius angle is from center to marker
+            const radiusAngle = Math.atan2(currentMarker.y - centerY, currentMarker.x - centerX);
+            
+            // Tangent is perpendicular to radius
+            // CORRECTED: Prograde (green) goes CCW, retrograde (red) goes CW
+            const arrowLength = 15;
+            const tangentAngle = currentMarker.type === 'prograde' ? 
+                radiusAngle - Math.PI / 2 :  // CCW tangent (subtract for CCW)
+                radiusAngle + Math.PI / 2;   // CW tangent (add for CW)
+            
+            ctx.strokeStyle = currentMarker.color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(currentMarker.x, currentMarker.y);
+            ctx.lineTo(
+                currentMarker.x + arrowLength * Math.cos(tangentAngle),
+                currentMarker.y + arrowLength * Math.sin(tangentAngle)
+            );
+            ctx.stroke();
+            
+            // Arrowhead
+            const headSize = 6;
+            ctx.beginPath();
+            ctx.moveTo(
+                currentMarker.x + arrowLength * Math.cos(tangentAngle),
+                currentMarker.y + arrowLength * Math.sin(tangentAngle)
+            );
+            ctx.lineTo(
+                currentMarker.x + (arrowLength - headSize) * Math.cos(tangentAngle + 0.3),
+                currentMarker.y + (arrowLength - headSize) * Math.sin(tangentAngle + 0.3)
+            );
+            ctx.moveTo(
+                currentMarker.x + arrowLength * Math.cos(tangentAngle),
+                currentMarker.y + arrowLength * Math.sin(tangentAngle)
+            );
+            ctx.lineTo(
+                currentMarker.x + (arrowLength - headSize) * Math.cos(tangentAngle - 0.3),
+                currentMarker.y + (arrowLength - headSize) * Math.sin(tangentAngle - 0.3)
+            );
+            ctx.stroke();
+        }
+        
+        function drawPlanet(config) {
+            const planetX = centerX + config.distance * Math.cos(config.angle);
+            const planetY = centerY + config.distance * Math.sin(config.angle);
+            
+            // Draw orbit
+            ctx.strokeStyle = config.color + '66';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, config.distance, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw planet
+            ctx.fillStyle = config.color;
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, config.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw label
+            ctx.fillStyle = '#e0e0e0';
+            ctx.font = 'bold 14px Arial';
+            const textWidth = ctx.measureText(config.name).width;
+            ctx.fillText(config.name, planetX - textWidth/2, planetY - config.size - 8);
+        }
+        
+        function drawSightLine() {
+            const apparent = calculateApparentVenusPosition();
+            
+            if (apparent.visible) {
+                // The line goes from Earth, through Venus, and extends to the star ring
+                const dx = apparent.venusX - apparent.earthX;
+                const dy = apparent.venusY - apparent.earthY;
+                const angle = Math.atan2(dy, dx);
+                
+                // Find where the line from Earth at this angle intersects the star ring
+                const a = dx * dx + dy * dy;
+                const b = 2 * (dx * (apparent.earthX - centerX) + dy * (apparent.earthY - centerY));
+                const c = (apparent.earthX - centerX) ** 2 + (apparent.earthY - centerY) ** 2 - starRingRadius ** 2;
+                
+                const discriminant = b * b - 4 * a * c;
+                if (discriminant >= 0) {
+                    const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                    const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    const t = Math.max(t1, t2);
+                    
+                    const starX = apparent.earthX + t * dx;
+                    const starY = apparent.earthY + t * dy;
+                    
+                    // Draw STRAIGHT line from Earth to star ring intersection
+                    ctx.strokeStyle = 'rgba(255, 255, 100, 0.6)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(apparent.earthX, apparent.earthY);
+                    ctx.lineTo(starX, starY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    return { x: starX, y: starY, angle: angle };
+                }
+            }
+            return null;
+        }
+        
+        function drawScene() {
+            // Clear canvas
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Sun
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun glow
+            const gradient = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, 60);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw star ring
+            drawStarRing();
+            
+            // Draw sight line from Earth through Venus to star ring
+            const sightLineResult = drawSightLine();
+            
+            // Draw current marker on star ring
+            drawCurrentMarker();
+            
+            // Draw planets
+            drawPlanet(venusConfig);
+            drawPlanet(earthConfig);
+            
+            // Update positions and current marker
+            if (animating) {
+                venusConfig.angle -= (0.02 / venusConfig.period) * animationSpeed;
+                earthConfig.angle -= (0.02 / earthConfig.period) * animationSpeed;
+                
+                // Update current marker every frame
+                const apparent = calculateApparentVenusPosition();
+                
+                if (apparent.visible && sightLineResult) {
+                    const motionType = getMotionType(sightLineResult.angle, lastVenusAngle);
+                    
+                    let color;
+                    if (motionType === 'retrograde') {
+                        color = 'rgba(255, 0, 0, 1)'; // Red for retrograde (CW)
+                    } else {
+                        color = 'rgba(0, 255, 0, 1)'; // Green for prograde (CCW)
+                    }
+                    
+                    currentMarker = {
+                        x: sightLineResult.x,
+                        y: sightLineResult.y,
+                        angle: sightLineResult.angle,
+                        color: color,
+                        type: motionType === 'retrograde' ? 'retrograde' : 'prograde',
+                        visible: true
+                    };
+                    
+                    lastVenusAngle = sightLineResult.angle;
+                } else {
+                    // Venus not visible - hide marker
+                    if (currentMarker) {
+                        currentMarker.visible = false;
+                    }
+                }
+                
+                frameCount++;
+            }
+            
+            requestAnimationFrame(drawScene);
+        }
+        
+        function toggleAnimation() {
+            animating = !animating;
+        }
+        
+        function resetAnimation() {
+            venusConfig.angle = Math.PI;
+            earthConfig.angle = Math.PI;
+            currentMarker = null;
+            lastVenusAngle = null;
+            frameCount = 0;
+            animationSpeed = 1.0; // Reset to normal speed
+            document.getElementById('speedButton').textContent = 'Slow Down'; // Reset button text
+        }
+        
+        function slowDown() {
+            const speedButton = document.getElementById('speedButton');
+            // Toggle between normal speed (1.0 = ~10 sec/orbit) and slow speed (0.67 = ~15 sec/orbit)
+            if (animationSpeed === 1.0) {
+                animationSpeed = 0.67;
+                speedButton.textContent = 'Speed Up';
+            } else {
+                animationSpeed = 1.0;
+                speedButton.textContent = 'Slow Down';
+            }
+        }
+        
+        function toggleFullscreen() {
+            const container = canvas.parentElement.parentElement;
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        // ESC key exits fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        });
+        
+        // Start animation
+        drawScene();
+    
+
+        const audio = document.getElementById('pageAudio');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+
+        // Auto-play audio when page loads
+        window.addEventListener('load', function() {
+            // Delay audio by 0.8s to prevent first words from being clipped
+            setTimeout(function() {
+                if (audio.readyState >= 2) {
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log('Autoplay prevented'));
+                } else {
+                    audio.addEventListener('canplay', function() {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.log('Autoplay prevented'));
+                    }, { once: true });
+                }
+            }, 800);
+        });
+
+        function startAudio() {
+            // Ensure audio is ready before playing
+            if (audio.readyState >= 2) {
+                audio.currentTime = 0;
+                audio.play();
+            } else {
+                audio.load();
+                audio.addEventListener('canplay', function() {
+                    audio.currentTime = 0;
+                    audio.play();
+                }, { once: true });
+            }
+        }
+
+        function stopAudio() {
+            audio.pause();
+        }
+
+        function resumeAudio() {
+            audio.play();
+        }
+
+        // Update button states based on audio state
+        audio.addEventListener('play', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = false;
+            resumeBtn.disabled = true;
+        });
+
+        audio.addEventListener('pause', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resumeBtn.disabled = false;
+        });
+
+        audio.addEventListener('ended', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resumeBtn.disabled = true;
+        });
+
+
+        // Transcript data with timing
+        const transcript = "On this page we see that even though Venus is an inferior planet, meaning it is closer to the Sun than the Earth, it still, like all Solar System planets, exhibits planetary retrograde motion. When someone on Earth sees Venus moving forward, or prograde, or counterclockwise in its orbit relative to the unmovable faraway background stars, the animation indicates that motion with a green dot and forward arrow movement on the starry ring. But when someone on Earth sees Venus moving backward, or retrograde, or clockwise in its orbit relative to the unmovable faraway background stars, the animation indicates that motion with a red dot and backward arrow movement on the starry ring. Notice that Venus only shows planetary retrograde motion when it laps Earth, but this only happens when Venus moves between the Earth and the Sun, at or near inferior conjunction. Notice also that the dotted yellow line of sight connecting Earth, Venus and the starry ring disappears when Venus goes behind the Sun, when it is at or near Superior Conjunction, but it does not disappear when Venus is lapping the Earth, when it is between the Earth and the Sun, except at the precise moment of Inferior Conjunction, when the Earth, Venus and the Sun all line up. This is because, even though Venus is in the glare of the Sun near Inferior Conjunction, it is still visible, because almost all of the time it passes above or below the Sun. Try using the animation control buttons on the left side. You can slow down the animation to better observe Venus's retrograde motion, and you can also switch to full screen viewing of the animation to better observe that retrograde motion. When you are all finished exploring this animation, be sure to answer the question or questions at the bottom of this web page.";
+        const captionElement = document.getElementById('captionText');
+        
+        // Function to update caption based on audio progress
+
+
+        // Audio functionality
+        const audioVenus = document.getElementById('pageAudio');
+        const startBtnVenus = document.getElementById('startBtn');
+        const stopBtnVenus = document.getElementById('stopBtn');
+        const resumeBtnVenus = document.getElementById('resumeBtn');
+
+        // Autoplay is handled by the first window.addEventListener('load') above
+
+        function startAudio() {
+            if (audioVenus) {
+                audioVenus.currentTime = 0;
+                audioVenus.play();
+            }
+        }
+
+        function stopAudio() {
+            if (audioVenus) audioVenus.pause();
+        }
+
+        function resumeAudio() {
+            if (audioVenus) audioVenus.play();
+        }
+
+        if (audioVenus) {
+            audioVenus.addEventListener('play', function() {
+                if (startBtnVenus) startBtnVenus.disabled = false;
+                if (stopBtnVenus) stopBtnVenus.disabled = false;
+                if (resumeBtnVenus) resumeBtnVenus.disabled = true;
+            });
+            audioVenus.addEventListener('pause', function() {
+                if (startBtnVenus) startBtnVenus.disabled = false;
+                if (stopBtnVenus) stopBtnVenus.disabled = true;
+                if (resumeBtnVenus) resumeBtnVenus.disabled = false;
+            });
+            audioVenus.addEventListener('ended', function() {
+                if (startBtnVenus) startBtnVenus.disabled = false;
+                if (stopBtnVenus) stopBtnVenus.disabled = true;
+                if (resumeBtnVenus) resumeBtnVenus.disabled = true;
+            });
+        }
+        
+        // Caption handling for Venus
+        const captionElementVenus = document.getElementById('captionText');
+        const transcriptVenus = "On this page we see that even though Venus is an inferior planet, meaning it is closer to the Sun than the Earth, it still, like all Solar System planets, exhibits planetary retrograde motion. When someone on Earth sees Venus moving forward, or prograde, or counterclockwise in its orbit relative to the unmovable faraway background stars, the animation indicates that motion with a green dot and forward arrow movement on the starry ring. But when someone on Earth sees Venus moving backward, or retrograde, or clockwise in its orbit relative to the unmovable faraway background stars, the animation indicates that motion with a red dot and backward arrow movement on the starry ring. Notice that Venus only shows planetary retrograde motion when it laps Earth, but this only happens when Venus moves between the Earth and the Sun, at or near inferior conjunction. Notice also that the dotted yellow line of sight connecting Earth, Venus and the starry ring disappears when Venus goes behind the Sun, when it is at or near Superior Conjunction, but it does not disappear when Venus is lapping the Earth, when it is between the Earth and the Sun, except at the precise moment of Inferior Conjunction, when the Earth, Venus and the Sun all line up. This is because, even though Venus is in the glare of the Sun near Inferior Conjunction, it is still visible, because almost all of the time it passes above or below the Sun. Try using the animation control buttons on the left side. You can slow down the animation to better observe Venus's retrograde motion, and you can also switch to full screen viewing of the animation to better observe that retrograde motion. When you are all finished exploring this animation, be sure to answer the question or questions at the bottom of this web page.";
+        
+        if (audioVenus && captionElementVenus) {
+            function updateCaptionVenus() {
+                if (audioVenus.currentTime > 0 && !audioVenus.paused) {
+                    captionElementVenus.textContent = transcriptVenus;
+                    captionElementVenus.classList.add('active');
+                } else {
+                    captionElementVenus.textContent = '';
+                    captionElementVenus.classList.remove('active');
+                }
+            }
+            
+            audioVenus.addEventListener('timeupdate', updateCaptionVenus);
+            audioVenus.addEventListener('play', updateCaptionVenus);
+            audioVenus.addEventListener('pause', function() {
+                captionElementVenus.classList.remove('active');
+            });
+            audioVenus.addEventListener('ended', function() {
+                captionElementVenus.textContent = '';
+                captionElementVenus.classList.remove('active');
+            });
+        }
+
+    </script>
+
+    <!-- Load shared logic -->
+    <script src="retro-shared.js"></script>
+
+        <!-- Navigation -->
+        <div class="navigation" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3);">
+            <button class="nav-button"  onclick="window.location.href='mars.html'" >← Previous</button>
+            <div class="page-counter" style="font-size: 1.2em; color: #4da6ff; font-weight: 600;">
+                <span>4</span> / <span>5</span>
+            </div>
+            <button class="nav-button" onclick="sessionStorage.setItem('completionTime', Date.now().toString()); window.location.href='outro.html'" >Submit</button>
+        </div>
+        
+        <div class="timeline-indicator" style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5);">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot" onclick="window.location.href='copernicus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot" onclick="window.location.href='mars.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot active" onclick="window.location.href='venus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: #4da6ff; transition: all 0.3s ease; cursor: pointer; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+        </div>
+    
+</body>
+</html>

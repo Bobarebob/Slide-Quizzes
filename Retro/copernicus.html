@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Retrograde Motion - Nicolaus Copernicus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin: 30px 0 40px;
+        }
+
+        h1 {
+            color: #4da6ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+        }
+
+        .subtitle {
+            color: #ffa64d;
+            font-size: 1.3em;
+            margin-top: 10px;
+        }
+
+        /* Audio Player Styles */
+        .audio-player {
+            background: rgba(77, 166, 255, 0.15);
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .audio-player h3 {
+            color: #4da6ff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .audio-controls button {
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+            min-width: 100px;
+        }
+
+        .audio-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5);
+            background: linear-gradient(135deg, #357abd 0%, #2a5f99 100%);
+        }
+
+        .audio-controls button:active {
+            transform: translateY(0);
+        }
+
+        .audio-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .content-section {
+            background: rgba(10, 10, 26, 0.9);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+        }
+
+        .bio-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .portrait {
+            text-align: center;
+        }
+
+        .portrait img {
+            width: 100%;
+            border-radius: 10px;
+            border: 3px solid rgba(77, 166, 255, 0.5);
+            box-shadow: 0 0 20px rgba(77, 166, 255, 0.3);
+        }
+
+        .portrait-caption {
+            margin-top: 10px;
+            font-style: italic;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .bio-text {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+
+        .bio-text h2 {
+            color: #4da6ff;
+            margin: 20px 0 15px;
+            font-size: 1.5em;
+        }
+
+        .bio-text p {
+            margin-bottom: 15px;
+        }
+
+        .highlight {
+            color: #ffa64d;
+            font-weight: bold;
+        }
+
+        .quote {
+            background: rgba(77, 166, 255, 0.1);
+            border-left: 4px solid #4da6ff;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        .animations-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .animation-card {
+            background: linear-gradient(135deg, rgba(77, 166, 255, 0.2) 0%, rgba(255, 166, 77, 0.2) 100%);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            border: 2px solid rgba(77, 166, 255, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .animation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(77, 166, 255, 0.4);
+        }
+
+        .animation-card h3 {
+            color: #4da6ff;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+
+        .animation-card p {
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .animation-card a {
+            display: inline-block;
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .animation-card a:hover {
+            background: linear-gradient(135deg, #357abd 0%, #2a5f99 100%);
+        }
+
+        footer {
+            text-align: center;
+            margin: 50px 0 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .bio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+        .audio-caption {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: rgba(10, 10, 26, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .caption-text {
+            color: #e0e0e0;
+            font-size: 1em;
+            line-height: 1.6;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .caption-text.active {
+            color: #4da6ff;
+        }
+
+    
+
+
+    
+.nav-button {
+    padding: 14px 35px;
+    background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+    color: #999;
+}
+
+
+        .student-info {
+            background: rgba(20, 20, 35, 0.9);
+            padding: 15px 40px;
+            border-bottom: 2px solid rgba(77, 166, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .student-name {
+            color: #4da6ff;
+            font-size: 1.1em;
+        }
+        
+        .student-score {
+            color: #ffa64d;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .student-attempt {
+            color: #9d9dff;
+            font-size: 1em;
+        }
+        
+        .student-timer {
+            color: #4dffb8;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Student Info Banner -->
+    <div class="student-info" id="studentBanner" style="display: none;">
+        <div class="student-name">Student: <span id="displayName"></span> (<span id="displayID"></span>)</div>
+        <div class="student-score">Score: <span id="displayScore">0</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display: none;">
+            <span id="timeWarningMessage" style="color: #ff4444; margin-right: 10px; font-weight: bold; display: none;"></span>
+            Time Remaining: <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Planetary Retrograde Motion</h1>
+            <div class="subtitle">Understanding Copernicus's Revolutionary Insight</div>
+        </div>
+
+        <!-- Audio Player -->
+        <div class="audio-player">
+            <h3>🎧 Instructions</h3>
+            <audio id="pageAudio" preload="auto">
+                <source src="copernicus.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <div class="audio-controls">
+                <button id="startBtn" onclick="startAudio()">Start</button>
+                <button id="stopBtn" onclick="stopAudio()">Stop</button>
+                <button id="resumeBtn" onclick="resumeAudio()">Resume</button>
+            </div>
+            <div class="audio-caption">
+                <div id="captionText" class="caption-text"></div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="bio-grid">
+                <div class="portrait">
+                    <img src="Nikolaus_Kopernikus_MOT.jpg" alt="Portrait of Nicolaus Copernicus">
+                    <div class="portrait-caption">Nicolaus Copernicus</div>
+                </div>
+
+                <div class="bio-text">
+                    <h2>The Man Who Moved the Earth</h2>
+                    <p>
+                        <span class="highlight">Nicolaus Copernicus</span> (1473-1543) was a Polish mathematician and astronomer who formulated a model of the Solar System (and by extension the Universe) that placed the <span class="highlight">Sun rather than Earth at its center</span>. This heliocentric model revolutionized our understanding of the cosmos and laid the foundation for modern astronomy.
+                    </p>
+
+                    <h2>The Challenge of Retrograde Motion</h2>
+                    <p>
+                        For centuries, astronomers struggled to explain why planets occasionally appear to move <span class="highlight">backward</span> against the background stars. The prevailing geocentric model (Earth-centered) required complex systems of epicycles—circles within circles—to account for this phenomenon.
+                    </p>
+
+                    <div class="quote">
+                        "Finally we shall place the Sun himself at the center of the Universe. All this is suggested by the systematic procession of events and the harmony of the whole Universe, if only we face the facts, as they say, 'with both eyes open.'"
+                        <div style="text-align: right; margin-top: 10px; color: #4da6ff;">— Nicolaus Copernicus</div>
+                    </div>
+
+                    <h2>Copernicus's Elegant Solution</h2>
+                    <p>
+                        Copernicus realized that retrograde motion was an <span class="highlight">illusion</span> created by Earth's own motion around the Sun. When Earth, moving on an inner orbit, overtakes a slower outer planet like Mars, that planet appears to move backward. Similarly, when a faster inner planet like Venus laps Earth, it too exhibits retrograde motion from our perspective.
+                    </p>
+                    <p>
+                        This simple geometric explanation eliminated the need for epicycles and demonstrated the power of the heliocentric model. It was a triumph of <span class="highlight">Occam's Principle</span>—the simpler explanation proved to be the correct one.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- Quiz Section -->
+        <div class="quiz-container" style="margin-top: 50px; padding: 30px; background: rgba(255, 193, 7, 0.05); border: 2px solid #ffc107; border-radius: 12px;">
+            <h2 style="color: #ffc107; font-size: 2em; margin-bottom: 30px; text-align: center;">📝 Quiz Questions</h2>
+
+            <!-- Question 1 -->
+            <div class="quiz-question-block" style="margin-bottom: 35px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px;">
+                <div class="question-text" style="font-size: 1.2em; color: #e0e0e0; margin-bottom: 20px; font-weight: 500;">
+                    <strong>Question 1:</strong> Which planets exhibit planetary retrograde motion as seen by an Earthbound observer? If you need to, you can use the internet to discover the answer to this question.
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" data-question="1" data-option="0" onclick="handleQuizAnswer(1, 0, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>A)</strong> Just Mars and Venus
+                    </div>
+                    <div class="quiz-option" data-question="1" data-option="1" onclick="handleQuizAnswer(1, 1, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>B)</strong> Mercury, Venus and Mars
+                    </div>
+                    <div class="quiz-option" data-question="1" data-option="2" onclick="handleQuizAnswer(1, 2, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>C)</strong> Venus, Mars and Earth
+                    </div>
+                    <div class="quiz-option" data-question="1" data-option="3" onclick="handleQuizAnswer(1, 3, 3)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>D)</strong> All the planets external to Earth
+                    </div>
+                </div>
+                <div class="quiz-feedback" id="feedback-1" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="quiz-question-block" style="margin-bottom: 35px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px;">
+                <div class="question-text" style="font-size: 1.2em; color: #e0e0e0; margin-bottom: 20px; font-weight: 500;">
+                    <strong>Question 2:</strong> Which explanation of planetary retrograde motion is simpler (less complicated)? You can use the internet to discover the answer to this question.
+                </div>
+                <div class="quiz-options" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="quiz-option" data-question="2" data-option="0" onclick="handleQuizAnswer(2, 0, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>A)</strong> The Geocentric Model of Ptolemy
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="1" onclick="handleQuizAnswer(2, 1, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>B)</strong> The Heliocentric Model of Copernicus
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="2" onclick="handleQuizAnswer(2, 2, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>C)</strong> Both theories are equally complicated
+                    </div>
+                    <div class="quiz-option" data-question="2" data-option="3" onclick="handleQuizAnswer(2, 3, 1)" style="background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 2px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0;">
+                        <strong>D)</strong> Both theories are equally simple
+                    </div>
+                </div>
+                <div class="quiz-feedback" id="feedback-2" style="margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 1.05em; display: none;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Audio functionality
+        const audio = document.getElementById('pageAudio');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+
+        // Auto-play audio when page loads
+        window.addEventListener('load', function() {
+            // Delay audio by 0.8s to prevent first words from being clipped
+            setTimeout(function() {
+                if (audio.readyState >= 2) {
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log('Autoplay prevented'));
+                } else {
+                    audio.addEventListener('canplay', function() {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.log('Autoplay prevented'));
+                    }, { once: true });
+                }
+            }, 800);
+        });
+
+        function startAudio() {
+            if (audio.readyState >= 2) {
+                audio.currentTime = 0;
+                audio.play();
+            } else {
+                audio.load();
+                audio.addEventListener('canplay', function() {
+                    audio.currentTime = 0;
+                    audio.play();
+                }, { once: true });
+            }
+        }
+
+        function stopAudio() {
+            audio.pause();
+        }
+
+        function resumeAudio() {
+            audio.play();
+        }
+
+        // Update button states
+        audio.addEventListener('play', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = false;
+            resumeBtn.disabled = true;
+        });
+
+        audio.addEventListener('pause', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resumeBtn.disabled = false;
+        });
+
+        audio.addEventListener('ended', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resumeBtn.disabled = true;
+        });
+
+        // Transcript and captions
+        const transcript = "On this page we learn about Nicolaus Copernicus, a Polish mathematician, astronomer and cleric, who first formulated a model of the Solar System that placed the Sun rather than Earth at the System's center. This Heliocentric, or Sun centered Model, revolutionized our understanding of the cosmos and laid the foundation for modern astronomy. Copernicus realized that planetary retrograde motion, the apparent backward movement of a planet relative to the fixed background stars, was an illusion created by Earth's own motion around the Sun. When Earth, moving faster in its orbit than the more distant planet Mars, overtakes Mars on an inside track, Mars appears to move backward, relative to the faraway background stars, even though it is actually continuing to move forward in its orbit. Similarly, a planet closer to the Sun, like Venus, moving faster in its orbit than Earth, also exhibits planetary retrograde motion when it passes or laps Earth on an inside track. This simple geometric explanation eliminated the need for the deferents and epicycles geometry of Ptolemy's Earth centered Solar System model, the Geocentric Model, and demonstrated, by its utter simplicity, the power of the Heliocentric Model. It was a triumph of Occam's Principle. The simpler explanation turned out to be the correct one. While Copernicus's model explained other Solar System oddities, like the phases of Venus's illumination, it made a false assumption that all planetary orbits around the Sun were circles. It would take more than 60 years for Johannes Kepler to correct this error with his First Law of Planetary Motion, which states that all planetary orbits are ellipses. Be sure to read this web page carefully, and then answer the question or questions below, before moving on to the Mars retrograde animation.";
+        const captionElement = document.getElementById('captionText');
+        
+        function updateCaption() {
+            if (audio.currentTime > 0 && !audio.paused) {
+                captionElement.textContent = transcript;
+                captionElement.classList.add('active');
+            } else {
+                captionElement.textContent = '';
+                captionElement.classList.remove('active');
+            }
+        }
+        
+        audio.addEventListener('timeupdate', updateCaption);
+        audio.addEventListener('play', function() { updateCaption(); });
+        audio.addEventListener('pause', function() { captionElement.classList.remove('active'); });
+        audio.addEventListener('ended', function() { captionElement.textContent = ''; captionElement.classList.remove('active'); });
+    </script>
+
+    <!-- Load shared logic -->
+    <script src="retro-shared.js"></script>
+
+        <!-- Navigation -->
+        <div class="navigation" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3);">
+            <button class="nav-button"  onclick="window.location.href='intro.html'" >← Previous</button>
+            <div class="page-counter" style="font-size: 1.2em; color: #4da6ff; font-weight: 600;">
+                <span>2</span> / <span>5</span>
+            </div>
+            <button class="nav-button"  onclick="window.location.href='mars.html'" >Next →</button>
+        </div>
+        
+        <div class="timeline-indicator" style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5);">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot active" onclick="window.location.href='copernicus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: #4da6ff; transition: all 0.3s ease; cursor: pointer; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);"></div>
+            <div class="timeline-dot" onclick="window.location.href='mars.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot" onclick="window.location.href='venus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; transform: scale(1); box-shadow: none;"></div>
+        </div>
+    
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Retrograde Motion - Interactive Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .page-content {
+            padding: 40px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4da6ff;
+        }
+        
+        .page-title {
+            font-size: 2.8em;
+            color: #4da6ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .page-subtitle {
+            font-size: 1.4em;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+        
+        .intro-content, .outro-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .intro-icon {
+            font-size: 8em;
+            margin: 30px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .intro-text, .outro-text {
+            font-size: 1.3em;
+            line-height: 1.8;
+            margin: 30px 0;
+            color: #d0d0d0;
+        }
+        
+        .key-fact {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+            border-left: 4px solid #ffc107;
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+        
+        .key-fact-title {
+            font-size: 1.3em;
+            color: #4dffb8;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .key-fact ul {
+            list-style: none;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+        
+        .key-fact li {
+            padding-left: 25px;
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        .key-fact li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #4dffb8;
+        }
+        
+        /* Audio Player Styles */
+        .audio-player {
+            background: rgba(20, 20, 35, 0.8);
+            border: 2px solid #4da6ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .audio-player h3 {
+            color: #4da6ff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .audio-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .audio-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #357abd 0%, #2563a8 100%);
+            transform: translateY(-2px);
+        }
+        
+        .audio-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .audio-caption {
+            text-align: center;
+            min-height: 60px;
+            padding: 15px;
+            background: rgba(10, 10, 20, 0.6);
+            border-radius: 8px;
+            color: #b0b0b0;
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+        
+        .audio-caption.active {
+            color: #4da6ff;
+        }
+        
+        /* Quiz Styles */
+        .quiz-container {
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 193, 7, 0.05);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+        }
+        
+        .quiz-container h2 {
+            color: #4dffb8;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .quiz-question-block {
+            margin-bottom: 35px;
+            padding: 25px;
+            background: rgba(30, 30, 50, 0.6);
+            border-radius: 10px;
+        }
+        
+        .question-text {
+            font-size: 1.2em;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .quiz-option {
+            background: rgba(20, 20, 35, 0.8);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 2px solid rgba(77, 166, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #d0d0d0;
+        }
+        
+        .quiz-option:hover {
+            background: rgba(77, 166, 255, 0.2);
+            border-color: #4da6ff;
+        }
+        
+        .quiz-feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.05em;
+            display: none;
+        }
+        
+        /* Navigation Styles */
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 40px;
+            background: rgba(20, 20, 35, 0.8);
+            border-top: 2px solid rgba(77, 166, 255, 0.3);
+        }
+        
+        
+        
+        .page-counter {
+            font-size: 1.2em;
+            color: #4da6ff;
+            font-weight: 600;
+        }
+        
+        .timeline-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(20, 20, 35, 0.5);
+        }
+        
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(77, 166, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .timeline-dot:hover {
+            background: rgba(77, 166, 255, 0.6);
+            transform: scale(1.2);
+        }
+        
+        .timeline-dot.active {
+            background: #4da6ff;
+            transform: scale(1.4);
+            box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);
+            border-color: #fff;
+        }
+        
+        /* Content Styles */
+        .content-section {
+            background: rgba(20, 20, 35, 0.6);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+        
+        .content-section h2 {
+            color: #ffa64d;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        
+        .content-section p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #d0d0d0;
+        }
+        
+        .image-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            border: 2px solid rgba(77, 166, 255, 0.3);
+        }
+        
+        .image-caption {
+            margin-top: 15px;
+            font-size: 1em;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+        
+        .nav-button {
+            padding: 14px 35px;
+            background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.5;
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .page-content {
+                padding: 20px;
+            }
+            
+            .page-title {
+                font-size: 2em;
+            }
+            
+            .navigation {
+                padding: 15px 20px;
+            }
+        }
+
+        /* Student Info Banner */
+        .student-info {
+            background: rgba(20, 20, 35, 0.9);
+            padding: 15px 40px;
+            border-bottom: 2px solid rgba(77, 166, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .student-name, .student-score, .student-attempt {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .student-name {
+            color: #4da6ff;
+        }
+        
+        .student-score {
+            color: #ffa500;  /* Orange */
+        }
+        
+        .student-attempt {
+            color: #b19cd9;  /* Lavender/purple */
+        }
+        
+        .student-timer {
+            color: #4dffb8;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Student Info Banner -->
+    <div class="student-info" id="studentBanner" style="display: none;">
+        <div class="student-name">Student: <span id="displayName"></span> (<span id="displayID"></span>)</div>
+        <div class="student-score">Score: <span id="displayScore">0</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display: none;">
+            <span id="timeWarningMessage" style="color: #ff4444; margin-right: 10px; font-weight: bold; display: none;"></span>
+            Time Remaining: <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Planetary Retrograde Motion</h1>
+                <p class="page-subtitle">An Interactive Journey Through Copernican Astronomy</p>
+            </div>
+            <div class="intro-content">
+                <div class="intro-icon">🌌</div>
+                <div class="intro-text">
+                    Discover how Nicolaus Copernicus revolutionized our understanding of the cosmos<br>
+                    by explaining the mysterious backward motion of planets
+                </div>
+                <div class="key-fact">
+                    <div class="key-fact-title">🔬 What You'll Explore:</div>
+                    <ul>
+                        <li>The heliocentric model and its triumph over geocentric complexity</li>
+                        <li>How planetary retrograde motion is an optical illusion</li>
+                        <li>Mars retrograde: Earth overtaking on the "inside track"</li>
+                        <li>Venus retrograde: The inferior planet lapping Earth</li>
+                        </ul>
+                </div>
+                <div class="intro-text" style="margin-top: 40px; font-size: 1.1em;">
+                    <strong>Instructions:</strong> Each page includes an audio voiceover with synchronized captions
+                    explaining the concepts. Listen carefully, then answer the quiz questions at the bottom of each page.
+                    Use the navigation buttons or dot indicators to move between pages.
+                </div>
+                <div class="intro-text" style="margin-top: 40px; text-align: center; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 0.95em; color: #c0c0c0; letter-spacing: 0.5px;">
+                    Interactive Visualization of Planetary Retrograde Motion &nbsp;|&nbsp; © 2026 Magellica Press, R. Mahoney
+                </div>
+</div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="navigation">
+            <button class="nav-button" disabled>← Previous</button>
+            <div class="page-counter">
+                <span>1</span> / <span>5</span>
+            </div>
+            <button class="nav-button" onclick="window.location.href='copernicus.html'">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator">
+            <div class="timeline-dot active"></div>
+            <div class="timeline-dot" onclick="window.location.href='copernicus.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='mars.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='venus.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'"></div>
+        </div>
+    </div>
+    
+    <script>
+    // Simple banner display - runs before retro-shared.js
+    (function() {
+        const studentName = sessionStorage.getItem('studentName');
+        const studentID = sessionStorage.getItem('studentID');
+        const score = parseFloat(sessionStorage.getItem('score') || '0');
+        const quizConfig = JSON.parse(sessionStorage.getItem('quizConfig') || '{}');
+        const ptsPerQ = parseFloat(quizConfig.restrictions?.pointsPerQuestion) || 1.0;
+        const maxScore = 6 * ptsPerQ;
+        const attemptNumber = sessionStorage.getItem('attemptNumber');
+        const maxAttempts = sessionStorage.getItem('maxAttempts');
+        const timerEndTime = parseInt(sessionStorage.getItem('timerEndTime') || '0');
+        
+        if (studentName && studentID) {
+            document.getElementById('displayName').textContent = studentName;
+            document.getElementById('displayID').textContent = studentID;
+            const scoreText = ptsPerQ === 0.5 ? score.toFixed(1) : (score % 1 === 0 ? score : score.toFixed(1));
+            const maxText = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
+            document.getElementById('displayScore').textContent = scoreText + ' / ' + maxText;
+            
+            if (attemptNumber) {
+                document.getElementById('attemptNumber').textContent = maxAttempts && maxAttempts !== '0' ? `${attemptNumber} of ${maxAttempts}` : attemptNumber;
+                document.getElementById('attemptDisplay').style.display = 'block';
+            }
+            
+            if (timerEndTime > 0) {
+                document.getElementById('timerDisplay').style.display = 'block';
+                // Start timer countdown
+                function updateTimer() {
+                    const remaining = Math.max(0, timerEndTime - Date.now());
+                    const seconds = Math.ceil(remaining / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    document.getElementById('timeRemaining').textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                    
+                    if (seconds > 179) {
+                        // No warning
+                    } else if (seconds > 119) {
+                        document.getElementById('timeWarningMessage').textContent = 'Three minutes left!';
+                        document.getElementById('timeWarningMessage').style.display = 'inline';
+                    } else if (seconds > 59) {
+                        document.getElementById('timeWarningMessage').textContent = 'Two minutes left!';
+                        document.getElementById('timeWarningMessage').style.display = 'inline';
+                    } else if (seconds > 0) {
+                        document.getElementById('timeWarningMessage').textContent = 'Less than 1 minute left!';
+                        document.getElementById('timeWarningMessage').style.display = 'inline';
+                    } else {
+                        document.getElementById('timeWarningMessage').textContent = 'TIME IS UP!';
+                        document.getElementById('timeWarningMessage').style.display = 'inline';
+                    }
+                    
+                    if (remaining > 0) setTimeout(updateTimer, 1000);
+                }
+                updateTimer();
+            }
+            
+            document.getElementById('studentBanner').style.display = 'flex';
+        }
+    })();
+    </script>
+    
+    <!-- Load shared logic -->
+    <script src="retro-shared.js"></script>
+</body>
+</html>

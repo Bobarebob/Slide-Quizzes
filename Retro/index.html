@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Planetary Retrograde Motion - Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: rgba(30, 30, 50, 0.95); padding: 50px 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(77, 166, 255, 0.3); text-align: center; max-width: 500px; width: 100%; }
+        .login-box h2 { color: #4da6ff; font-size: 2em; margin-bottom: 15px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .login-box p { color: #b0b0b0; margin-bottom: 30px; font-size: 1.1em; }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(10, 10, 20, 0.8); border: 2px solid rgba(77, 166, 255, 0.3); border-radius: 10px; color: #e0e0e0; font-size: 1em; }
+        .login-box input:focus { outline: none; border-color: #4da6ff; box-shadow: 0 0 15px rgba(77, 166, 255, 0.3); }
+        .login-box button { width: 100%; padding: 15px; background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3); }
+        .login-box button:hover { transform: translateY(-2px); }
+        #loginError { color: #ff6b6b; margin-top: 15px; display: none; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🪐 Planetary Retrograde Motion</h2>
+        <p>Enter your information to begin</p>
+        <input type="text" id="studentName" placeholder="Loading...">
+        <input type="text" id="studentID" placeholder="Loading...">
+        <input type="password" id="studentPassword" placeholder="Loading...">
+        <div id="loginError"></div>
+        <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+    <script src="retro-shared.js"></script>
+    <script>
+window.addEventListener('load', async () => {
+    const success = await loadQuizConfig();
+    if (success) {
+        document.getElementById('studentName').placeholder = quizConfig.loginDescriptors.name || 'Enter name';
+        document.getElementById('studentID').placeholder = quizConfig.loginDescriptors.id || 'Enter ID';
+        document.getElementById('studentPassword').placeholder = quizConfig.loginDescriptors.pass || 'Enter password';
+    }
+});
+
+async function startQuiz() {
+    const name = document.getElementById('studentName').value.trim();
+    const studentID = document.getElementById('studentID').value.trim();
+    const password = document.getElementById('studentPassword').value;
+    const errorDiv = document.getElementById('loginError');
+    errorDiv.style.display = 'none';
+    
+    if (!name || !studentID) { errorDiv.textContent = 'Fill all fields'; errorDiv.style.display = 'block'; return; }
+    if (password !== QUIZ_PASSWORD) { errorDiv.textContent = 'Incorrect password'; errorDiv.style.display = 'block'; return; }
+    if (!quizConfig.className) { errorDiv.textContent = 'Config not loaded'; errorDiv.style.display = 'block'; return; }
+    
+    const now = new Date();
+    console.log('Date check:', {
+        now: now.toISOString(),
+        startDateTime: quizConfig.restrictions.startDateTime,
+        stopDateTime: quizConfig.restrictions.stopDateTime
+    });
+    
+    if (quizConfig.restrictions.startDateTime) {
+        const start = new Date(quizConfig.restrictions.startDateTime);
+        console.log('Start date:', start.toISOString(), 'Now < Start:', now < start);
+        if (now < start) { 
+            errorDiv.textContent = `Quiz is not available yet. It will open on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`; 
+            errorDiv.style.display = 'block'; 
+            return; 
+        }
+    }
+    if (quizConfig.restrictions.stopDateTime) {
+        const stop = new Date(quizConfig.restrictions.stopDateTime);
+        console.log('Stop date:', stop.toISOString(), 'Now > Stop:', now > stop);
+        if (now > stop) { 
+            errorDiv.textContent = `Quiz has closed. The deadline was ${stop.toLocaleDateString()} at ${stop.toLocaleTimeString()}.`; 
+            errorDiv.style.display = 'block'; 
+            return; 
+        }
+    }
+    
+    if (quizConfig.restrictions.attemptsAllowed > 0) {
+        try {
+            const snap = await db.collection('students').where('studentID', '==', studentID).where('quizPassword', '==', QUIZ_PASSWORD).get();
+            if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
+                errorDiv.textContent = `Used all ${quizConfig.restrictions.attemptsAllowed} attempts`;
+                errorDiv.style.display = 'block';
+                return;
+            }
+            // Store attempt number and max attempts
+            const attemptNumber = snap.size + 1;
+            sessionStorage.setItem('attemptNumber', attemptNumber.toString());
+            sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+        } catch (e) { console.error(e); }
+    } else {
+        sessionStorage.setItem('attemptNumber', '1');
+        sessionStorage.setItem('maxAttempts', '0');
+    }
+    
+    const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    sessionStorage.setItem('studentName', name);
+    sessionStorage.setItem('studentID', studentID);
+    sessionStorage.setItem('sessionId', sessionId);
+    sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
+    sessionStorage.setItem('answers', '{}');
+    sessionStorage.setItem('score', '0');
+    
+    if (quizConfig.restrictions.timeLimit > 0) {
+        const now = Date.now();
+        sessionStorage.setItem('quizStartTime', now.toString());
+        sessionStorage.setItem('timerEndTime', (now + quizConfig.restrictions.timeLimit * 60000).toString());
+    }
+    
+    try {
+        await db.collection('students').doc(sessionId).set({
+            name, studentID,
+            className: quizConfig.className,
+            quizName: quizConfig.quizName,
+            quizPassword: QUIZ_PASSWORD,
+            databaseId: quizConfig.databaseId,
+            startTime: firebase.firestore.Timestamp.now(),
+            answers: {}, score: 0, completed: false
+        });
+        window.location.href = 'intro.html';
+    } catch (e) {
+        errorDiv.textContent = 'Database error: ' + e.message;
+        errorDiv.style.display = 'block';
+    }
+}
+    </script>
+</body>
+</html>

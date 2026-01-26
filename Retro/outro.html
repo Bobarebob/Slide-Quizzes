@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Retrograde Motion - Conclusion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .page-content {
+            padding: 40px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4da6ff;
+        }
+        
+        .page-title {
+            font-size: 2.8em;
+            color: #4da6ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .page-subtitle {
+            font-size: 1.4em;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+        
+        .outro-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .outro-icon {
+            font-size: 8em;
+            margin: 30px 0;
+            animation: rotate 4s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .outro-text {
+            font-size: 1.3em;
+            line-height: 1.8;
+            margin: 30px 0;
+            color: #d0d0d0;
+        }
+        
+        .key-fact {
+            background: linear-gradient(135deg, rgba(77, 175, 80, 0.1) 0%, rgba(56, 142, 60, 0.1) 100%);
+            border-left: 4px solid #4caf50;
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+        
+        .key-fact-title {
+            font-size: 1.3em;
+            color: #4caf50;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .key-fact ul {
+            list-style: none;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+        
+        .key-fact li {
+            padding-left: 25px;
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        .key-fact li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+        }
+    
+
+
+    
+.nav-button {
+    padding: 14px 35px;
+    background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+    color: #999;
+}
+
+/* Student Info Banner */
+.student-info {
+    background: rgba(20, 20, 35, 0.9);
+    padding: 15px 40px;
+    border-bottom: 2px solid rgba(77, 166, 255, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.student-name, .student-score, .student-attempt {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.student-name {
+    color: #4da6ff;
+}
+
+.student-score {
+    color: #ffa500;  /* Orange */
+}
+
+.student-attempt {
+    color: #b19cd9;  /* Lavender/purple */
+}
+
+.student-timer {
+    color: #4dffb8;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+</style>
+</head>
+<body>
+    <!-- Student Info Banner -->
+    <div class="student-info" id="studentBanner" style="display: none;">
+        <div class="student-name">Student: <span id="displayName"></span> (<span id="displayID"></span>)</div>
+        <div class="student-score">Score: <span id="displayScore">0</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display: none;">
+            <span id="timeWarningMessage" style="color: #ff4444; margin-right: 10px; font-weight: bold; display: none;"></span>
+            <span id="timerLabel">Time Remaining:</span> <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Congratulations!</h1>
+                <p class="page-subtitle">You've Completed the Journey Through Planetary Retrograde Motion</p>
+            </div>
+                    <div class="outro-content">
+            <div class="outro-icon">🎉</div>
+            <div class="outro-text">
+                You have completed the Planetary Retrograde Motion Quiz
+            </div>
+            
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="color: #4dffb8; font-size: 2em;">Final Score</h2>
+                <div style="font-size: 6em; color: #4da6ff; font-weight: bold; margin: 20px 0;">
+                    <span id="finalScore">0</span> / <span id="finalMaxScore">6</span>
+                </div>
+            </div>
+            
+            <div class="outro-text">
+                Thank you for participating! Your responses have been saved.
+            </div>
+        </div>
+                <div class="key-fact">
+                    <div class="key-fact-title">🌟 Key Insights You've Mastered:</div>
+                    <ul>
+                        <li>The heliocentric model's triumph over geocentric complexity</li>
+                        <li>How retrograde motion is an illusion of perspective</li>
+                        <li>Mars retrograde occurs when Earth overtakes it at opposition</li>
+                        <li>Venus retrograde occurs when it laps Earth at inferior conjunction</li>
+                        </ul>
+                </div>
+                <div class="outro-text" style="margin-top: 50px;">
+                    <strong style="color: #4dffb8; font-size: 1.2em;">The Copernican Revolution</strong><br><br>
+                    By placing the Sun at the center of the Solar System, Copernicus didn't just solve the puzzle of
+                    retrograde motion—he fundamentally changed humanity's place in the universe. His work paved the way
+                    for Galileo and Newton, ultimately leading to our modern understanding of celestial mechanics.
+                </div>
+                <div class="outro-text" style="margin-top: 40px; font-size: 1.1em; color: #b0b0b0;">
+                    Thank you for exploring this fascinating chapter in the history of astronomy. May you continue to
+                    look up at the night sky with wonder and understanding!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="navigation" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3);">
+            <button class="nav-button" onclick="window.location.href='venus.html'" >← Previous</button>
+            <div class="page-counter" style="font-size: 1.2em; color: #4da6ff; font-weight: 600;">
+                <span>5</span> / <span>5</span>
+            </div>
+            <div style="width: 120px;"></div> <!-- Spacer to balance layout -->
+        </div>
+        
+        <div class="timeline-indicator" style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5);">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='copernicus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='mars.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='venus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot active" style="width: 14px; height: 14px; border-radius: 50%; background: #4da6ff; transition: all 0.3s ease; cursor: pointer; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);"></div>
+        </div>
+    </div>
+    
+    <script>
+    // Run immediately without delay
+    (function() {
+        // Check if user is logged in - redirect if not
+        const studentName = sessionStorage.getItem('studentName');
+        const studentID = sessionStorage.getItem('studentID');
+        if (!studentName || !studentID) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Get all data from sessionStorage
+        const score = parseFloat(sessionStorage.getItem('score') || '0');
+        const attemptNumber = sessionStorage.getItem('attemptNumber');
+        const maxAttempts = sessionStorage.getItem('maxAttempts');
+        const quizConfig = JSON.parse(sessionStorage.getItem('quizConfig') || '{}');
+        const ptsPerQ = parseFloat(quizConfig.restrictions?.pointsPerQuestion) || 1.0;
+        const maxScore = 6 * ptsPerQ;
+        const answers = JSON.parse(sessionStorage.getItem('answers') || '{}');
+        const allAnswered = Object.keys(answers).length === 6;
+        const timerEndTime = parseInt(sessionStorage.getItem('timerEndTime') || '0');
+        const startTime = parseInt(sessionStorage.getItem('quizStartTime') || Date.now());
+        const totalTimeSeconds = (quizConfig.restrictions?.timeLimit || 0) * 60;
+        
+        console.log('Outro DEBUG:', {score, studentName, studentID, ptsPerQ, maxScore, allAnswered});
+        
+        // Display final score (large display)
+        document.getElementById('finalScore').textContent = ptsPerQ === 0.5 ? score.toFixed(1) : (score % 1 === 0 ? score : score.toFixed(1));
+        document.getElementById('finalMaxScore').textContent = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
+        
+        // Show banner
+        if (studentName && studentID) {
+            document.getElementById('displayName').textContent = studentName;
+            document.getElementById('displayID').textContent = studentID;
+            const scoreText = ptsPerQ === 0.5 ? score.toFixed(1) : (score % 1 === 0 ? score : score.toFixed(1));
+            const maxText = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
+            document.getElementById('displayScore').textContent = scoreText + ' / ' + maxText;
+            
+            if (attemptNumber) {
+                document.getElementById('attemptNumber').textContent = maxAttempts && maxAttempts !== '0' ? `${attemptNumber} of ${maxAttempts}` : attemptNumber;
+                document.getElementById('attemptDisplay').style.display = 'block';
+            }
+            
+            document.getElementById('studentBanner').style.display = 'flex';
+        }
+        
+        // Timer logic
+        const timeIsUp = timerEndTime > 0 && timerEndTime <= Date.now();
+        const isLocked = allAnswered || timeIsUp;
+        
+        console.log('Outro DEBUG - Timer:', {
+            timerEndTime,
+            startTime,
+            allAnswered,
+            timeIsUp,
+            isLocked,
+            completionTime: sessionStorage.getItem('completionTime'),
+            now: Date.now()
+        });
+        
+        if (timerEndTime > 0) {
+            if (isLocked) {
+                // Show Time Taken (FROZEN - how long it took to complete)
+                let lockTime;
+                if (timeIsUp) {
+                    // Time expired - use timerEndTime
+                    lockTime = timerEndTime;
+                    console.log('Using timerEndTime for lockTime:', lockTime);
+                } else {
+                    // All answered - use saved completionTime or current time as fallback
+                    const savedCompletionTime = parseInt(sessionStorage.getItem('completionTime') || '0');
+                    lockTime = savedCompletionTime > 0 ? savedCompletionTime : Date.now();
+                    console.log('Using completionTime for lockTime:', lockTime, 'saved:', savedCompletionTime);
+                }
+                
+                const timeTakenMs = lockTime - startTime;
+                const timeTakenSeconds = Math.floor(timeTakenMs / 1000);
+                // Show how long it TOOK, not how much time was LEFT
+                const minutes = Math.floor(timeTakenSeconds / 60);
+                const secs = timeTakenSeconds % 60;
+                const timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                
+                console.log('Time Taken calculation:', {
+                    lockTime,
+                    startTime,
+                    timeTakenMs,
+                    timeTakenSeconds,
+                    display: timeString
+                });
+                
+                document.getElementById('timerLabel').textContent = 'Completion Time:';
+                document.getElementById('timeRemaining').textContent = timeString;
+                document.getElementById('timerDisplay').style.display = 'block';
+                
+                // CRITICAL: Stop the timer interval from retro-shared.js
+                if (typeof timerInterval !== 'undefined' && timerInterval) {
+                    clearInterval(timerInterval);
+                    console.log('Cleared timer interval - display is now FROZEN');
+                }
+                
+                if (timeIsUp) {
+                    document.getElementById('timeWarningMessage').textContent = 'TIME IS UP!';
+                    document.getElementById('timeWarningMessage').style.display = 'inline';
+                }
+                
+                // DO NOT start countdown - timer is frozen!
+                console.log('Timer FROZEN at:', timeString);
+            } else {
+                // Show Time Remaining (continuously counting down)
+                document.getElementById('timerLabel').textContent = 'Time Remaining:';
+                document.getElementById('timerDisplay').style.display = 'block';
+                
+                function updateTimer() {
+                    const timeRemaining = Math.max(0, timerEndTime - Date.now());
+                    const seconds = Math.ceil(timeRemaining / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    document.getElementById('timeRemaining').textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                    
+                    if (seconds > 0) {
+                        setTimeout(updateTimer, 1000);
+                    } else {
+                        // Time is up! Reload to lock
+                        location.reload();
+                    }
+                }
+                updateTimer();
+            }
+        }
+        
+        // Lock/unlock navigation
+        const dots = document.querySelectorAll('.timeline-dot');
+        const prevButton = document.querySelector('.nav-button[onclick*="venus.html"]');
+        
+        if (isLocked) {
+            // Lock dots
+            dots.forEach(dot => {
+                dot.style.cursor = 'not-allowed';
+                dot.style.opacity = '0.3';
+                dot.onclick = null;
+            });
+            // Lock Previous button
+            if (prevButton) {
+                prevButton.disabled = true;
+                prevButton.style.opacity = '0.5';
+                prevButton.style.cursor = 'not-allowed';
+                prevButton.onclick = null;
+            }
+            console.log('Navigation locked');
+        } else {
+            // Unlock dots
+            dots.forEach((dot, index) => {
+                if (index < 4) {
+                    dot.style.cursor = 'pointer';
+                    dot.style.opacity = '1';
+                }
+            });
+            // Unlock Previous button
+            if (prevButton) {
+                prevButton.disabled = false;
+                prevButton.style.opacity = '1';
+                prevButton.style.cursor = 'pointer';
+            }
+            console.log('Navigation unlocked');
+        }
+    })();
+    </script>
+</body>
+</html>

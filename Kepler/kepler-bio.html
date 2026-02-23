@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepler's Laws - Biography</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(30, 30, 50, 0.9); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(77, 166, 255, 0.2); overflow: hidden; min-height: 100vh; }
+        
+        /* Banner */
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 30px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+        
+        /* Layout */
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .page-subtitle { font-size: 1.4em; color: #b0b0b0; font-style: italic; }
+        
+        /* Interactive Audio Instructions Panel */
+        .audio-instruction-panel {
+            background: rgba(20, 30, 50, 0.8);
+            border: 2px solid rgba(77, 166, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px auto 40px;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .audio-header {
+            text-align: center;
+            color: #4da6ff;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .audio-controls button {
+            background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        .audio-controls button:hover {
+            box-shadow: 0 0 20px rgba(77, 166, 255, 0.6);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #5eb1ff 0%, #408dd6 100%);
+        }
+        .audio-script-box {
+            background: rgba(10, 15, 25, 0.6);
+            border-radius: 8px;
+            min-height: 40px; 
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+        .audio-script-box.expanded {
+            padding: 25px;
+            border: 1px solid rgba(77, 166, 255, 0.1);
+        }
+        .script-text {
+            display: none; 
+            color: #8fa3bf;
+            font-style: italic;
+            text-align: center;
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+        .script-text p { margin-bottom: 15px; }
+        .script-text p:last-child { margin-bottom: 0; }
+        .script-text.show { display: block; }
+
+        /* Bio Content Section */
+        .bio-container { 
+            display: flex; 
+            gap: 40px; 
+            align-items: flex-start; 
+            background: rgba(20, 20, 35, 0.5);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            max-width: 1000px;
+            margin: 0 auto 40px;
+        }
+        .bio-image {
+            flex-shrink: 0;
+            width: 250px;
+            border: 2px solid #4da6ff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(77,166,255,0.3);
+            overflow: hidden;
+        }
+        .bio-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .bio-text {
+            flex-grow: 1;
+            font-size: 1.15em;
+            line-height: 1.8;
+            color: #d0d0d0;
+        }
+        .bio-text h2 { color: #4da6ff; margin-bottom: 20px; font-size: 1.8em; }
+        .bio-text p { margin-bottom: 20px; }
+        .name-highlight { color: #ffa64d; font-weight: bold; }
+        
+        /* Restored Structural Quiz Styling */
+        .quiz-container { margin: 0 auto; max-width: 1000px; padding: 30px; background: rgba(255, 193, 7, 0.05); border: 2px solid #ffc207; border-radius: 12px; }
+        .quiz-container h2 { color: #ffc207; font-size: 2em; margin-bottom: 30px; text-align: center; }
+        .quiz-question-block { margin-bottom: 20px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px; border: 1px solid rgba(77, 166, 255, 0.2); }
+        .question-text { font-size: 1.2em; margin-bottom: 20px; font-weight: 500; }
+        .quiz-option { background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 1px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0; margin-bottom: 10px; }
+        .quiz-option:hover:not(.locked) { background: rgba(77, 166, 255, 0.2); border-color: #4da6ff; }
+        .quiz-option.correct { background: rgba(46, 125, 50, 0.2); border-color: #4caf50; color: #e0e0e0; }
+        .quiz-option.incorrect { background: rgba(198, 40, 40, 0.2); border-color: #f44336; color: #e0e0e0; }
+        .quiz-option.locked:not(.correct):not(.incorrect) { opacity: 0.6; cursor: not-allowed; }
+        .quiz-feedback-box { padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-feedback-box.show-correct { display: block; background: rgba(46, 125, 50, 0.2); border: 1px solid #4caf50; color: #4caf50; }
+        .quiz-feedback-box.show-incorrect { display: block; background: rgba(198, 40, 40, 0.2); border: 1px solid #f44336; color: #f44336; }
+        
+        /* Navigation & Timeline */
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease; }
+        .timeline-dot:hover { background: rgba(77, 166, 255, 0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name">
+                <span id="displayName"></span> (<span id="displayID"></span>)
+            </div>
+            <div class="student-score">
+                Score: <span id="displayScore">0 / 6</span>
+            </div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">
+                Attempt: <span id="attemptNumber">1</span>
+            </div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Johannes Kepler</h1>
+                <p class="page-subtitle">The Mathematician Who Unlocked the Heavens</p>
+            </div>
+
+            <div class="audio-instruction-panel">
+                <div class="audio-header">🎧 Instructions</div>
+                <div class="audio-controls">
+                    <button onclick="startInstructions()">Start</button>
+                    <button onclick="stopInstructions()">Stop</button>
+                    <button onclick="resumeInstructions()">Resume</button>
+                </div>
+                
+                <div class="audio-script-box" id="instructionScriptBox">
+                    <div class="script-text" id="scriptText">
+                        <p>On this page we learn about Johannes Kepler, a first-class mathematician, astronomer and astrologer, who derived by hand - from observational data collected by his colleague Tycho Brahe - Three Laws of Planetary Motion.</p>
+                        <p>These three laws were ultimately derived by Sir Isaac Newton using his more fundamental Three Laws of Motion and his Law of Gravity, thus experimentally validating Newton’s theoretical work.</p>
+                        <p>Notably, Kepler’s First Law showed that orbits of Solar System planets were ellipses (squished circles, or ovals), not pure circles. For this discovery, he primarily used Brahe’s data on Mars.</p>
+                        <p>Ultimately, Kepler’s Third Law was used (posthumously) by Newton’s friend, the astronomer Edmund Halley (of Halley’s comet fame), to determine the average Sun-planet distances of all the Solar System planets, first by exploiting the relatively rare Transit of Venus to trigonometrically determine the value of the Astronomical Unit (AU), the average Sun-Earth distance (now known to be 93 million miles), and then second, plugging that number into Kepler’s Third Law to determine the average Sun-planet distances of all the other planets known and tracked at that time (six planets total).</p>
+                    </div>
+                </div>
+                
+                <audio id="pageAudio" src="kepler-bio.mp3"></audio>
+            </div>
+
+            <div class="bio-container">
+                <div class="bio-image">
+                    <img src="kepler.jpg" alt="Portrait of Johannes Kepler (1610)">
+                </div>
+                <div class="bio-text">
+                    <h2>The Architect of Planetary Motion</h2>
+                    <p>On this page we learn about <strong class="name-highlight">Johannes Kepler</strong>, a first-class mathematician, astronomer and astrologer, who derived by hand - from observational data collected by his colleague <strong class="name-highlight">Tycho Brahe</strong> - Three Laws of Planetary Motion.</p>
+                    <p>These three laws were ultimately derived by Sir Isaac Newton using his more fundamental Three Laws of Motion and his Law of Gravity, thus experimentally validating Newton’s theoretical work. Notably, Kepler’s First Law showed that orbits of Solar System planets were ellipses (squished circles, or ovals), not pure circles. For this discovery, he primarily used Brahe’s data on Mars.</p>
+                    <p>Ultimately, Kepler’s Third Law was used (posthumously) by Newton’s friend, the astronomer <strong class="name-highlight">Edmund Halley</strong> (of Halley’s comet fame), to determine the average Sun-planet distances of all the Solar System planets, first by exploiting the relatively rare Transit of Venus to trigonometrically determine the value of the Astronomical Unit (AU), the average Sun-Earth distance (now known to be 93 million miles), and then second, plugging that number into Kepler’s Third Law to determine the average Sun-planet distances of all the other planets known and tracked at that time (six planets total).</p>
+                </div>
+            </div>
+
+            <div class="quiz-container">
+                <h2>📝 Quiz Questions</h2>
+                
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 1:</strong> Whose observational data did Kepler use to determine his Three Laws of Planetary Motion?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('bioQ1', this, 'A')">A) Newton</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('bioQ1', this, 'B')">B) Copernicus</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('bioQ1', this, 'C')">C) Galileo</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('bioQ1', this, 'D')">D) Brahe</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='intro.html'">← Previous</button>
+            <div class="page-counter"><span>2</span> / <span>6</span></div>
+            <button class="nav-button" onclick="window.location.href='law1.html'">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'"></div>
+            <div class="timeline-dot active" onclick="window.location.href='kepler-bio.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='law1.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='law2.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='law3.html'"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'"></div>
+        </div>
+    </div>
+
+    <script src="kepler-shared.js"></script>
+    <script>
+        const audioEl = document.getElementById('pageAudio');
+        const scriptBox = document.getElementById('instructionScriptBox');
+        const scriptText = document.getElementById('scriptText');
+
+        function startInstructions() {
+            scriptBox.classList.add('expanded');
+            scriptText.classList.add('show');
+            audioEl.currentTime = 0;
+            setTimeout(() => {
+                audioEl.play().catch(e => console.log("Audio play blocked by browser:", e));
+            }, 500);
+        }
+
+        function stopInstructions() {
+            audioEl.pause();
+        }
+
+        function resumeInstructions() {
+            scriptBox.classList.add('expanded');
+            scriptText.classList.add('show');
+            setTimeout(() => {
+                audioEl.play().catch(e => console.log("Audio play blocked by browser:", e));
+            }, 500);
+        }
+    </script>
+</body>
+</html>

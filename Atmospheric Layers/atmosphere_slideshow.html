@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earth's Atmosphere — Complete Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --tro: #4ade80;
+    --str: #facc15;
+    --mes: #a5f3fc;
+    --therm: #f97316;
+    --exo: #f43f5e;
+    --bg: #485E7A;
+    --panel: rgba(0,20,50,0.45);
+    --border: rgba(255,255,255,0.15);
+    --text: #f0f4f8;
+    --dim: #c8d8e8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+
+  .slideshow {
+    position: relative;
+    z-index: 10;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV BAR */
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 10px 32px 6px;
+    flex-shrink: 0;
+  }
+
+  .fs-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .fs-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.5); }
+
+  /* SLIDES WRAPPER */
+  .slides-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 10px 32px 20px;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: all 0.5s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+
+  /* SLIDE HEADER */
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .layer-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    opacity: 0.9;
+  }
+
+  .slide-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .slide-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    margin-left: auto;
+    letter-spacing: 1px;
+  }
+
+  /* GLOWING DIVIDER */
+  .glow-line {
+    height: 1px;
+    flex-shrink: 0;
+  }
+
+  /* CARD GRID */
+  .card-grid {
+    display: grid;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0.8;
+  }
+
+  .card-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+
+  .card-value {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(16px, 2.5vw, 26px);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .card-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+
+  /* TEMP BAR */
+  .temp-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    flex-shrink: 0;
+  }
+
+  .temp-section-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+
+  .temp-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .temp-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    width: 80px;
+    flex-shrink: 0;
+    color: var(--dim);
+  }
+
+  .temp-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .temp-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  .temp-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    width: 120px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ATMOSPHERE STACK (slide 5) */
+  .atm-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-radius: 8px;
+    overflow: visible;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    margin-bottom: 16px;
+  }
+
+  .atm-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s;
+    gap: 8px;
+    min-height: 42px;
+  }
+  .atm-row:last-child { border-bottom: none; }
+  .atm-row:hover { background: rgba(255,255,255,0.04); }
+
+  .atm-row.header {
+    background: rgba(0,15,40,0.5);
+    padding: 10px 14px;
+  }
+
+  .atm-row.header .atm-cell {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 400;
+  }
+
+  .atm-cell {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .atm-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .atm-mono {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+  }
+
+  .layer-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  /* PERCENT BAR */
+  .pct-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .pct-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .pct-bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .pct-bar {
+    height: 100%;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: white;
+    transition: width 1.2s ease;
+    min-width: 30px;
+  }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 0 14px;
+    flex-shrink: 0;
+  }
+
+  .nav-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .slide-counter {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    width: 60px;
+    text-align: center;
+  }
+
+  /* COLOR UTILITIES */
+  .c-tro { color: var(--tro); }
+  .c-str { color: var(--str); }
+  .c-mes { color: var(--mes); }
+  .c-therm { color: var(--therm); }
+  .c-exo { color: var(--exo); }
+
+  .bg-tro::before { background: var(--tro); }
+  .bg-str::before { background: var(--str); }
+  .bg-mes::before { background: var(--mes); }
+  .bg-therm::before { background: var(--therm); }
+
+  .bar-tro { background: linear-gradient(90deg, #4ade80, rgba(74,222,128,0.35)); }
+  .bar-str { background: linear-gradient(90deg, #facc15, rgba(250,204,21,0.35)); }
+  .bar-mes { background: linear-gradient(90deg, #a5f3fc, rgba(165,243,252,0.35)); }
+  .bar-therm { background: linear-gradient(90deg, #f97316, rgba(249,115,22,0.35)); }
+
+  /* GLOW */
+  .glow-tro { box-shadow: 0 0 20px rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.3); }
+  .glow-str { box-shadow: 0 0 20px rgba(250,204,21,0.15); border-color: rgba(250,204,21,0.3); }
+  .glow-mes { box-shadow: 0 0 20px rgba(165,243,252,0.15); border-color: rgba(165,243,252,0.3); }
+  .glow-therm { box-shadow: 0 0 20px rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.3); }
+
+  /* SPECIAL NOTE BOX */
+  .note-box {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid currentColor;
+    padding: 10px 14px;
+    border-radius: 0 4px 4px 0;
+    font-size: 12px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--dim);
+  }
+
+  .note-box strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .wide { grid-column: span 2; }
+  .wide3 { grid-column: span 3; }
+
+  /* MASTER SLIDE: Hover glow + click-to-magnify */
+  .atm-row.interactive {
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.3s, transform 0.2s;
+    border-radius: 4px;
+  }
+  .atm-row.interactive:hover {
+    box-shadow: 0 0 18px rgba(255,255,255,0.15), inset 0 0 12px rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.08) !important;
+  }
+  .atm-row.interactive.glow-tro-row:hover { box-shadow: 0 0 22px rgba(74,222,128,0.3), inset 0 0 10px rgba(74,222,128,0.06); }
+  .atm-row.interactive.glow-str-row:hover { box-shadow: 0 0 22px rgba(250,204,21,0.3), inset 0 0 10px rgba(250,204,21,0.06); }
+  .atm-row.interactive.glow-mes-row:hover { box-shadow: 0 0 22px rgba(165,243,252,0.3), inset 0 0 10px rgba(165,243,252,0.06); }
+  .atm-row.interactive.glow-therm-row:hover { box-shadow: 0 0 22px rgba(249,115,22,0.3), inset 0 0 10px rgba(249,115,22,0.06); }
+  .atm-row.interactive.glow-exo-row:hover { box-shadow: 0 0 22px rgba(244,63,94,0.3), inset 0 0 10px rgba(244,63,94,0.06); }
+
+  /* Magnify overlay */
+  .magnify-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,10,30,0.85);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+  }
+  .magnify-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .magnify-content {
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    gap: 20px;
+    padding: 30px 40px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-width: 90vw;
+    min-width: 70vw;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  }
+  .magnify-overlay.visible .magnify-content {
+    transform: scale(1);
+  }
+  .magnify-content .mag-cell {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .magnify-content .mag-cell.mag-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .magnify-content .mag-cell.mag-mono {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+  }
+  .magnify-hint {
+    margin-top: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    opacity: 0.6;
+  }
+
+</style>
+</head>
+<body>
+
+
+<div class="slideshow">
+  <div class="top-bar">
+    <button class="fs-btn" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
+  </div>
+
+  <div class="slides-wrapper">
+
+    <div class="slide active" id="slide-0">
+      <div class="slide-header">
+        <div class="layer-badge c-tro" style="border-color:var(--tro)">Layer 1</div>
+        <div class="slide-title c-tro">Troposphere</div>
+        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+      </div>
+      <div class="glow-line" style="background:linear-gradient(90deg,var(--tro),transparent)"></div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-tro glow-tro">
+          <div class="card-label">Bottom</div>
+          <div class="card-value c-tro">Sea Level</div>
+          <div class="card-sub">0 km · 0 ft · 0 mi</div>
+        </div>
+        <div class="card bg-tro glow-tro">
+          <div class="card-label">Top / Tropopause</div>
+          <div class="card-value c-tro">~11 km</div>
+          <div class="card-sub">~36,000 ft · ~6.8 mi</div>
+        </div>
+        <div class="card bg-tro glow-tro">
+          <div class="card-label">Thickness Range (Seasonal)</div>
+          <div class="card-value c-tro">9 – 12 km</div>
+          <div class="card-sub">Summer higher · Winter lower</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-tro" style="border-color:rgba(0,201,167,0.25)">
+        <div class="temp-section-title">⟶ Temperature Gradient (Lapse Rate: 6.5°C per 1,000 m)</div>
+        <div class="temp-row">
+          <div class="temp-label">Sea Level</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:65%"></div></div>
+          <div class="temp-val c-tro">+15°C / +59°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">10,000 ft</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:48%"></div></div>
+          <div class="temp-val c-tro">-5°C / +23°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">18,000 ft</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:34%"></div></div>
+          <div class="temp-val c-tro">-21°C / -6°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">30,000 ft</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:18%"></div></div>
+          <div class="temp-val c-tro">-44°C / -47°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">Tropopause</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:6%"></div></div>
+          <div class="temp-val c-tro">-56°C / -69°F</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-tro">
+          <div class="card-label">Pressure at Sea Level</div>
+          <div class="card-value c-tro">1,013 mb</div>
+          <div class="card-sub">Standard atmosphere</div>
+        </div>
+        <div class="card bg-tro">
+          <div class="card-label">Pressure at Tropopause</div>
+          <div class="card-value c-tro">~226 mb</div>
+          <div class="card-sub">~22% of sea level</div>
+        </div>
+        <div class="card bg-tro">
+          <div class="card-label">Pressure Halves Every</div>
+          <div class="card-value c-tro">~18,000 ft</div>
+          <div class="card-sub">~5.5 km</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-tro" style="border-color:rgba(0,201,167,0.25)">
+        <div class="temp-section-title">⟶ Atmospheric Content</div>
+        <div style="margin-bottom:6px">
+          <div class="pct-row">
+            <div class="pct-label">Air Mass</div>
+            <div class="pct-bar-wrap">
+              <div class="pct-bar bar-tro" style="width:78%">78%</div>
+            </div>
+          </div>
+          <div class="pct-row">
+            <div class="pct-label">Water Vapor</div>
+            <div class="pct-bar-wrap">
+              <div class="pct-bar bar-tro" style="width:99%">99%</div>
+            </div>
+          </div>
+        </div>
+        <div class="note-box c-tro" style="font-size:11px">
+          <strong>All weather occurs here.</strong> Contains ~78% of total atmospheric mass and ~99% of all water vapor. Lapse rate: temp falls 6.5°C per 1,000 m. Pressure halves every 18,000 ft.
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" id="slide-1">
+      <div class="slide-header">
+        <div class="layer-badge c-str" style="border-color:var(--str)">Layer 2</div>
+        <div class="slide-title c-str">Stratosphere</div>
+        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+      </div>
+      <div class="glow-line" style="background:linear-gradient(90deg,var(--str),transparent)"></div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-str glow-str">
+          <div class="card-label">Bottom / Tropopause</div>
+          <div class="card-value c-str">~11 km</div>
+          <div class="card-sub">~36,000 ft · ~6.8 mi</div>
+        </div>
+        <div class="card bg-str glow-str">
+          <div class="card-label">Top / Stratopause</div>
+          <div class="card-value c-str">~50 km</div>
+          <div class="card-sub">~164,000 ft · ~31 mi</div>
+        </div>
+        <div class="card bg-str glow-str">
+          <div class="card-label">Thickness</div>
+          <div class="card-value c-str">~39 km</div>
+          <div class="card-sub">~128,000 ft · ~24 mi</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-str" style="border-color:rgba(78,205,196,0.25)">
+        <div class="temp-section-title">⟶ Temperature Gradient — INVERTED (warms with altitude due to ozone UV absorption)</div>
+        <div class="temp-row">
+          <div class="temp-label">Tropopause</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:6%"></div></div>
+          <div class="temp-val c-str">-56°C / -69°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">~25 km (ozone peak)</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:35%"></div></div>
+          <div class="temp-val c-str">-30°C / -22°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">Stratopause ~50 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:62%"></div></div>
+          <div class="temp-val c-str">0 to +10°C / +32 to +50°F</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-str glow-str">
+          <div class="card-label">Ozone Layer Base</div>
+          <div class="card-value c-str">~15 km</div>
+          <div class="card-sub">~49,000 ft · ~9.3 mi</div>
+        </div>
+        <div class="card bg-str glow-str">
+          <div class="card-label">Ozone Peak Concentration</div>
+          <div class="card-value c-str">~25 km</div>
+          <div class="card-sub">~82,000 ft · ~15.5 mi</div>
+        </div>
+        <div class="card bg-str glow-str">
+          <div class="card-label">Ozone Top = Stratopause</div>
+          <div class="card-value c-str">~50 km</div>
+          <div class="card-sub">~164,000 ft · ~31 mi</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-str">
+          <div class="card-label">Pressure at Tropopause</div>
+          <div class="card-value c-str">~226 mb</div>
+          <div class="card-sub">22% of sea level</div>
+        </div>
+        <div class="card bg-str">
+          <div class="card-label">Pressure at Stratopause</div>
+          <div class="card-value c-str">~1 mb</div>
+          <div class="card-sub">0.1% of sea level</div>
+        </div>
+        <div class="card bg-str">
+          <div class="card-label">Air Mass Content</div>
+          <div class="card-value c-str">21.9%</div>
+          <div class="card-sub">Water vapor: ~0.99%</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-str" style="border-color:rgba(78,205,196,0.25)">
+        <div class="temp-section-title">⟶ Atmospheric Content (In Layer)</div>
+        <div class="pct-row">
+          <div class="pct-label">Air Mass</div>
+          <div class="pct-bar-wrap"><div class="pct-bar bar-str" style="width:21.9%">21.9%</div></div>
+        </div>
+        <div class="pct-row">
+          <div class="pct-label">Water Vapor</div>
+          <div class="pct-bar-wrap"><div class="pct-bar bar-str" style="width:1%">1%</div></div>
+        </div>
+
+        <div class="note-box c-str" style="margin-top:12px; border-left-color: #fff; background: rgba(255,255,255,0.08);">
+          <div style="font-family: 'Orbitron'; font-size: 10px; letter-spacing: 1px; margin-bottom: 4px; color: #fff;">Total Atmospheric Content (Troposphere + Stratosphere)</div>
+          <div style="display: flex; gap: 20px; font-family: 'Share Tech Mono'; font-size: 14px;">
+            <span style="color: var(--str)">Air Mass: <strong>99.9%</strong></span>
+            <span style="color: var(--str)">Water Vapor: <strong>99.99%</strong></span>
+          </div>
+        </div>
+
+        <div class="note-box c-str" style="margin-top:8px;font-size:11px">
+          <strong>Concorde cruised here</strong> at ~60,000 ft (~18 km), entering the ozone layer base. No weather, near-zero water vapor. Nacreous (polar stratospheric) clouds form at 15–30 km in polar winter at temps below -78°C (-108°F).
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div class="layer-badge c-mes" style="border-color:var(--mes)">Layer 3</div>
+        <div class="slide-title c-mes">Mesosphere</div>
+        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+      </div>
+      <div class="glow-line" style="background:linear-gradient(90deg,var(--mes),transparent)"></div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Bottom / Stratopause</div>
+          <div class="card-value c-mes">~50 km</div>
+          <div class="card-sub">~164,000 ft · ~31 mi</div>
+        </div>
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Top / Mesopause</div>
+          <div class="card-value c-mes">~85 km</div>
+          <div class="card-sub">~279,000 ft · ~53 mi</div>
+        </div>
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Thickness</div>
+          <div class="card-value c-mes">~35 km</div>
+          <div class="card-sub">~115,000 ft · ~22 mi</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-mes" style="border-color:rgba(167,139,250,0.25)">
+        <div class="temp-section-title">⟶ Temperature Gradient — FALLS AGAIN (no ozone, rapid radiative cooling)</div>
+        <div class="temp-row">
+          <div class="temp-label">Stratopause 50 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:62%"></div></div>
+          <div class="temp-val c-mes">+10°C / +50°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">~65 km (mid)</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:30%"></div></div>
+          <div class="temp-val c-mes">-50 to -60°C / -58 to -76°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">Mesopause 85 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:4%"></div></div>
+          <div class="temp-val c-mes">-100°C / -148°F</div>
+        </div>
+        <div style="padding:6px 0 0">
+          <div class="note-box c-mes" style="font-size:10px"><strong>Note:</strong> Polar summer mesopause can reach -137°C / -215°F — coldest natural place on Earth.</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Pressure at Stratopause</div>
+          <div class="card-value c-mes">~1 mb</div>
+          <div class="card-sub">Bottom of mesosphere</div>
+        </div>
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Pressure at Mesopause</div>
+          <div class="card-value c-mes">~0.004 mb</div>
+          <div class="card-sub">4 × 10⁻³ mb</div>
+        </div>
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Air Mass Content</div>
+          <div class="card-value c-mes">~0.1%</div>
+          <div class="card-sub">Effectively near-vacuum</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-2">
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Noctilucent Clouds (NLCs)</div>
+          <div class="card-value c-mes" style="font-size:18px">~80–85 km</div>
+          <div class="card-sub">Highest clouds on Earth · Pure water ice on meteor dust · Water vapor from methane oxidation · Visible from 50–65°N/S in summer at twilight</div>
+        </div>
+        <div class="card bg-mes glow-mes">
+          <div class="card-label">Salient Facts</div>
+          <div class="card-sub" style="margin-top:6px; font-size:13px; line-height:1.8">
+            <strong style="color:var(--mes)">Meteors burn up in the Mesosphere</strong><br>
+            <strong style="color:var(--mes)">Airglow starts in the Mesopause</strong><br>
+            <strong style="color:var(--mes)">Sodium Guide Stars start just above the Mesopause</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-mes">
+          <div class="card-label">Ionosphere D Layer</div>
+          <div class="card-value c-mes" style="font-size:16px">60–90 km</div>
+          <div class="card-sub">Absorbs AM radio daytime · Disappears at night · No skywave</div>
+        </div>
+        <div class="card bg-mes">
+          <div class="card-label">Airglow Range</div>
+          <div class="card-value c-mes" style="font-size:16px">80 – 100 km</div>
+        </div>
+        <div class="card bg-mes">
+          <div class="card-label">Sodium Guide Star</div>
+          <div class="card-value c-mes" style="font-size:16px">~90 km</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div class="layer-badge c-therm" style="border-color:var(--therm)">Layer 4</div>
+        <div class="slide-title c-therm">Thermosphere</div>
+        <div class="slide-subtitle">42°N · Moderate Solar Activity</div>
+      </div>
+      <div class="glow-line" style="background:linear-gradient(90deg,var(--therm),transparent)"></div>
+
+      <div class="card-grid cols-3">
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Bottom / Mesopause</div>
+          <div class="card-value c-therm">~85 km</div>
+          <div class="card-sub">~279,000 ft · ~53 mi</div>
+        </div>
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Top / Thermopause</div>
+          <div class="card-value c-therm">~600 km</div>
+          <div class="card-sub">~1,968,000 ft · ~373 mi</div>
+        </div>
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Thermopause Range</div>
+          <div class="card-value c-therm">500–1000+ km</div>
+          <div class="card-sub">Expands/contracts with solar activity</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-therm" style="border-color:rgba(249,115,22,0.25)">
+        <div class="temp-section-title">⟶ Temperature Gradient — RISES DRAMATICALLY (direct solar UV/X-ray absorption by individual atoms)</div>
+        <div class="temp-row">
+          <div class="temp-label">Mesopause 85 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:3%"></div></div>
+          <div class="temp-val c-therm">-100°C / -148°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">Kármán 100 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:8%"></div></div>
+          <div class="temp-val c-therm">-50 to -70°C / -58 to -94°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">~200 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:45%"></div></div>
+          <div class="temp-val c-therm">~600°C / ~1,100°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">ISS ~408 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:75%"></div></div>
+          <div class="temp-val c-therm">~900°C / ~1,650°F</div>
+        </div>
+        <div class="temp-row">
+          <div class="temp-label">Thermopause ~600 km</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:95%"></div></div>
+          <div class="temp-val c-therm">~1,100°C / ~2,010°F</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-4">
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Kármán Line (Space)</div>
+          <div class="card-value c-therm" style="font-size:16px">100 km</div>
+          <div class="card-sub">328,000 ft · 62.1 mi</div>
+        </div>
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Anacoustic Line</div>
+          <div class="card-value c-therm" style="font-size:16px">~160 km</div>
+          <div class="card-sub">~525,000 ft · ~99 mi · Sound cannot propagate</div>
+        </div>
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">ISS Orbit</div>
+          <div class="card-value c-therm" style="font-size:16px">~408 km</div>
+          <div class="card-sub">~1,339,000 ft · ~253 mi · F2 ionosphere layer</div>
+        </div>
+        <div class="card bg-therm glow-therm">
+          <div class="card-label">Pressure at ISS</div>
+          <div class="card-value c-therm" style="font-size:16px">~10⁻⁶ mb</div>
+          <div class="card-sub">Still causes orbital drag · Reboost required</div>
+        </div>
+      </div>
+
+      <div class="temp-section glow-therm" style="border-color:rgba(249,115,22,0.25)">
+        <div class="temp-section-title">⟶ Ionospheric Layers within Thermosphere</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div>
+            <div class="card-label">E Layer</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600">90–150 km</div>
+            <div class="card-sub">Skywave daytime only</div>
+          </div>
+          <div>
+            <div class="card-label">F1 Layer</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600">150–200 km</div>
+            <div class="card-sub">Skywave daytime only</div>
+          </div>
+          <div>
+            <div class="card-label">F2 Layer</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600">200–500 km</div>
+            <div class="card-sub">24/7 Skywave (frequencies depend on solar activity)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div class="layer-badge" style="color:#fff;border-color:rgba(255,255,255,0.4)">Master</div>
+        <div class="slide-title" style="color:white">Full Atmospheric Summary</div>
+        <div class="slide-subtitle">42°N · All Layers · Moderate Solar Activity</div>
+      </div>
+      <div class="glow-line" style="background:linear-gradient(90deg,white,transparent);opacity:0.3"></div>
+
+      <div class="atm-stack">
+        <div class="atm-row header">
+          <div class="atm-cell">Layer / Pause</div>
+          <div class="atm-cell">Height</div>
+          <div class="atm-cell">Temp °C</div>
+          <div class="atm-cell">Temp °F</div>
+          <div class="atm-cell">Pressure</div>
+          <div class="atm-cell">Air Mass / H₂O</div>
+        </div>
+
+        <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.35)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--tro)"></span><span class="atm-name c-tro">Sea Level</span></div>
+          <div class="atm-cell atm-mono">0 km · 0 ft · 0 mi</div>
+          <div class="atm-cell atm-mono c-tro">+15°C</div>
+          <div class="atm-cell atm-mono c-tro">+59°F</div>
+          <div class="atm-cell atm-mono c-tro">1,013 mb</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">— / —</div>
+        </div>
+
+        <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.25)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--tro);opacity:0.5"></span><span class="atm-name c-tro" style="font-size:10px;opacity:0.8">TROPOSPHERE</span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px">0 – 11 km<br>0 – 36,000 ft<br>0 – 6.8 mi</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">+15°C → -56°C</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">+59°F → -69°F</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">1013 → 226 mb</div>
+          <div class="atm-cell atm-mono c-tro" style="font-size:11px">~78% air<br>~99% H₂O</div>
+        </div>
+
+        <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.45);border-left:3px solid var(--tro)">
+          <div class="atm-cell"><span class="atm-name c-tro">⊱ TROPOPAUSE</span></div>
+          <div class="atm-cell atm-mono c-tro">11 km · 36,000 ft · 6.8 mi</div>
+          <div class="atm-cell atm-mono c-tro">-56°C</div>
+          <div class="atm-cell atm-mono c-tro">-69°F</div>
+          <div class="atm-cell atm-mono c-tro">~226 mb</div>
+          <div class="atm-cell atm-mono c-tro">Cumul: 78% / 99%</div>
+        </div>
+
+        <div class="atm-row interactive glow-str-row" style="background:rgba(0,20,55,0.25)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--str);opacity:0.5"></span><span class="atm-name c-str" style="font-size:10px;opacity:0.8">STRATOSPHERE</span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px">11 – 50 km<br>36k – 164k ft<br>6.8 – 31 mi</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">-56°C → +10°C</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">-69°F → +50°F</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">226 → 1 mb</div>
+          <div class="atm-cell atm-mono c-str" style="font-size:11px">21.9% air<br>~0.99% H₂O</div>
+        </div>
+
+        <div class="atm-row interactive glow-str-row" style="background:rgba(0,20,55,0.45);border-left:3px solid var(--str)">
+          <div class="atm-cell"><span class="atm-name c-str">⊱ STRATOPAUSE</span></div>
+          <div class="atm-cell atm-mono c-str">50 km · 164,000 ft · 31 mi</div>
+          <div class="atm-cell atm-mono c-str">+10°C</div>
+          <div class="atm-cell atm-mono c-str">+50°F</div>
+          <div class="atm-cell atm-mono c-str">~1 mb</div>
+          <div class="atm-cell atm-mono c-str">Cumul: 99.9% / 99.99%</div>
+        </div>
+
+        <div class="atm-row interactive glow-mes-row" style="background:rgba(0,10,45,0.25)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--mes);opacity:0.5"></span><span class="atm-name c-mes" style="font-size:10px;opacity:0.8">MESOSPHERE</span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px">50 – 85 km<br>164k – 279k ft<br>31 – 53 mi</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">+10°C → -100°C</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">+50°F → -148°F</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">1 → 0.004 mb</div>
+          <div class="atm-cell atm-mono c-mes" style="font-size:11px">~0.1% air<br>trace H₂O</div>
+        </div>
+
+        <div class="atm-row interactive glow-mes-row" style="background:rgba(0,10,45,0.45);border-left:3px solid var(--mes)">
+          <div class="atm-cell"><span class="atm-name c-mes">⊱ MESOPAUSE</span></div>
+          <div class="atm-cell atm-mono c-mes">85 km · 279,000 ft · 53 mi</div>
+          <div class="atm-cell atm-mono c-mes">-100°C</div>
+          <div class="atm-cell atm-mono c-mes">-148°F</div>
+          <div class="atm-cell atm-mono c-mes">~0.004 mb</div>
+          <div class="atm-cell atm-mono c-mes">Coldest on Earth</div>
+        </div>
+
+        <div class="atm-row interactive glow-therm-row" style="background:rgba(40,15,0,0.35)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--therm);opacity:0.5"></span><span class="atm-name c-therm" style="font-size:10px;opacity:0.8">THERMOSPHERE</span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px">85 – 600 km<br>53 – 373 mi</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">-100°C → +1,100°C</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">-148°F → +2,010°F</div>
+          <div class="atm-cell atm-mono" style="font-size:11px">0.004 → 10⁻⁷ mb</div>
+          <div class="atm-cell atm-mono c-therm" style="font-size:11px">~0.001% air<br>ISS @ 408 km</div>
+        </div>
+
+        <div class="atm-row interactive glow-therm-row" style="background:rgba(40,15,0,0.55);border-left:3px solid var(--therm)">
+          <div class="atm-cell"><span class="atm-name c-therm">⊱ THERMOPAUSE</span></div>
+          <div class="atm-cell atm-mono c-therm">~600 km · ~373 mi<br><span style="font-size:9px;color:var(--dim)">(Low solar: ~500km · High: 1000km+)</span></div>
+          <div class="atm-cell atm-mono c-therm">~1,100°C</div>
+          <div class="atm-cell atm-mono c-therm">~2,010°F</div>
+          <div class="atm-cell atm-mono c-therm">~10⁻⁷ mb</div>
+          <div class="atm-cell atm-mono c-therm">Moderate solar</div>
+        </div>
+
+        <div class="atm-row interactive glow-exo-row" style="background:rgba(50,0,15,0.35);border-left:3px solid var(--exo)">
+          <div class="atm-cell"><span class="layer-dot" style="background:var(--exo)"></span><span class="atm-name c-exo">EXOSPHERE ↑</span></div>
+          <div class="atm-cell atm-mono c-exo" style="font-size:11px">600 km → ~10,000 km<br>373 mi → ~6,214 mi</div>
+          <div class="atm-cell atm-mono" style="font-size:11px;color:var(--dim)">No defined T<br>(molecular escape)</div>
+          <div class="atm-cell atm-mono" style="font-size:11px;color:var(--dim)">—</div>
+          <div class="atm-cell atm-mono c-exo" style="font-size:11px">≪ 10⁻⁷ mb<br>→ interplanetary</div>
+          <div class="atm-cell atm-mono" style="font-size:10px;color:var(--dim)">Molecules escape to space · Merges with solar wind</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- Magnify Overlay -->
+<div class="magnify-overlay" id="magnifyOverlay" onclick="closeMagnify()">
+  <div class="magnify-content" id="magnifyContent" onclick="event.stopPropagation()">
+  </div>
+  <div class="magnify-hint">CLICK ANYWHERE TO CLOSE</div>
+</div>
+
+<div class="bottom-nav">
+    <button class="nav-btn" id="btn-prev" onclick="prevSlide()" disabled>◀ PREV</button>
+    <div class="slide-counter" id="counter">1 / 5</div>
+    <button class="nav-btn" id="btn-next" onclick="nextSlide()">NEXT ▶</button>
+  </div>
+</div>
+
+<script>
+// SLIDESHOW
+let current = 0;
+const total = 5;
+
+function goTo(n) {
+  const slides = document.querySelectorAll('.slide');
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit');
+  setTimeout(() => slides[current].classList.remove('exit'), 500);
+  current = n;
+  slides[current].classList.add('active');
+  updateNav();
+}
+
+function nextSlide() { if(current < total-1) goTo(current+1); }
+function prevSlide() { if(current > 0) goTo(current-1); }
+
+function updateNav() {
+  document.getElementById('counter').textContent = `${current+1} / ${total}`;
+  document.getElementById('btn-prev').disabled = current === 0;
+  document.getElementById('btn-next').disabled = current === total-1;
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeMagnify();
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+  if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevSlide();
+});
+
+// MAGNIFY: Click-to-pop-out for master slide rows
+function initMagnify() {
+  const rows = document.querySelectorAll('.atm-row.interactive');
+  rows.forEach(row => {
+    row.addEventListener('click', () => magnifyRow(row));
+  });
+}
+
+function magnifyRow(row) {
+  const overlay = document.getElementById('magnifyOverlay');
+  const content = document.getElementById('magnifyContent');
+  const cells = row.querySelectorAll('.atm-cell');
+  
+  // Determine the glow color from the row's class
+  let borderColor = 'rgba(255,255,255,0.3)';
+  if (row.classList.contains('glow-tro-row')) borderColor = 'rgba(74,222,128,0.5)';
+  else if (row.classList.contains('glow-str-row')) borderColor = 'rgba(250,204,21,0.5)';
+  else if (row.classList.contains('glow-mes-row')) borderColor = 'rgba(165,243,252,0.5)';
+  else if (row.classList.contains('glow-therm-row')) borderColor = 'rgba(249,115,22,0.5)';
+  else if (row.classList.contains('glow-exo-row')) borderColor = 'rgba(244,63,94,0.5)';
+  
+  let shadowColor = borderColor;
+  content.style.borderColor = borderColor;
+  content.style.boxShadow = `0 0 40px ${shadowColor}`;
+  
+  // Build magnified cells
+  content.innerHTML = '';
+  cells.forEach((cell, i) => {
+    const magCell = document.createElement('div');
+    magCell.className = 'mag-cell mag-mono';
+    if (i === 0) magCell.className = 'mag-cell mag-name';
+    magCell.innerHTML = cell.innerHTML;
+    // Copy color from original
+    const computed = getComputedStyle(cell);
+    magCell.style.color = computed.color;
+    content.appendChild(magCell);
+  });
+  
+  overlay.classList.add('visible');
+}
+
+function closeMagnify() {
+  document.getElementById('magnifyOverlay').classList.remove('visible');
+}
+
+// Initialize magnify on load
+initMagnify();
+</script>
+</body>
+</html>

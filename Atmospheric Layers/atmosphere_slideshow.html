@@ -372,31 +372,8 @@
     transition: all 0.2s;
     text-transform: uppercase;
   }
-  .nav-btn:hover, .nav-btn:active { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
-  .nav-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-
-  /* Mobile responsiveness */
-  @media (max-width: 768px) {
-    .slide { padding: 8px 12px 16px; gap: 8px; }
-    .top-bar { padding: 6px 12px 4px; }
-    .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr 1fr; }
-    .card { padding: 10px 12px; }
-    .card-value { font-size: 16px; }
-    .slide-header { flex-wrap: wrap; gap: 8px; }
-    .slide-subtitle { margin-left: 0; font-size: 10px; }
-    .nav-btn { padding: 12px 28px; font-size: 12px; -webkit-tap-highlight-color: rgba(255,255,255,0.2); touch-action: manipulation; }
-    .bottom-nav { padding: 8px 0 18px; gap: 16px; z-index: 1000; position: relative; }
-    .temp-section { padding: 10px 12px; }
-    .note-box { font-size: 12px; padding: 10px 14px; }
-    .atm-row { font-size: 10px; padding: 6px 8px; }
-    .atm-cell { font-size: 10px; }
-    .magnify-content { grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; min-width: 85vw; }
-  }
-  @media (max-width: 480px) {
-    .card-grid.cols-3, .card-grid.cols-4, .card-grid.cols-2 { grid-template-columns: 1fr; }
-    .slide-title { font-size: 16px; }
-    .nav-btn { padding: 14px 32px; font-size: 13px; }
-  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
 
   .slide-counter {
     font-family: 'Share Tech Mono', monospace;
@@ -527,7 +504,7 @@
   }
 
 </style>
-<script type='text/javascript' src='https://private-us-east-1.manuscdn.com/mPPccw762LAg0sDKzOe6A5qe_UzZ4p0CmpD1gQBw_h5_UpOxiuqlol0-rtXalhJX0EikcN2o-3eRDBE2qYsSAW43zik9xaYJPA74cvlE5Go25urbcWJInNXrhvHUPkJPrg1MmYZQVcys6iYuQb6nc9_vTVcfN4jyfo8clfGA0Y1eizv7eKssCgP1euKnXpWyE41dEB0UFn3oqg4Q-_FcaSQv1LHpnvs4N50QW8OzRgBZufadvbnIenV82m4sLLmGe7QNxACo8GNc011CmhwuX_PcqgdasYMh3huvVwhydufKNBYgptICvEVzR_4Y4qsQbdIAVk1aL-8kr6fIPpOweJehrdkBlkaaCn32UynZ1B4MKaBoK-i5mwoKSWpbt0XmqypJ649pP2L3eFOPme2QhZhNNHTW1rKZm7WJJQsklIAQwzscsTEt00pFupIPTm5fSLfl7KIAlF4LkcM5CPM0vMU1CxqQsn7h04ucxN1bAel4tyVZ62SgXojyDwJyTMjzKZepT3YuR8eTx30WdRHD-l0CSEzrla04VJkeqDszSzLzByaZzLbHNACanoFsrutDijd6u2BBRlLFmJN4Ii8oWmFUTyNZlFJbnjGSLKy7oo9n8wOvSOGICfO-_U7tOhrLeKpJBsXmLd1WBmruL9UV8_3cSGoSf6pTnTllhQoQzRLh7Rf-6TWVnMY_d6A85P-dnSCR2qOEUaHIXRiZkMx3emCG05Y2ZZz7RXOdSzgkAukUEHgL7r7utnZrHvTNCehEHhpF38BEu3gqZ-oRb458Yw5J4VRIomu83pUKRVXeMJsgqgsm9w8IgE1XHStErvJgC-uS7Xtqq5VBiv3klKIRl-jBSXX3FJxoNg6EGcgvZRL8-wBAwIiQIwYzstxpMnLsxLL6DYuqSHF9-2SgYqeEqPsDkaJd3vzDrQFid2OiNYD3Od7Rmi3QQwkYBGJbLXQsKOkN8IOWwEhTVMHSDJcw4qkS8jGEC2PZ2ztu-iZfLxsHFV1GNrFe7CXIQMzofIziBwku-yRo7pvhqBeP455sRAArp4qwarKMbPRlceba-HUzvoTy5qdPglxAhrU_1eidnZdbi6OwJJi-TC4vtdXurH0POjnyZrJyKmoNocenBM1qMWPPUpdNX4RL7OHFEIed7yDTtt-w1epkIFJ6WvNrMEH4zQgqDzojJB8tY7AXCtdWUfW7Ok4j5R4vdboxEeWuhrl6-4FY_XWDtb1VjMqHtHWhENI4SXaaPkNXb_J6SIEh1HBzdG6f6e20ZDLFMMs75Bd_K8Ym6sU1VzdBPRjLoQOtxzOc9VBQyKvkpGU4QocGS-CUlgeQOvDs8F1V1obgdGFqDWe16d9z920Y6HOXGiL60MweE1u736lnhFTS4KZG3o96vHxAUmhQ2Ssrv6-ad8ZoDlQ3J_VbEsAukKtGeSZvi3TNdvBV42sRzd7j8_CncvAdiB5fltn043PPbAeeugtLUhQG7aQnyaSUB7jmnnazyUiUJmTtWQZbKew9h2Wd4n-bjgBwx_yCkaxLYVW9UGrhox_QKoqleu38i-BU-X3ZhJhmT9WGO10AlmtujRSqBiL0gJb8kUvUmn72W1KC33sFsAyXPcwanMgRKQzM26r9eb5GN3_zKjSbNywZZw1SnVxDi4caqQ'></script></head>
+</head>
 <body>
 
 
@@ -832,7 +809,7 @@
           <div class="card-value c-mes" style="font-size:16px">80 – 100 km</div>
         </div>
         <div class="card bg-mes">
-          <div class="card-label">Sodium Guide Star</div>
+          <div class="card-label">Sodium Guide Star Height</div>
           <div class="card-value c-mes" style="font-size:16px">~90 km</div>
         </div>
       </div>
@@ -941,7 +918,7 @@
     <div class="slide" id="slide-4">
       <div class="slide-header">
         <div class="layer-badge" style="color:#fff;border-color:rgba(255,255,255,0.4)">Master</div>
-        <div class="slide-title" style="color:white">Full Atmospheric Summary</div>
+        <div class="slide-title" style="color:white">Full Atmospheric Stack</div>
         <div class="slide-subtitle">42°N · All Layers · Moderate Solar Activity</div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,white,transparent);opacity:0.3"></div>
@@ -1102,24 +1079,6 @@ document.addEventListener('keydown', e => {
   if(e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
   if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevSlide();
 });
-
-// Touch swipe support for mobile
-let touchStartX = 0;
-let touchEndX = 0;
-const swipeThreshold = 50;
-
-document.addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].screenX;
-}, { passive: true });
-
-document.addEventListener('touchend', e => {
-  touchEndX = e.changedTouches[0].screenX;
-  const diff = touchStartX - touchEndX;
-  if (Math.abs(diff) > swipeThreshold) {
-    if (diff > 0) nextSlide();  // swipe left = next
-    else prevSlide();           // swipe right = prev
-  }
-}, { passive: true });
 
 // MAGNIFY: Click-to-pop-out for master slide rows
 function initMagnify() {

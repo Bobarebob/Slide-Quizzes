@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Pressure Interactive Demonstration</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a1a;
+            --panel-bg: rgba(30, 30, 50, 0.9);
+            --accent-blue: #4da6ff;
+            --accent-orange: #ffa64d;
+            --accent-yellow: #ffeb3b;
+            --accent-green: #4dffb8;
+            --text-gray: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            color: var(--text-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 1000px;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 10px;
+        }
+
+        .header h1 { color: var(--accent-blue); margin: 0; font-size: 1.8em; }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        /* Controls Section */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(10, 10, 26, 0.5);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(77, 166, 255, 0.1);
+        }
+
+        .slider-container { position: relative; }
+        
+        input[type=range] { width: 100%; cursor: pointer; }
+
+        /* Dynamic mb Display [cite: 7, 8] */
+        .mb-display {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            transition: all 0.4s ease;
+            margin-top: 10px;
+        }
+        .theme-green { background: rgba(77, 255, 184, 0.2); color: var(--accent-green); border: 2px solid var(--accent-green); }
+        .theme-yellow { background: rgba(255, 235, 59, 0.2); color: var(--accent-yellow); border: 2px solid var(--accent-yellow); }
+        .theme-blue { background: rgba(77, 166, 255, 0.2); color: var(--accent-blue); border: 2px solid var(--accent-blue); }
+        .theme-gray { background: rgba(160, 160, 160, 0.15); color: #a0a0a0; border: 2px solid #a0a0a0; }
+
+        .readouts { display: flex; flex-direction: column; gap: 10px; }
+
+        .readout-box {
+            background: rgba(20, 20, 35, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-orange);
+        }
+        /* Yellow theme for ATM [cite: 10] */
+        .atm-readout { border-left: 3px solid var(--accent-yellow); }
+
+        .label { font-size: 0.75em; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 1.2em; font-weight: bold; }
+
+        .forecast-box {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Reset Button [cite: 6] */
+        .reset-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .reset-btn:hover { background: #666; }
+
+        /* Visuals Section */
+        .visuals {
+            background: #e8edf2;
+            border-radius: 10px;
+            padding: 15px;
+            border: 3px solid #3a3a3a;
+        }
+
+        .info-strip {
+            background: white;
+            color: #1a1a2e;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            border-radius: 0 0 15px 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Atmospheric Pressure Interactive Demonstration</h1>
+    </div>
+
+    <div class="main-layout">
+        <div class="controls">
+            <div class="slider-container">
+                <label class="label">Adjust Pressure (mb)</label>
+                <input type="range" id="pressSlider" min="900" max="1100" step="0.01" value="1013.25">
+                <div id="mbValueBox" class="mb-display">1013.25 mb</div>
+            </div>
+
+            <div class="readouts">
+                <div class="readout-box">
+                    <div class="label">Pascal (Pa)</div>
+                    <div class="value" id="valPa">101325.0</div>
+                </div>
+                <div class="readout-box atm-readout">
+                    <div class="label">Atmospheres (ATM)</div>
+                    <div class="value" id="valAtm" style="color: var(--accent-yellow);">1.00</div>
+                </div>
+                <div class="readout-box">
+                    <div class="label">Pounds/sq inch (psi)</div>
+                    <div class="value" id="valPsi">14.696</div>
+                </div>
+            </div>
+
+            <div id="forecast" class="forecast-box">Conditions: Fair</div>
+            <button class="reset-btn" onclick="resetSim()">RESET TO 1 ATM</button>
+        </div>
+
+        <div class="visuals">
+            <canvas id="baroCanvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+
+    <div class="info-strip">
+        Mercury Barometer Simulation | One Atmosphere = 1013.25 mb (101325 Pa)
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('baroCanvas');
+    const gc = canvas.getContext('2d');
+    const slider = document.getElementById('pressSlider');
+    const mbBox = document.getElementById('mbValueBox');
+    const valPa = document.getElementById('valPa');
+    const valAtm = document.getElementById('valAtm');
+    const valPsi = document.getElementById('valPsi');
+    const forecast = document.getElementById('forecast');
+
+    function resetSim() {
+        slider.value = 1013.25;
+        update();
+    }
+
+    function update() {
+        const mb = parseFloat(slider.value);
+        
+        // Data conversions
+        const pa = mb * 100;
+        const atm = mb / 1013.25;
+        const psi = mb * 0.0145038;
+        const cmHg = atm * 76.0;
+        const inHg = atm * 29.9213;
+
+        // Display updates
+        mbBox.textContent = mb.toFixed(2) + " mb";
+        valPa.textContent = pa.toLocaleString(undefined, {minimumFractionDigits: 1});
+        valAtm.textContent = atm.toPrecision(3);
+        valPsi.textContent = psi.toFixed(3);
+
+        // Color Logic [cite: 8]
+        mbBox.className = "mb-display";
+        if (mb >= 1008 && mb <= 1018) mbBox.classList.add('theme-green');
+        else if (mb > 1018) mbBox.classList.add('theme-yellow');
+        else if (mb >= 980) mbBox.classList.add('theme-blue');
+        else mbBox.classList.add('theme-gray');
+
+        // Forecast Logic
+        if (mb >= 1020) forecast.textContent = "Forecast: Fair";
+        else if (mb >= 1000) forecast.textContent = "Forecast: Uncertain";
+        else if (mb >= 980) forecast.textContent = "Forecast: Rain";
+        else forecast.textContent = "Forecast: PDS";
+
+        draw(mb, cmHg, inHg);
+    }
+
+    function draw(mb, cmHg, inHg) {
+        gc.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2 - 50;
+        const tubeW = 40;
+        const resY = 480;
+        const tubeTop = 60;
+        const tubeH = resY - tubeTop;
+
+        // Mercury Column Height
+        const mercuryHeight = (mb / 1013.25) * (tubeH * 0.8);
+        const mercTopY = resY - mercuryHeight;
+
+        // 1. Draw Tube
+        gc.fillStyle = "#f0f8ff";
+        gc.beginPath();
+        gc.roundRect(cx - tubeW/2, tubeTop, tubeW, tubeH, [20, 20, 0, 0]);
+        gc.fill();
+        gc.strokeStyle = "#5a3e2b";
+        gc.lineWidth = 3;
+        gc.stroke();
+
+        // 2. Mercury Fill
+        const mercGrad = gc.createLinearGradient(cx - tubeW/2, 0, cx + tubeW/2, 0);
+        mercGrad.addColorStop(0, "#999");
+        mercGrad.addColorStop(0.5, "#eee");
+        mercGrad.addColorStop(1, "#999");
+        gc.fillStyle = mercGrad;
+        gc.fillRect(cx - tubeW/2 + 3, mercTopY, tubeW - 6, mercuryHeight);
+
+        // 3. Labels and Arrows [cite: 1, 2, 3, 4]
+        gc.fillStyle = "#1a1a2e";
+        gc.font = "bold 14px Arial";
+        gc.textAlign = "left";
+
+        // Vacuum [cite: 1, 2]
+        gc.fillText("Vacuum", cx + tubeW, tubeTop + 20);
+        drawArrow(cx + tubeW - 5, tubeTop + 15, cx + 5, tubeTop + 15);
+
+        // Mercury-filled tube [cite: 3, 4]
+        gc.fillText("mercury-filled tube", cx + tubeW, (mercTopY + resY)/2);
+        drawArrow(cx + tubeW - 5, (mercTopY + resY)/2 - 5, cx + 10, (mercTopY + resY)/2 - 5);
+
+        // Meniscus Readings
+        gc.fillStyle = "#d32f2f";
+        gc.fillText(`${cmHg.toPrecision(4)} cm Hg`, cx + tubeW + 10, mercTopY);
+        gc.fillText(`${inHg.toPrecision(4)} in Hg`, cx + tubeW + 10, mercTopY + 18);
+
+        // 4. Reservoir
+        const resW = 200;
+        const resH = 100;
+        gc.fillStyle = "#c8a882";
+        gc.beginPath();
+        gc.roundRect(cx - resW/2, resY - 20, resW, resH, 10);
+        gc.fill();
+        
+        // Reservoir Mercury (No glare/arrow artifacts)
+        gc.fillStyle = "#b0b0b0";
+        gc.beginPath();
+        gc.ellipse(cx, resY - 10, (resW/2) - 15, 15, 0, 0, Math.PI * 2);
+        gc.fill();
+        gc.strokeStyle = "#888";
+        gc.stroke();
+
+        // 5. Atmospheric Pressure Arrows [cite: 5]
+        gc.fillStyle = "#1a7abf";
+        gc.textAlign = "center";
+        
+        // Left Arrow
+        gc.fillText("Atmospheric", cx - 70, resY - 55);
+        drawArrowDown(gc, cx - 70, resY - 50);
+        
+        // Right Arrow
+        gc.fillText("Pressure", cx + 70, resY - 55);
+        drawArrowDown(gc, cx + 70, resY - 50);
+    }
+
+    function drawArrow(x1, y1, x2, y2) {
+        gc.strokeStyle = "#555";
+        gc.lineWidth = 1.5;
+        gc.beginPath();
+        gc.moveTo(x1, y1);
+        gc.lineTo(x2, y2);
+        gc.stroke();
+        // Head
+        gc.beginPath();
+        gc.moveTo(x2 + 5, y2 - 3);
+        gc.lineTo(x2, y2);
+        gc.lineTo(x2 + 5, y2 + 3);
+        gc.stroke();
+    }
+
+    function drawArrowDown(ctx, x, y) {
+        ctx.strokeStyle = "#1a7abf";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + 30);
+        ctx.stroke();
+        // Head
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y + 22);
+        ctx.lineTo(x, y + 32);
+        ctx.lineTo(x + 8, y + 22);
+        ctx.stroke();
+    }
+
+    slider.addEventListener('input', update);
+    update();
+</script>
+
+</body>
+</html>

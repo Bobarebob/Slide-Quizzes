@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Pressure – Slide 2: Measurement</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(30, 30, 50, 0.9); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(77, 166, 255, 0.2); overflow: hidden; min-height: 100vh; }
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+        .page-content { padding: 40px; }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .page-subtitle { font-size: 1.4em; color: #ffa64d; font-style: italic; }
+        .audio-instruction-panel { background: rgba(20, 30, 50, 0.8); border: 2px solid rgba(77, 166, 255, 0.3); border-radius: 12px; padding: 25px; margin: 0 auto 40px; max-width: 1000px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .audio-header { text-align: center; color: #4da6ff; font-size: 1.3em; font-weight: bold; margin-bottom: 20px; }
+        .audio-controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+        .audio-controls button { background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; padding: 12px 35px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: all 0.3s ease; }
+        .audio-controls button:hover { box-shadow: 0 0 20px rgba(77, 166, 255, 0.6); transform: translateY(-2px); }
+        .audio-script-box { background: rgba(10, 15, 25, 0.6); border-radius: 8px; min-height: 40px; padding: 0; overflow: hidden; transition: all 0.5s ease; }
+        .audio-script-box.expanded { padding: 25px; border: 1px solid rgba(77, 166, 255, 0.1); }
+        .script-text { display: none; color: #8fa3bf; font-style: italic; text-align: center; line-height: 1.6; font-size: 1.05em; }
+        .script-text p { margin-bottom: 15px; }
+        .script-text.show { display: block; }
+        .content-section { background: rgba(10, 10, 26, 0.9); border-radius: 10px; padding: 30px; margin: 20px 0; border: 1px solid rgba(77, 166, 255, 0.3); }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; margin-bottom: 25px; }
+        @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        .definition-box { background: linear-gradient(135deg, rgba(77, 166, 255, 0.1) 0%, rgba(53, 122, 189, 0.1) 100%); border-left: 4px solid #4da6ff; padding: 18px 22px; margin: 18px 0; border-radius: 8px; }
+        .definition-box .def-title { color: #4dffb8; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .definition-box .def-text { color: #d0d0d0; font-size: 1.05em; line-height: 1.6; }
+        .info-box { background: rgba(77, 166, 255, 0.08); border-left: 4px solid #4da6ff; padding: 15px 18px; margin: 15px 0; border-radius: 5px; font-size: 1.0em; line-height: 1.7; }
+        .torricelli-highlight { background: linear-gradient(135deg, rgba(180, 120, 255, 0.12) 0%, rgba(120, 60, 200, 0.12) 100%); border-left: 4px solid #b478ff; padding: 18px 22px; margin: 18px 0; border-radius: 8px; }
+        .torricelli-highlight .tor-title { color: #b478ff; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .illustration { background: rgba(5, 5, 20, 0.8); border-radius: 10px; padding: 15px; border: 1px solid rgba(77, 166, 255, 0.2); }
+        .illustration-caption { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; font-style: italic; }
+        .quiz-container { margin: 30px auto 0; max-width: 1000px; padding: 30px; background: rgba(255, 193, 7, 0.05); border: 2px solid #ffc207; border-radius: 12px; }
+        .quiz-container h2 { color: #ffc207; font-size: 2em; margin-bottom: 30px; text-align: center; }
+        .quiz-question-block { margin-bottom: 20px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px; border: 1px solid rgba(77, 166, 255, 0.2); }
+        .question-text { font-size: 1.15em; margin-bottom: 20px; font-weight: 500; }
+        .quiz-option { background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 1px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0; margin-bottom: 10px; }
+        .quiz-option:hover:not(.locked) { background: rgba(77, 166, 255, 0.2); border-color: #4da6ff; }
+        .quiz-option.correct { background: rgba(46, 125, 50, 0.2); border-color: #4caf50; color: #e0e0e0; }
+        .quiz-option.incorrect { background: rgba(198, 40, 40, 0.2); border-color: #f44336; color: #e0e0e0; }
+        .quiz-option.locked:not(.correct):not(.incorrect) { opacity: 0.6; cursor: not-allowed; }
+        .quiz-feedback-box { padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-feedback-box.show-correct { display: block; background: rgba(46, 125, 50, 0.2); border: 1px solid #4caf50; color: #4caf50; }
+        .quiz-feedback-box.show-incorrect { display: block; background: rgba(198, 40, 40, 0.2); border: 1px solid #f44336; color: #f44336; }
+        .placeholder-note { color: #888; font-style: italic; font-size: 0.9em; margin-bottom: 8px; }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77, 166, 255, 0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8); }
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .nav-button:hover:not(:disabled) { background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .nav-button:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; color: #999; }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .navigation { padding: 15px 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Measuring Atmospheric Pressure</h1>
+                <p class="page-subtitle">From Torricelli's Mercury Tube to Modern Digital Sensors</p>
+            </div>
+
+            <div class="audio-instruction-panel">
+                <div class="audio-header">🎧 Instructions</div>
+                <div class="audio-controls">
+                    <button onclick="startInstructions()">▶ Start</button>
+                    <button onclick="stopInstructions()">⏹ Stop</button>
+                    <button onclick="resumeInstructions()">⏯ Resume</button>
+                </div>
+                <div class="audio-script-box" id="instructionScriptBox">
+                    <div class="script-text" id="scriptText">
+                        <p>Loading script&hellip;</p>
+                    </div>
+                </div>
+                <audio id="pageAudio" src="audio/slide2.mp3"></audio>
+            </div>
+
+            <div class="content-section">
+
+                <!-- Row 1: Full-width Torricelli bio -->
+                <div class="torricelli-highlight" style="margin-bottom:28px;">
+                    <div class="tor-title">Evangelista Torricelli (1608–1647)</div>
+                    <div style="display:flex; gap:22px; align-items:flex-start; margin-top:12px;">
+                        <img src="Images/Evangelista_Torricelli.jpg" alt="Evangelista Torricelli" style="width:150px; height:auto; border-radius:8px; border:2px solid rgba(180,120,255,0.4); flex-shrink:0;"/>
+                        <div style="font-size:1.0em; line-height:1.75; color:#d0d0d0;">
+                            <p style="margin-bottom:10px;">Italian physicist and mathematician <span class="highlight">Evangelista Torricelli</span> — a student and successor of Galileo — invented the first mercury barometer in <strong>1643</strong>. His elegant experiment established that the atmosphere has weight and can support a column of liquid mercury approximately <span class="highlight">760 mm (29.92 inches) tall</span> at sea level.</p>
+                            <p style="margin-bottom:10px;">His experiment was simple but revolutionary: he filled a glass tube (closed at one end) with mercury, then inverted it into an open dish of mercury. The column settled at ~760 mm — not because of a vacuum "pulling" it up, but because the <span class="highlight">weight of the atmosphere pushing down on the open dish</span> was supporting the mercury column.</p>
+                            <p style="margin-bottom:10px;">The empty space above the mercury — now called a <span class="highlight">Torricellian vacuum</span> — was the first sustained man-made vacuum ever created.</p>
+                            <p>💡 He famously wrote: <em>"We live submerged at the bottom of an ocean of air."</em> This insight laid the groundwork for Pascal's subsequent experiments on atmospheric pressure with altitude.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Full-width barometer animation (no header/footer) -->
+                <div style="background:rgba(5,5,20,0.8); border-radius:10px; border:1px solid rgba(77,166,255,0.2); overflow:hidden; margin-bottom:28px;">
+                    <iframe src="barometer.html" style="width:100%; height:940px; border:none; display:block;"></iframe>
+                </div>
+
+                <!-- Row 3: Modern measurement text + small MEMS image (Figure 3) -->
+                <div class="content-grid">
+                    <div>
+                        <div class="definition-box">
+                            <div class="def-title">Modern Atmospheric Pressure Measurement</div>
+                            <div class="def-text">Today, atmospheric pressure is measured using several types of instruments:</div>
+                        </div>
+
+                        <p style="font-size:1.05em; line-height:1.8; margin-bottom:12px;"><strong style="color:#4dffb8;">Aneroid Barometer</strong> — Uses a sealed, flexible metal capsule (aneroid cell) that expands and contracts with changes in atmospheric pressure. A mechanical linkage translates this movement into a pressure reading. Invented in 1844 by Lucien Vidie, the aneroid barometer replaced fragile mercury instruments for most practical applications.</p>
+
+                        <p style="font-size:1.05em; line-height:1.8; margin-bottom:12px;"><strong style="color:#4dffb8;">Electronic / Digital Barometer</strong> — Modern sensors use a piezoelectric crystal or MEMS (Micro-Electro-Mechanical System) chip that changes its electrical resistance when pressure is applied. These are found in smartphones, aircraft altimeters, and weather stations.</p>
+
+                        <p style="font-size:1.05em; line-height:1.8;"><strong style="color:#4dffb8;">Barograph</strong> — A recording barometer that traces atmospheric pressure continuously on a rotating drum of paper, creating a historical pressure record over time — essential for weather forecasting.</p>
+                    </div>
+
+                    <!-- Figure 3: MEMS sensor image at natural size -->
+                    <div class="illustration" style="display:flex; flex-direction:column; align-items:center;">
+                        <img src="Images/MEMS.jpeg" alt="MEMS pressure sensor chip" style="width:100%; max-width:500px; height:auto; border-radius:8px; display:block;"/>
+                        <div class="illustration-caption" style="width:100%; max-width:500px;">Fig. 3 — MEMS chip (lower left hand corner) measures atmospheric pressure in mb and psi: one atmosphere is 1013 mb and 14.69 psi</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Quiz Questions -->
+            <div class="quiz-container">
+                <h2>📝 Quiz Questions</h2>
+
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 3:</strong> Who invented the mercury barometer?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s2Q1', this, 'A')">A) Newton</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s2Q1', this, 'B')">B) Galileo</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s2Q1', this, 'C')">C) Pascal</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s2Q1', this, 'D')">D) Torricelli</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 4:</strong> The relationship between atmospheric pressure and weather is:</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s2Q2', this, 'A')">A) the higher the pressure, the fairer (more sunny) the weather</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s2Q2', this, 'B')">B) the lower the pressure, the fairer (more sunny) the weather</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s2Q2', this, 'C')">C) the higher the pressure, the more likely it will rain</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s2Q2', this, 'D')">D) particularly damaging storms (PDS), like tornadoes, occur when pressure is very high</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='slide1.html'">← Previous</button>
+            <div class="page-counter"><span>3</span> / <span>6</span></div>
+            <button class="nav-button" onclick="window.location.href='slide3.html'">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'" title="Introduction"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide1.html'" title="Slide 1: Pressure Definitions"></div>
+            <div class="timeline-dot active" onclick="window.location.href='slide2.html'" title="Slide 2: Measuring Pressure"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide3.html'" title="Slide 3: Pa, Atm, bar, mb, hPa"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide4.html'" title="Slide 4: psi, mm Hg, in Hg"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'" title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="scripts/slide2_script.js"></script>
+    <script src="atm-shared.js"></script>
+    <script>
+        const audioEl = document.getElementById('pageAudio');
+        const scriptBox = document.getElementById('instructionScriptBox');
+        const scriptText = document.getElementById('scriptText');
+
+        (function() {
+            const raw = (typeof slideScriptText !== 'undefined') ? slideScriptText : '[Script unavailable]';
+            scriptText.innerHTML = '';
+            raw.trim().split(/\n\s*\n/).forEach(p => {
+                const el = document.createElement('p');
+                el.textContent = p.replace(/\n/g, ' ').trim();
+                scriptText.appendChild(el);
+            });
+        })();
+
+        function startInstructions() { scriptBox.classList.add('expanded'); scriptText.classList.add('show'); audioEl.currentTime = 0; setTimeout(() => { audioEl.play().catch(e => console.log("Audio blocked:", e)); }, 500); }
+        function stopInstructions() { audioEl.pause(); scriptBox.classList.remove('expanded'); scriptText.classList.remove('show'); }
+        function resumeInstructions() { scriptBox.classList.add('expanded'); scriptText.classList.add('show'); setTimeout(() => { audioEl.play().catch(e => console.log("Audio blocked:", e)); }, 300); }
+    </script>
+</body>
+</html>

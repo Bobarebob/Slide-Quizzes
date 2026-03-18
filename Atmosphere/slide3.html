@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Pressure – Slide 3: Pascal, Atm, bar, mbar, hPa</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(30, 30, 50, 0.9); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(77, 166, 255, 0.2); overflow: hidden; min-height: 100vh; }
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+        .page-content { padding: 40px; }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .page-subtitle { font-size: 1.4em; color: #ffa64d; font-style: italic; }
+        .audio-instruction-panel { background: rgba(20, 30, 50, 0.8); border: 2px solid rgba(77, 166, 255, 0.3); border-radius: 12px; padding: 25px; margin: 0 auto 40px; max-width: 1000px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .audio-header { text-align: center; color: #4da6ff; font-size: 1.3em; font-weight: bold; margin-bottom: 20px; }
+        .audio-controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+        .audio-controls button { background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; padding: 12px 35px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: all 0.3s ease; }
+        .audio-controls button:hover { box-shadow: 0 0 20px rgba(77, 166, 255, 0.6); transform: translateY(-2px); }
+        .audio-script-box { background: rgba(10, 15, 25, 0.6); border-radius: 8px; min-height: 40px; padding: 0; overflow: hidden; transition: all 0.5s ease; }
+        .audio-script-box.expanded { padding: 25px; border: 1px solid rgba(77, 166, 255, 0.1); }
+        .script-text { display: none; color: #8fa3bf; font-style: italic; text-align: center; line-height: 1.6; font-size: 1.05em; }
+        .script-text p { margin-bottom: 15px; }
+        .script-text.show { display: block; }
+        .content-section { background: rgba(10, 10, 26, 0.9); border-radius: 10px; padding: 30px; margin: 20px 0; border: 1px solid rgba(77, 166, 255, 0.3); }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        .info-box { background: rgba(77, 166, 255, 0.08); border-left: 4px solid #4da6ff; padding: 15px 18px; margin: 15px 0; border-radius: 5px; font-size: 1.0em; line-height: 1.7; }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+        @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+        /* Unit cards */
+        .units-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 20px 0; }
+        @media (max-width: 700px) { .units-grid { grid-template-columns: 1fr; } }
+        .unit-card { background: rgba(20, 25, 45, 0.95); border-radius: 10px; padding: 20px 22px; border: 1px solid rgba(77, 166, 255, 0.3); transition: border-color 0.3s; }
+        .unit-card:hover { border-color: #4da6ff; }
+        .unit-card .unit-name { font-size: 1.2em; font-weight: bold; margin-bottom: 6px; }
+        .unit-card .unit-symbol { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; }
+        .unit-card .unit-value { color: #ffa64d; font-size: 1.05em; font-weight: bold; margin-bottom: 8px; }
+        .unit-card .unit-desc { color: #b0b0b0; font-size: 0.95em; line-height: 1.6; }
+        .card-pa { border-color: rgba(77, 200, 255, 0.5); }
+        .card-pa .unit-name { color: #4dd6ff; }
+        .card-pa .unit-symbol { color: #4dd6ff; }
+        .card-atm { border-color: rgba(77, 255, 180, 0.5); }
+        .card-atm .unit-name { color: #4dffb8; }
+        .card-atm .unit-symbol { color: #4dffb8; }
+        .card-bar { border-color: rgba(255, 166, 77, 0.5); }
+        .card-bar .unit-name { color: #c8864a !important; }
+        .card-bar .unit-symbol { color: #c8864a !important; }
+        .card-mbar { border-color: rgba(180, 120, 255, 0.5); }
+        .card-mbar .unit-name { color: #b478ff; }
+        .card-mbar .unit-symbol { color: #b478ff; }
+        .card-hpa { border-color: rgba(255, 120, 180, 0.5); }
+        .card-hpa .unit-name { color: #ff78b4; }
+        .card-hpa .unit-symbol { color: #ff78b4; }
+        /* Reference table */
+        .ref-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.0em; }
+        .ref-table th { background: rgba(77, 166, 255, 0.2); color: #4da6ff; padding: 12px 15px; text-align: left; border-bottom: 2px solid rgba(77, 166, 255, 0.4); }
+        .ref-table td { padding: 11px 15px; border-bottom: 1px solid rgba(77, 166, 255, 0.15); color: #d0d0d0; }
+        .ref-table tr:hover td { background: rgba(77, 166, 255, 0.06); }
+        .ref-table .atm-row td { color: #4dffb8; font-weight: bold; }
+        .illustration { background: rgba(5, 5, 20, 0.8); border-radius: 10px; padding: 15px; border: 1px solid rgba(77, 166, 255, 0.2); }
+        .illustration-caption { text-align: center; color: #888; font-size: 0.9em; margin-top: 10px; font-style: italic; }
+        .pascal-highlight { background: linear-gradient(135deg, rgba(77, 166, 255, 0.10) 0%, rgba(30, 90, 180, 0.10) 100%); border-left: 4px solid #4da6ff; padding: 18px 22px; border-radius: 8px; }
+        .pascal-highlight .pas-title { color: #4dd6ff; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .quiz-container { margin: 30px auto 0; max-width: 1000px; padding: 30px; background: rgba(255, 193, 7, 0.05); border: 2px solid #ffc207; border-radius: 12px; }
+        .quiz-container h2 { color: #ffc207; font-size: 2em; margin-bottom: 30px; text-align: center; }
+        .quiz-question-block { margin-bottom: 20px; padding: 25px; background: rgba(30, 30, 50, 0.6); border-radius: 10px; border: 1px solid rgba(77, 166, 255, 0.2); }
+        .question-text { font-size: 1.15em; margin-bottom: 20px; font-weight: 500; }
+        .quiz-option { background: rgba(20, 20, 35, 0.8); padding: 15px 20px; border-radius: 8px; border: 1px solid rgba(77, 166, 255, 0.3); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0; margin-bottom: 10px; }
+        .quiz-option:hover:not(.locked) { background: rgba(77, 166, 255, 0.2); border-color: #4da6ff; }
+        .quiz-option.correct { background: rgba(46, 125, 50, 0.2); border-color: #4caf50; color: #e0e0e0; }
+        .quiz-option.incorrect { background: rgba(198, 40, 40, 0.2); border-color: #f44336; color: #e0e0e0; }
+        .quiz-option.locked:not(.correct):not(.incorrect) { opacity: 0.6; cursor: not-allowed; }
+        .quiz-feedback-box { padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-feedback-box.show-correct { display: block; background: rgba(46, 125, 50, 0.2); border: 1px solid #4caf50; color: #4caf50; }
+        .quiz-feedback-box.show-incorrect { display: block; background: rgba(198, 40, 40, 0.2); border: 1px solid #f44336; color: #f44336; }
+        .placeholder-note { color: #888; font-style: italic; font-size: 0.9em; margin-bottom: 8px; }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77, 166, 255, 0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8); }
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .nav-button:hover:not(:disabled) { background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .nav-button:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; color: #999; }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .navigation { padding: 15px 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Pressure Units — Part 1</h1>
+                <p class="page-subtitle">Pascal, Atmospheres, Bar, Millibar &amp; Hectopascal</p>
+            </div>
+
+            <div class="audio-instruction-panel">
+                <div class="audio-header">🎧 Instructions</div>
+                <div class="audio-controls">
+                    <button onclick="startInstructions()">▶ Start</button>
+                    <button onclick="stopInstructions()">⏹ Stop</button>
+                    <button onclick="resumeInstructions()">⏯ Resume</button>
+                </div>
+                <div class="audio-script-box" id="instructionScriptBox">
+                    <div class="script-text" id="scriptText">
+                        <p>Loading script&hellip;</p>
+                    </div>
+                </div>
+                <audio id="pageAudio" src="audio/slide3.mp3"></audio>
+            </div>
+
+            <div class="content-section">
+                <div class="info-box">
+                    <strong>Reference:</strong> All units on this page describe the same physical quantity — atmospheric pressure. The standard reference is <span class="highlight">1 Atmosphere (Atm)</span>, defined as the average air pressure at sea level.
+                    <br>1 Atm = 101,325 Pa, where 1 Pa = 1 N / 1 m²
+                </div>
+
+                <!-- Unit cards -->
+                <div class="units-grid">
+                    <div class="unit-card card-pa">
+                        <div class="unit-name">Pascal</div>
+                        <div class="unit-symbol">Pa</div>
+                        <div class="unit-value">1 Atm = 101,325 Pa</div>
+                        <div class="unit-desc">The metric (SI) base unit of pressure. Named after French physicist and mathematician <strong>Blaise Pascal</strong> (1623–1662). Defined as one Newton of force per one square meter of area. The Pascal is a very small unit — standard atmospheric pressure is over 100,000 Pa, so larger derived units are often more convenient.</div>
+                    </div>
+
+                    <div class="unit-card card-atm">
+                        <div class="unit-name">Atmosphere</div>
+                        <div class="unit-symbol">Atm</div>
+                        <div class="unit-value">1 Atm = 101,325 Pa (exact)</div>
+                        <div class="unit-desc">A non-SI but widely used unit defined as the average atmospheric pressure at sea level. Convenient for expressing any pressure relative to Earth's atmospheric pressure. At sea level, for 1 Atm, water boils at 100°C and freezes at 0°C.</div>
+                    </div>
+
+                    <div class="unit-card card-bar">
+                        <div class="unit-name">Bar</div>
+                        <div class="unit-symbol">bar</div>
+                        <div class="unit-value">1 Atm = 1.01325 bar</div>
+                        <div class="unit-desc">A metric unit of pressure introduced in 1909. Exactly 100,000 Pa (or 100 kPa). Because 1 bar is very close to 1 Atm, it is a convenient unit to use for many scientific and industrial applications — particularly in oceanography, meteorology, and thermodynamics. Standard atmosphere is just 1.3% greater than 1 bar.</div>
+                    </div>
+
+                    <div class="unit-card card-mbar">
+                        <div class="unit-name">Millibar</div>
+                        <div class="unit-symbol">mbar or mb</div>
+                        <div class="unit-value">1 Atm = 1,013.25 mbar</div>
+                        <div class="unit-desc">One thousandth of a bar (1 mbar = 0.001 bar = 100 Pa). The millibar was the standard unit in meteorology for most of the 20th century, and is still widely used in weather maps, aviation weather reports, and weather discussions. Atmospheric pressure near the eye of a powerful hurricane can drop to 870–900 mbar.</div>
+                    </div>
+
+                    <div class="unit-card card-hpa" style="grid-column: 1 / -1;">
+                        <div class="unit-name">Hectopascal</div>
+                        <div class="unit-symbol">hPa</div>
+                        <div class="unit-value">1 Atm = 1,013.25 hPa &nbsp;|&nbsp; 1 hPa ≡ 1 mbar (numerically identical)</div>
+                        <div class="unit-desc">One hundred Pascals (hecto = 100, so 1 hPa = 100 Pa). The hectopascal was adopted by the World Meteorological Organization (WMO) as the preferred unit for surface pressure. It is numerically identical to the millibar, which made the transition seamless: a surface pressure of 1013.25 mbar is exactly 1013.25 hPa. Modern weather reports, ship logs, and aviation settings all use hPa.</div>
+                    </div>
+                </div>
+
+                <!-- Quick reference and Pascal illustration -->
+                <div class="content-grid" style="margin-top: 25px;">
+                    <div>
+                        <h3 style="color:#4dffb8; margin-bottom: 15px;">📊 Quick Conversion Reference (Part 1)</h3>
+                        <table class="ref-table">
+                            <thead>
+                                <tr><th>Unit</th><th>Symbol</th><th>Value at 1 Atm</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Pascal</td><td>Pa</td><td>101,325 Pa</td></tr>
+                                <tr class="atm-row"><td>Atmosphere</td><td>Atm</td><td>1 Atm (reference)</td></tr>
+                                <tr><td>Bar</td><td>bar</td><td>1.01325 bar</td></tr>
+                                <tr><td>Millibar</td><td>mbar / mb</td><td>1,013.25 mbar</td></tr>
+                                <tr><td>Hectopascal</td><td>hPa</td><td>1,013.25 hPa</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="info-box" style="margin-top: 15px;">
+                            💡 <strong>Memory aid:</strong> Since <span class="highlight">1 hPa = 1 mbar</span> (numerically identical), you can freely substitute one for the other. Weather apps and maps may show either unit — they mean the same thing!
+                        </div>
+                        <div class="info-box">
+                            💡 <strong>Linearity:</strong> All these units are linear. So 0.5 Atm = 50,662.5 Pa = 506.625 mbar = 506.625 hPa, etc.
+                        </div>
+                    </div>
+
+                    <!-- Pascal bio panel -->
+                    <div class="pascal-highlight">
+                        <div class="pas-title">Blaise Pascal (1623–1662)</div>
+                        <div style="display:flex; gap:22px; align-items:flex-start; margin-top:12px;">
+                            <img src="Images/Blaise_Pascal.jpg" alt="Blaise Pascal" style="width:150px; height:auto; border-radius:8px; border:2px solid rgba(77,166,255,0.4); flex-shrink:0;"/>
+                            <div style="font-size:1.0em; line-height:1.75; color:#d0d0d0;">
+                                <p style="margin-bottom:10px;">French physicist, mathematician, and inventor, <span class="highlight">Blaise Pascal</span> made foundational contributions to fluid mechanics and the study of pressure. He demonstrated that atmospheric pressure decreases with altitude — an experiment carried out on Puy de Dôme in <strong>1648</strong> — and invented one of the earliest mechanical calculators.</p>
+                            </div>
+                        </div>
+                        <p style="font-size:1.0em; line-height:1.75; color:#d0d0d0; margin-top:10px; margin-bottom:0;">His work on hydrostatics established the principle that now bears his name. In his honor, the SI unit of pressure — the <span class="highlight">Pascal (Pa)</span> — was named, defined as one Newton of force per square meter of area.</p>
+                        <div style="margin-top:16px; padding:14px 16px; background:rgba(20,30,55,0.8); border-radius:6px; border:1px solid rgba(77,166,255,0.25);">
+                            <div style="color:#4dffb8; font-weight:bold; font-size:0.95em; margin-bottom:6px;">Pascal's Principle</div>
+                            <p style="color:#e0e0e0; font-size:0.93em; line-height:1.7; font-style:italic;">An external pressure applied to a liquid is extended, undiminished, to every point in the liquid, and to the walls of the liquid's container.</p>
+                        </div>
+                        <div class="illustration-caption" style="margin-top:12px;">Fig. 4 – Blaise Pascal, for whom the metric (SI) unit of pressure is named</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Questions -->
+            <div class="quiz-container">
+                <h2>📝 Quiz Questions</h2>
+
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 5:</strong> In millibars (mb), how many mb equal one Atmosphere (Atm)?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s3Q1', this, 'A')">A) 101,325</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s3Q1', this, 'B')">B) 100,000</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s3Q1', this, 'C')">C) 1013.25</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s3Q1', this, 'D')">D) 1.01325</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='slide2.html'">← Previous</button>
+            <div class="page-counter"><span>4</span> / <span>6</span></div>
+            <button class="nav-button" onclick="window.location.href='slide4.html'">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator">
+			<div class="timeline-dot" onclick="window.location.href='intro.html'" title="Introduction"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide1.html'" title="Slide 1: Pressure Definitions"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide2.html'" title="Slide 2: Measuring Pressure"></div>
+            <div class="timeline-dot active" onclick="window.location.href='slide3.html'" title="Slide 3: Pa, Atm, bar, mb, hPa"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide4.html'" title="Slide 4: psi, mm Hg, in Hg"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'" title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="scripts/slide3_script.js"></script>
+    <script src="atm-shared.js"></script>
+    <script>
+        const audioEl = document.getElementById('pageAudio');
+        const scriptBox = document.getElementById('instructionScriptBox');
+        const scriptText = document.getElementById('scriptText');
+
+        (function() {
+            const raw = (typeof slideScriptText !== 'undefined') ? slideScriptText : '[Script unavailable]';
+            scriptText.innerHTML = '';
+            raw.trim().split(/\n\s*\n/).forEach(p => {
+                const el = document.createElement('p');
+                el.textContent = p.replace(/\n/g, ' ').trim();
+                scriptText.appendChild(el);
+            });
+        })();
+
+        function startInstructions() { scriptBox.classList.add('expanded'); scriptText.classList.add('show'); audioEl.currentTime = 0; setTimeout(() => { audioEl.play().catch(e => console.log("Audio blocked:", e)); }, 500); }
+        function stopInstructions() { audioEl.pause(); scriptBox.classList.remove('expanded'); scriptText.classList.remove('show'); }
+        function resumeInstructions() { scriptBox.classList.add('expanded'); scriptText.classList.add('show'); setTimeout(() => { audioEl.play().catch(e => console.log("Audio blocked:", e)); }, 300); }
+    </script>
+</body>
+</html>

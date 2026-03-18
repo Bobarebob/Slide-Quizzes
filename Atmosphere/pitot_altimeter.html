@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitot-Static → Altimeter</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#07101e;
+  font-family:'Rajdhani',sans-serif;
+  color:#c8d8e8;
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:30px 20px 50px;
+}
+header { text-align:center; margin-bottom:22px; }
+.title { font-size:2em; font-weight:700; color:#e2f0ff; letter-spacing:4px; text-transform:uppercase; }
+.subtitle { margin-top:5px; font-family:'Share Tech Mono',monospace; font-size:.9em; color:#4a6a8a; letter-spacing:1px; }
+.diagram-wrap {
+  background:#060d1a; border:1px solid #162438; border-radius:14px;
+  padding:16px; box-shadow:0 0 60px rgba(0,80,180,.15);
+  max-width:900px; width:100%;
+}
+svg { width:100%; height:auto; display:block; }
+.caption {
+  background:#08101f; border:1px solid #1a2f4a; border-radius:10px;
+  padding:14px 26px; margin-top:16px; max-width:900px; width:100%;
+  font-family:'Share Tech Mono',monospace; font-size:.92em;
+  color:#7a9abb; line-height:1.9; text-align:center;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">Pitot-Static → Altimeter</div>
+  <div class="subtitle">STATIC PRESSURE ONLY · ALTITUDE MEASUREMENT</div>
+</header>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 880 490" xmlns="http://www.w3.org/2000/svg" font-family="'Share Tech Mono',monospace">
+<defs>
+  <pattern id="g" width="36" height="36" patternUnits="userSpaceOnUse">
+    <path d="M36 0L0 0 0 36" fill="none" stroke="#0b1828" stroke-width=".5"/>
+  </pattern>
+  <marker id="ab" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+    <path d="M0,0 L8,4 L0,8 Z" fill="#4da6ff"/>
+  </marker>
+  <marker id="ao" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+    <path d="M0,0 L8,4 L0,8 Z" fill="#ff6b35"/>
+  </marker>
+  <filter id="gb">
+    <feGaussianBlur stdDeviation="3.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="go">
+    <feGaussianBlur stdDeviation="3" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+
+<!-- Background -->
+<rect width="880" height="490" fill="#07101e"/>
+<rect width="880" height="490" fill="url(#g)"/>
+
+<!-- ═══════════ AIRPLANE SILHOUETTE ═══════════ -->
+
+<!-- fuselage -->
+<path d="M80,218 C105,188 155,172 235,168 L560,168 C610,168 658,186 668,212
+         L668,228 C658,254 610,272 560,272 L235,272 C155,272 105,252 80,218 Z"
+      fill="#0b1a2e" stroke="#2d4d70" stroke-width="2"/>
+
+<!-- cockpit canopy -->
+<path d="M175,168 C190,142 228,130 305,135 L350,168"
+      fill="#091525" stroke="#2d4d70" stroke-width="1.8"/>
+<path d="M182,165 C196,145 230,135 300,140 L340,165"
+      fill="rgba(77,166,255,.06)" stroke="rgba(77,166,255,.2)" stroke-width="1.2"/>
+
+<!-- wing stub -->
+<path d="M380,272 L408,370 L478,370 L462,272 Z"
+      fill="#0b1a2e" stroke="#2d4d70" stroke-width="1.8"/>
+
+<!-- stabilisers -->
+<path d="M610,213 L632,185 L660,190 L648,213 Z" fill="#0b1a2e" stroke="#2d4d70" stroke-width="1.5"/>
+<path d="M610,228 L632,256 L660,250 L648,228 Z" fill="#0b1a2e" stroke="#2d4d70" stroke-width="1.5"/>
+<path d="M636,168 L650,122 L668,127 L668,168 Z"  fill="#0b1a2e" stroke="#2d4d70" stroke-width="1.5"/>
+
+<!-- centreline -->
+<line x1="80" y1="220" x2="668" y2="220" stroke="#111e2e" stroke-width="1" stroke-dasharray="7,5"/>
+
+<!-- ═══════════ PITOT TUBE ═══════════ -->
+<!-- tube body -->
+<line x1="22" y1="231" x2="84" y2="231" stroke="#8aaccc" stroke-width="5.5" stroke-linecap="round"/>
+<!-- tip opening -->
+<circle cx="22" cy="231" r="5" fill="#c8dce8" stroke="#8aaccc" stroke-width="1.8"/>
+<!-- mount bracket -->
+<line x1="62" y1="231" x2="62" y2="222" stroke="#6a8aaa" stroke-width="3"/>
+<!-- drain hole -->
+<circle cx="48" cy="234" r="2.5" fill="#07101e" stroke="#5a7a9a" stroke-width="1.2"/>
+<text x="42" y="246" fill="#3a5a7a" font-size="8">DRAIN</text>
+
+<!-- ram air arrows -->
+<line x1="2"  y1="222" x2="17" y2="222" stroke="#ff6b35" stroke-width="1.8" marker-end="url(#ao)" opacity=".7"/>
+<line x1="2"  y1="231" x2="17" y2="231" stroke="#ff6b35" stroke-width="2.2" marker-end="url(#ao)" opacity=".8"/>
+<line x1="2"  y1="240" x2="17" y2="240" stroke="#ff6b35" stroke-width="1.8" marker-end="url(#ao)" opacity=".7"/>
+
+<!-- pitot tube label -->
+<rect x="2" y="285" width="148" height="48" rx="4" fill="#120800" stroke="#ff6b35" stroke-width="1.3"/>
+<text x="76" y="301" text-anchor="middle" fill="#ff8855" font-size="10" font-family="'Rajdhani',sans-serif" font-weight="700">PITOT TUBE</text>
+<text x="76" y="314" text-anchor="middle" fill="#8a5533" font-size="8.5">Total = Static + Dynamic</text>
+<text x="76" y="326" text-anchor="middle" fill="#6a3a22" font-size="8">⚡ anti-ice heater</text>
+
+<!-- ═══════════ STATIC PORT ═══════════ -->
+<!-- top static port -->
+<ellipse cx="420" cy="168" rx="8" ry="4" fill="#0b1a2e" stroke="#4da6ff" stroke-width="2"/>
+<ellipse cx="420" cy="168" rx="4"  ry="2" fill="#07101e" stroke="#4da6ff" stroke-width="1.2"/>
+<!-- bottom static port -->
+<ellipse cx="420" cy="272" rx="8" ry="4" fill="#0b1a2e" stroke="#4da6ff" stroke-width="2"/>
+<ellipse cx="420" cy="272" rx="4"  ry="2" fill="#07101e" stroke="#4da6ff" stroke-width="1.2"/>
+<!-- dashed link between ports -->
+<line x1="420" y1="172" x2="420" y2="268" stroke="#4da6ff" stroke-width="1" stroke-dasharray="3,4" opacity=".3"/>
+
+<!-- static port label -->
+<rect x="338" y="104" width="162" height="44" rx="4" fill="#000d1e" stroke="#4da6ff" stroke-width="1.3"/>
+<text x="419" y="121" text-anchor="middle" fill="#4daaff" font-size="11" font-family="'Rajdhani',sans-serif" font-weight="700">STATIC PORT</text>
+<text x="419" y="133" text-anchor="middle" fill="#2a5a8a" font-size="8.5">Flush — senses ambient P only</text>
+<text x="419" y="144" text-anchor="middle" fill="#2a5a8a" font-size="8.5">Two ports avg. out sideslip errors</text>
+<!-- leader line to top port -->
+<line x1="419" y1="148" x2="420" y2="164" stroke="#4da6ff" stroke-width="1" stroke-dasharray="2,2"/>
+
+<!-- ═══════════ INTERNAL PLUMBING (cutaway box) ═══════════ -->
+<rect x="92" y="178" width="578" height="82" rx="5"
+      fill="rgba(6,13,26,.8)" stroke="#152030" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="106" y="192" fill="#3d6880" font-size="8" letter-spacing="1.5">INTERNAL PLUMBING — CUTAWAY</text>
+
+<!-- PITOT (orange) — enters fuselage, U-drain, runs to right edge -->
+<line x1="22" y1="231" x2="100" y2="231"  stroke="#ff6b35" stroke-width="3" filter="url(#go)" opacity=".9"/>
+<line x1="100" y1="231" x2="150" y2="231" stroke="#ff6b35" stroke-width="3" opacity=".9"/>
+<!-- drain U trap -->
+<path d="M150,231 L150,250 Q160,260 170,250 L170,231"
+      fill="none" stroke="#ff6b35" stroke-width="3"/>
+<!-- continues — fades toward right edge (pitot NOT used by altimeter) -->
+<line x1="170" y1="231" x2="422" y2="231" stroke="#ff6b35" stroke-width="2"
+      stroke-dasharray="6,4" opacity=".4"/>
+<!-- end with X — pitot not connected to altimeter -->
+<line x1="419" y1="224" x2="433" y2="238" stroke="#ff6b35" stroke-width="2.5" opacity=".75"/>
+<line x1="419" y1="238" x2="433" y2="224" stroke="#ff6b35" stroke-width="2.5" opacity=".75"/>
+
+<!-- STATIC (blue) — from top port down into plumbing, runs to right -->
+<line x1="420" y1="172" x2="420" y2="199" stroke="#4da6ff" stroke-width="3" opacity=".9"/>
+<line x1="420" y1="199" x2="672" y2="199" stroke="#4da6ff" stroke-width="3" filter="url(#gb)" opacity=".9"/>
+
+<!-- "NOT USED" note next to faded pitot line -->
+<text x="297" y="224" text-anchor="middle" fill="#5a2a10" font-size="9" font-style="italic">pitot line not used by altimeter</text>
+
+<!-- ═══════════ DIVIDER ═══════════ -->
+<line x1="682" y1="70" x2="682" y2="440" stroke="#162438" stroke-width="1.2" stroke-dasharray="6,4"/>
+
+<!-- ═══════════ ALTIMETER cx=780 cy=240 ═══════════ -->
+<!-- background panel -->
+<rect x="692" y="70" width="176" height="400" rx="10" fill="#050c18" stroke="#162438" stroke-width="1.8"/>
+<text x="780" y="95" text-anchor="middle" fill="#1e3a58" font-size="10" letter-spacing="2">INSTRUMENT PANEL</text>
+
+<!-- static line entry -->
+<line x1="672" y1="199" x2="698" y2="199" stroke="#4da6ff" stroke-width="2.8" opacity=".9"/>
+<line x1="698" y1="199" x2="698" y2="219" stroke="#4da6ff" stroke-width="2.8" opacity=".9"/>
+<circle cx="698" cy="219" r="5" fill="#4da6ff"/>
+
+<!-- outer ring -->
+<circle cx="780" cy="219" r="82" fill="#050c18" stroke="#2d4d70" stroke-width="2.5"/>
+<circle cx="780" cy="219" r="78" fill="#080f1e" stroke="#162438" stroke-width="1"/>
+
+<!-- coloured band — low altitude highlight -->
+<path d="M780,137 A82,82 0 0,1 862,219" fill="none" stroke="#2a5a3a" stroke-width="5" opacity=".3"/>
+
+<!-- tick marks and numbers -->
+<g transform="translate(780,219)">
+  <!-- 10 major ticks (1000 ft each) -->
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(36)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(72)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(108)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(144)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(180)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(216)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(252)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(288)"/>
+  <line x1="0" y1="-68" x2="0" y2="-54" stroke="#8aaccc" stroke-width="2.2" transform="rotate(324)"/>
+  <!-- minor ticks (500 ft) -->
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(18)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(54)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(90)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(126)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(162)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(198)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(234)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(270)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(306)"/>
+  <line x1="0" y1="-68" x2="0" y2="-61" stroke="#4a6a8a" stroke-width="1.2" transform="rotate(342)"/>
+  <!-- numbers (0–9 around dial) -->
+  <text x="0"   y="-46" text-anchor="middle" fill="#b0cce0" font-size="11">0</text>
+  <text x="27"  y="-37" text-anchor="middle" fill="#b0cce0" font-size="11">1</text>
+  <text x="44"  y="-8"  text-anchor="middle" fill="#b0cce0" font-size="11">2</text>
+  <text x="36"  y="26"  text-anchor="middle" fill="#b0cce0" font-size="11">3</text>
+  <text x="8"   y="48"  text-anchor="middle" fill="#b0cce0" font-size="11">4</text>
+  <text x="-18" y="48"  text-anchor="middle" fill="#b0cce0" font-size="11">5</text>
+  <text x="-40" y="26"  text-anchor="middle" fill="#b0cce0" font-size="11">6</text>
+  <text x="-48" y="-8"  text-anchor="middle" fill="#b0cce0" font-size="11">7</text>
+  <text x="-30" y="-37" text-anchor="middle" fill="#b0cce0" font-size="11">8</text>
+  <text x="-6"  y="-34" text-anchor="middle" fill="#b0cce0" font-size="9">9</text>
+  <!-- ×1000 ft label -->
+  <text x="0" y="-20" text-anchor="middle" fill="#3a6080" font-size="9">×1000 ft</text>
+  <!-- kollsman window (baro setting) -->
+  <rect x="22" y="16" width="38" height="18" rx="3" fill="#0a1825" stroke="#3a5a7a" stroke-width="1.2"/>
+  <text x="41" y="29" text-anchor="middle" fill="#6a9abb" font-size="9">29.92</text>
+  <!-- in Hg label under window -->
+  <text x="41" y="42" text-anchor="middle" fill="#2a4a6a" font-size="7.5">inHg SET</text>
+
+  <!-- long needle (1000 ft — pointing at ~1.45 = 1450 ft shown) -->
+  <line x1="0" y1="9" x2="0" y2="-56" stroke="#4da6ff" stroke-width="3" stroke-linecap="round" transform="rotate(52.2)"/>
+  <line x1="0" y1="9" x2="-7" y2="4"  stroke="#4da6ff" stroke-width="2" stroke-linecap="round" transform="rotate(52.2)"/>
+  <!-- short needle (10000 ft — pointing at ~0.145 = 1450 ft) -->
+  <line x1="0" y1="7" x2="0" y2="-38" stroke="#4dffb8" stroke-width="2" stroke-linecap="round" transform="rotate(5.2)"/>
+
+  <!-- centre hub -->
+  <circle cx="0" cy="0" r="7" fill="#1a2e48"/>
+  <circle cx="0" cy="0" r="3.5" fill="#8aaccc"/>
+</g>
+
+<text x="780" y="112" text-anchor="middle" fill="#4dbbff" font-family="'Rajdhani',sans-serif"
+      font-weight="700" font-size="14" letter-spacing="1.5">ALTIMETER</text>
+<text x="780" y="124" text-anchor="middle" fill="#2a4a6a" font-size="9.5">STATIC PRESSURE ONLY</text>
+
+<!-- needle key -->
+<rect x="696" y="384" width="168" height="64" rx="5" fill="#040a14" stroke="#1a2e48" stroke-width="1"/>
+<line x1="710" y1="400" x2="740" y2="400" stroke="#4da6ff"  stroke-width="3" stroke-linecap="round"/>
+<text x="748" y="404" fill="#4daaff"  font-size="9">1,000 ft hand</text>
+<line x1="710" y1="416" x2="740" y2="416" stroke="#4dffb8" stroke-width="2.5" stroke-linecap="round"/>
+<text x="748" y="420" fill="#4dffb8" font-size="9">10,000 ft hand</text>
+<text x="780" y="438" text-anchor="middle" fill="#2a4a6a" font-size="8">reads ~1,450 ft altitude</text>
+
+<!-- ═══════════ ANNOTATION ARROWS & CALLOUTS ═══════════ -->
+
+<!-- "static P decreases with altitude" annotation -->
+<rect x="88" y="348" width="220" height="70" rx="6" fill="#020810" stroke="#2a4a7a" stroke-width="1.5"/>
+<text x="198" y="366" text-anchor="middle" fill="#4daaff" font-size="11" font-family="'Rajdhani',sans-serif" font-weight="700">HOW ALTITUDE IS COMPUTED</text>
+<text x="198" y="380" text-anchor="middle" fill="#3a6a8a" font-size="9">Static P drops as altitude rises.</text>
+<text x="198" y="393" text-anchor="middle" fill="#3a6a8a" font-size="9">Altimeter converts P → feet via</text>
+<text x="198" y="406" text-anchor="middle" fill="#5a8aaa" font-size="9">standard atmosphere tables.</text>
+
+<!-- Kollsman window callout -->
+<rect x="696" y="312" width="168" height="64" rx="5" fill="#020810" stroke="#3a5a7a" stroke-width="1.2"/>
+<text x="780" y="328" text-anchor="middle" fill="#6aaacc" font-size="10" font-family="'Rajdhani',sans-serif" font-weight="700">KOLLSMAN WINDOW</text>
+<text x="780" y="342" text-anchor="middle" fill="#3a5a7a" font-size="8.5">Pilot sets local baro. pressure</text>
+<text x="780" y="355" text-anchor="middle" fill="#3a5a7a" font-size="8.5">to zero the altitude reference.</text>
+<line x1="770" y1="312" x2="802" y2="290" stroke="#3a5a7a" stroke-width="1" stroke-dasharray="2,2"/>
+
+<!-- legend strip -->
+<rect x="20" y="432" width="590" height="34" rx="6" fill="#060d1a" stroke="#162438" stroke-width="1"/>
+<line x1="34" y1="449" x2="74" y2="449" stroke="#4da6ff"  stroke-width="3" stroke-linecap="round"/>
+<circle cx="74" cy="449" r="4" fill="#4da6ff"/>
+<text x="82" y="453" fill="#4daaff"  font-size="10">Static Pressure Line</text>
+<line x1="258" y1="449" x2="300" y2="449" stroke="#ff6b35"  stroke-width="2.5" stroke-dasharray="5,3" stroke-linecap="round"/>
+<text x="308" y="453" fill="#ff7744" font-size="10">Pitot Line (unused here)</text>
+<line x1="488" y1="449" x2="528" y2="449" stroke="#2d4d70" stroke-width="3" stroke-linecap="round"/>
+<text x="536" y="453" fill="#4a6a8a" font-size="10">Structure</text>
+
+</svg>
+</div>
+
+<div class="caption">
+  <strong style="color:#4daaff;">Altimeter principle:</strong>
+  &nbsp; Altitude ∝ −ln(P<sub>static</sub> / P<sub>sea-level</sub>)
+  &nbsp;·&nbsp; As the aircraft climbs, static pressure falls, and the altimeter needle rotates clockwise.
+  &nbsp;·&nbsp; The <strong style="color:#6aaacc;">Kollsman window</strong> lets the pilot dial in the local barometric pressure so the altimeter reads true altitude, not pressure altitude.
+</div>
+
+</body>
+</html>

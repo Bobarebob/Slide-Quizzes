@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Pressure - Conclusion</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        /* Base and Layout Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(30, 30, 50, 0.9); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(77, 166, 255, 0.2); overflow: hidden; min-height: 100vh; }
+        
+        /* Student Info Banner Styles (Retained) */
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .page-subtitle { font-size: 1.4em; color: #b0b0b0; font-style: italic; }
+        .outro-content { text-align: center; padding: 20px 40px 40px; max-width: 960px; margin: 0 auto; }
+
+        /* 4:3 Video Player (Consistent with intro.html) */
+        .video-container {
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto 40px;
+            background: #000;
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            aspect-ratio: 4 / 3;
+        }
+        video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .score-display { background: linear-gradient(135deg, rgba(77, 166, 255, 0.2) 0%, rgba(53, 122, 189, 0.2) 100%); border: 2px solid #4da6ff; border-radius: 15px; padding: 30px; margin: 30px 0; }
+        .score-display h2 { color: #4da6ff; font-size: 2em; margin-bottom: 20px; }
+        .score-value { font-size: 3em; color: #4dffb8; font-weight: bold; }
+        .submit-btn-wrap { text-align: center; margin: 30px 0 10px; }
+        .submit-quiz-btn { padding: 16px 50px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: #fff; border: none; border-radius: 30px; cursor: pointer; font-size: 1.25em; font-weight: 700; letter-spacing: 0.03em; transition: all 0.3s ease; box-shadow: 0 4px 18px rgba(76,175,80,0.35); }
+        .submit-quiz-btn:hover:not(:disabled) { background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.45); }
+        .submit-quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .submit-confirm-msg { color: #4dffb8; font-size: 1.1em; font-weight: bold; margin-top: 12px; display: none; }
+
+        .outro-text { font-size: 1.2em; line-height: 1.8; margin: 20px 0; color: #d0d0d0; text-align: left; }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        
+        /* Key Fact Styles */
+        .key-fact { background: linear-gradient(135deg, rgba(77, 175, 80, 0.1) 0%, rgba(56, 142, 60, 0.1) 100%); border-left: 4px solid #4caf50; padding: 20px 25px; margin: 25px 0; border-radius: 8px; text-align: left; }
+        .key-fact-title { font-size: 1.2em; color: #4caf50; font-weight: bold; margin-bottom: 12px; }
+        .key-fact ul { list-style: none; margin-top: 10px; font-size: 1.05em; }
+        .key-fact li { padding-left: 25px; position: relative; margin-top: 10px; }
+        .key-fact li::before { content: "✓"; position: absolute; left: 0; color: #4caf50; }
+        
+        /* Navigation & Indicators */
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:hover:not(:disabled) { background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%); transform: translateY(-2px); }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8); }
+
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Congratulations!</h1>
+                <p class="page-subtitle">You've Completed the Atmospheric Pressure Module</p>
+            </div>
+
+            <div class="outro-content">
+                <div class="video-container">
+                    <video controls preload="auto">
+                        <source src="videos/atmos_outro.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div class="score-display">
+                    <h2>Your Final Score</h2>
+                    <div class="score-value" id="finalScore">Loading...</div>
+                </div>
+
+                <div class="outro-text">
+                    <p>Excellent work! You have successfully explored <strong class="highlight">atmospheric pressure</strong> — one of the most pervasive forces in our everyday environment. From the pressure of the air column above us to the elegant mercury barometer invented by Torricelli over 380 years ago, you now understand both the physics and the measurement of this invisible but ever-present force.</p>
+                </div>
+                
+                <div class="key-fact">
+                    <div class="key-fact-title">What You've Learned:</div>
+                    <ul>
+                        <li>Pressure is defined as force per unit area (P = F/A), measured in Pascals (Pa = N/m²)</li>
+                        <li>Atmospheric pressure is the weight per unit area of the air column above any point, equal to 101,325 Pa at sea level</li>
+                        <li>Torricelli invented the mercury barometer in 1643, discovering that air has weight and exhibits pressure</li>
+                        <li>Modern barometers (aneroid, electronic) measure pressure without using mercury</li>
+                        <li>Metric (SI) pressure units: Pa, Atm, bar, millibar (mbar), and hectopascal (hPa)</li>
+                        <li>Practical units: psi (tire pressure), mm Hg/Torr (medicine), in Hg (aviation, US weather)</li>
+                    </ul>
+                </div>
+
+                <div class="outro-text">
+                    <p style="text-align: center;">You may still <strong class="highlight">navigate back</strong> to any slide to answer unanswered questions — as long as the timer has not expired. When you are satisfied with your answers, click <strong class="highlight">Submit Quiz</strong> below to lock your results permanently.</p>
+                </div>
+
+                <div class="submit-btn-wrap">
+                    <button class="submit-quiz-btn" id="submitBtn" onclick="finalizeQuiz()">✔ Submit Quiz</button>
+                    <div class="submit-confirm-msg" id="submitConfirm">✅ Quiz submitted! Your results have been recorded.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='slide4.html'">← Previous</button>
+            <div class="page-counter"><span>6</span> / <span>6</span></div>
+            <button class="nav-button" style="visibility: hidden;">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator">
+			<div class="timeline-dot" onclick="window.location.href='intro.html'" title="Introduction"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide1.html'" title="Slide 1"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide2.html'" title="Slide 2"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide3.html'" title="Slide 3"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide4.html'" title="Slide 4"></div>
+            <div class="timeline-dot active" onclick="window.location.href='outro.html'" title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="atm-shared.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            // Sync Score Display only — do NOT auto-mark as completed.
+            // Quiz is only locked when the timer expires (handled by atm-shared.js)
+            // or when the student clicks the Submit button below.
+            const scoreEl = document.getElementById('finalScore');
+            if (scoreEl) {
+                const storedScore = parseFloat(sessionStorage.getItem('score') || '0');
+                const storedConfig = sessionStorage.getItem('quizConfig');
+                const cfg = storedConfig ? JSON.parse(storedConfig) : {};
+                const ptsPerQ = parseFloat((cfg.restrictions && cfg.restrictions.pointsPerQuestion) || 1.0);
+                const maxScore = TOTAL_QUESTIONS * ptsPerQ;
+                const scoreText = (storedScore % 1 !== 0) ? storedScore.toFixed(1) : storedScore;
+                const maxText  = (maxScore % 1 !== 0) ? maxScore.toFixed(1) : maxScore;
+                const fraction = scoreText + ' / ' + maxText;
+                scoreEl.textContent = fraction;
+                const displayScoreBanner = document.getElementById('displayScore');
+                if (displayScoreBanner) displayScoreBanner.textContent = fraction;
+            }
+
+            // If timer already expired, show submitted state on arrival
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                showSubmittedState();
+            }
+        });
+
+        function finalizeQuiz() {
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                showSubmittedState();
+                return;
+            }
+            sessionStorage.setItem('quizCompleted', 'true');
+            if (db && studentData && studentData.sessionId) {
+                db.collection('students').doc(studentData.sessionId).update({
+                    completed: true,
+                    completedTime: firebase.firestore.Timestamp.now()
+                }).catch(e => console.error(e));
+            }
+            showSubmittedState();
+        }
+
+        function showSubmittedState() {
+            const btn = document.getElementById('submitBtn');
+            const confirm = document.getElementById('submitConfirm');
+            if (btn) btn.disabled = true;
+            if (confirm) confirm.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

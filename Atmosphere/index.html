@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Atmospheric Pressure - Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: rgba(30, 30, 50, 0.95); padding: 50px 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(77, 166, 255, 0.3); text-align: center; max-width: 500px; width: 100%; }
+        .login-box h2 { color: #4da6ff; font-size: 2em; margin-bottom: 15px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .login-box p { color: #b0b0b0; margin-bottom: 30px; font-size: 1.1em; }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(10, 10, 20, 0.8); border: 2px solid rgba(77, 166, 255, 0.3); border-radius: 10px; color: #e0e0e0; font-size: 1em; }
+        .login-box input:focus { outline: none; border-color: #4da6ff; box-shadow: 0 0 15px rgba(77, 166, 255, 0.3); }
+        .login-box button { width: 100%; padding: 15px; background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3); transition: all 0.3s ease; }
+        .login-box button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5); }
+        #loginError { color: #ff6b6b; margin-top: 15px; margin-bottom: 15px; display: none; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🌬️ Atmospheric Pressure</h2>
+        <p>Enter your information to begin</p>
+        <input type="text" id="studentName" placeholder="Student Name">
+        <input type="text" id="studentID" placeholder="Student ID">
+        <input type="password" id="studentPassword" placeholder="Quiz Password">
+        <div id="loginError"></div>
+        <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+    
+    <script src="atm-shared.js"></script>
+    <script>
+        async function startQuiz() {
+            const name = document.getElementById('studentName').value.trim();
+            const studentID = document.getElementById('studentID').value.trim();
+            const password = document.getElementById('studentPassword').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
+            
+            if (!name || !studentID || !password) { 
+                errorDiv.textContent = 'Please fill in all fields.'; 
+                errorDiv.style.display = 'block'; 
+                return; 
+            }
+
+            // Simple password check (also validated against Firebase if available)
+            if (password !== 'pasta' && db) {
+                // Firebase-based auth
+            } else if (password !== 'pasta' && !db) {
+                errorDiv.textContent = 'Invalid quiz password.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                if (db) {
+                    const dbSnapshot = await db.collection('databases')
+                                             .where('password', '==', password)
+                                             .where('active', '==', true)
+                                             .limit(1)
+                                             .get();
+                    
+                    if (dbSnapshot.empty) {
+                        errorDiv.textContent = 'Invalid or inactive quiz password.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    const activeDb = dbSnapshot.docs[0].data();
+                    quizConfig.className = activeDb.className;
+                    quizConfig.quizName = activeDb.quizName;
+                    quizConfig.databaseId = dbSnapshot.docs[0].id;
+                    
+                    const settingsDoc = await db.collection('quizSettings').doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+                    if (settingsDoc.exists) {
+                        const settings = settingsDoc.data();
+                        if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
+                        if (settings.restrictions) quizConfig.restrictions = settings.restrictions;
+                        if (settings.idValidation) quizConfig.idValidation = settings.idValidation;
+                    }
+
+                    if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                        const valType = quizConfig.idValidation.type;
+                        const valValue = quizConfig.idValidation.value;
+                        if (valType === 'digits') {
+                            const numDigits = parseInt(valValue, 10);
+                            const digitRegex = new RegExp(`^\\d{${numDigits}}$`);
+                            if (!digitRegex.test(studentID)) {
+                                errorDiv.textContent = `Invalid ID: Student ID must be exactly ${numDigits} digits long.`;
+                                errorDiv.style.display = 'block';
+                                return;
+                            }
+                        } else if (valType === 'startsWith') {
+                            if (!studentID.startsWith(valValue)) {
+                                errorDiv.textContent = `Invalid ID: Student ID must start with "${valValue}".`;
+                                errorDiv.style.display = 'block';
+                                return;
+                            }
+                        }
+                    }
+
+                    const now = new Date();
+                    if (quizConfig.restrictions.startDateTime) {
+                        const start = new Date(quizConfig.restrictions.startDateTime);
+                        if (now < start) { 
+                            errorDiv.textContent = `Quiz is not available yet. It will open on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`; 
+                            errorDiv.style.display = 'block'; 
+                            return; 
+                        }
+                    }
+                    if (quizConfig.restrictions.stopDateTime) {
+                        const stop = new Date(quizConfig.restrictions.stopDateTime);
+                        if (now > stop) { 
+                            errorDiv.textContent = `Quiz has closed. The deadline was ${stop.toLocaleDateString()} at ${stop.toLocaleTimeString()}.`; 
+                            errorDiv.style.display = 'block'; 
+                            return; 
+                        }
+                    }
+
+                    if (quizConfig.restrictions.attemptsAllowed > 0) {
+                        const snap = await db.collection('students')
+                                             .where('studentID', '==', studentID)
+                                             .where('databaseId', '==', quizConfig.databaseId)
+                                             .get();
+                        if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
+                            errorDiv.textContent = `Access Denied: You have used all ${quizConfig.restrictions.attemptsAllowed} of your allowed attempts.`;
+                            errorDiv.style.display = 'block';
+                            return;
+                        }
+                        sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
+                        sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+                    } else {
+                        sessionStorage.setItem('attemptNumber', '1');
+                        sessionStorage.setItem('maxAttempts', '0');
+                    }
+                } else {
+                    // Standalone mode
+                    sessionStorage.setItem('attemptNumber', '1');
+                    sessionStorage.setItem('maxAttempts', '0');
+                }
+
+                const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('studentName', name);
+                sessionStorage.setItem('studentID', studentID);
+                sessionStorage.setItem('sessionId', sessionId);
+                sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
+                sessionStorage.setItem('answers', '{}');
+                sessionStorage.setItem('score', '0');
+                
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    const nowMs = Date.now();
+                    sessionStorage.setItem('quizStartTime', nowMs.toString());
+                    sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
+                }
+                
+                if (db) {
+                    await db.collection('students').doc(sessionId).set({
+                        name, 
+                        studentID,
+                        className: quizConfig.className || 'atm-pressure',
+                        quizName: quizConfig.quizName || 'atmospheric-pressure',
+                        quizPassword: password,
+                        databaseId: quizConfig.databaseId || 'standalone',
+                        startTime: firebase.firestore.Timestamp.now(),
+                        answers: {}, 
+                        score: 0, 
+                        completed: false
+                    });
+                }
+                
+                window.location.href = 'intro.html';
+                
+            } catch (e) {
+                errorDiv.textContent = 'Database connection error. Please notify your instructor.';
+                console.error(e);
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

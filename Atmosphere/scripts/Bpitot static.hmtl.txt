@@ -1,0 +1,136 @@
+import java.util.Scanner;
+
+// Representing the sensor part (like your body's senses)
+class PitotStaticSystem {
+    private double currentAltitude; // feet
+    private double airspeed; // knots (nautical miles per hour)
+    
+    // Physical constants for simplified pressure calculation
+    private final double SEA_LEVEL_PRESSURE = 29.92; // inches of Mercury (Hg)
+    private final double PRESSURE_LAPSE_RATE = 1.0; // in Hg decrease per 1000 ft
+
+    public PitotStaticSystem() {
+        this.currentAltitude = 0.0;
+        this.airspeed = 0.0;
+    }
+
+    // SIMULATION INPUTS: Setting up conditions
+    public void updateFlightConditions(double altitude, double speedKnots) {
+        this.currentAltitude = altitude;
+        this.airspeed = speedKnots;
+    }
+
+    // STATIC PORT: Measures only ambient Static Pressure
+    // This value is purely based on the current simulated altitude.
+    // We are simulating the "raw" reading directly here.
+    public double readStaticPressureInHg() {
+        double pressureChange = (this.currentAltitude / 1000.0) * PRESSURE_LAPSE_RATE;
+        return SEA_LEVEL_PRESSURE - pressureChange;
+    }
+
+    // PITOT TUBE: Measures Total Pressure (Static + Dynamic)
+    // Dynamic pressure is related to speed, so it is added to the static pressure.
+    // In a real system, the pitot tube directly measures total pressure.
+    // For this simulation, we simulate the "raw" reading based on inputs.
+    public double readTotalPressureInHg() {
+        double staticP = readStaticPressureInHg();
+        
+        // This is a VERY simplified calculation to get a dynamic pressure representation.
+        // A real dynamic pressure calculation is (1/2) * air_density * velocity^2.
+        // We are using a simplified proportionality factor.
+        // Using `k` to represent a highly approximated factor to relate speed in knots 
+        // to pressure in Inches of Mercury. This is not aerodynamically accurate
+        // but illustrative of the direct relationship.
+        double k = 0.0001; 
+        double dynamicPressureSim = k * Math.pow(this.airspeed, 2); 
+        
+        return staticP + dynamicPressureSim;
+    }
+}
+
+// Representing the instrument part (like your brain/processing and display)
+class CockpitDisplay {
+    private PitotStaticSystem pitotSystem;
+
+    public CockpitDisplay(PitotStaticSystem system) {
+        this.pitotSystem = system;
+    }
+
+    // DISPLAYS THE AIRSPEED
+    // The Airspeed Indicator measures (Total Pressure - Static Pressure)
+    // to determine Dynamic Pressure, which is then converted to airspeed.
+    // In our simplified simulation, we reverse the calculation that the 
+    // pitot tube simulation used to show how this works.
+    public void showAirspeed() {
+        double totalPressure = pitotSystem.readTotalPressureInHg();
+        double staticPressure = pitotSystem.readStaticPressureInHg();
+        double dynamicPressureMeasured = totalPressure - staticPressure;
+        
+        // Reversed simplified calculation: Speed is related to sqrt(dynamic pressure)
+        double k = 0.0001;
+        double calculatedSpeed;
+        if (dynamicPressureMeasured > 0) {
+             calculatedSpeed = Math.sqrt(dynamicPressureMeasured / k);
+        } else {
+            calculatedSpeed = 0.0;
+        }
+        
+        System.out.println(">>> Airspeed Indicator: " + Math.round(calculatedSpeed) + " Knots");
+    }
+
+    // DISPLAYS THE ALTITUDE
+    // The Altimeter displays altitude based directly on the static pressure reading.
+    // It is basically an absolute pressure gauge calibrated to show feet.
+    public void showAltitude() {
+        double staticPressure = pitotSystem.readStaticPressureInHg();
+        
+        // Simplified pressure to altitude conversion:
+        // We use the reverse of our lapse rate calculation from PitotStaticSystem
+        double pressureChange = 29.92 - staticPressure;
+        double calculatedAltitude = (pressureChange / 1.0) * 1000.0; 
+        
+        System.out.println(">>> Altimeter: " + Math.round(calculatedAltitude) + " Feet");
+    }
+    
+    // We are omitting VSI in this simulation for simplicity.
+    // The Vertical Speed Indicator measures the *rate of change* of static pressure.
+    // A digital system would compare current static pressure to a slightly older reading.
+}
+
+// MAIN CLASS to run the simple simulation
+public class PitotSystemSimulation {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.getScanner());
+        PitotStaticSystem mainPitotSystem = new PitotStaticSystem();
+        CockpitDisplay mainDisplay = new CockpitDisplay(mainPitotSystem);
+
+        System.out.println("--- Airplane Pitot System Simulation ---");
+        System.out.println("This program visually represents how a simple pitot system works");
+        System.out.println("based on changing flight conditions.");
+
+        System.out.print("\nEnter aircraft altitude (Feet): ");
+        double inputAltitude = scanner.nextDouble();
+        System.out.print("Enter aircraft airspeed (Knots): ");
+        double inputAirspeed = scanner.nextDouble();
+
+        // 1. UPDATE CONDITIONS (SENSORS SENSE)
+        mainPitotSystem.updateFlightConditions(inputAltitude, inputAirspeed);
+        
+        System.out.println("\n-------------------------------------------");
+        System.out.println("  Simulated Flight Readings:");
+        System.out.println("-------------------------------------------");
+        
+        // 2. DISPLAY READOUTS (INSTRUMENTS INTERPRET AND SHOW)
+        mainDisplay.showAirspeed();
+        mainDisplay.showAltitude();
+        
+        System.out.println("-------------------------------------------");
+        System.out.println("\nUnderstanding the flow:");
+        System.out.println("1. Altitude and speed define the state of the airplane.");
+        System.out.println("2. The Pitot Tube and Static Port conceptually generate raw pressure data.");
+        System.out.println("3. The Instruments read these separate pressures and interpret them");
+        System.out.println("   into understandable readings for the pilot.");
+        
+        scanner.close();
+    }
+}

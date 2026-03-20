@@ -75,7 +75,12 @@
 
         .slider-container { position: relative; }
 
-        input[type=range] { width: 100%; cursor: pointer; }
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            -webkit-appearance: auto;   /* iOS Safari: render as native slider */
+            touch-action: pan-y;        /* let horizontal drag reach the input */
+        }
 
         .mb-display {
             padding: 12px;
@@ -372,7 +377,8 @@
     }
 
     // ── Event listeners ───────────────────────────────────────────────────
-    slider.addEventListener('input', update);
+    slider.addEventListener('input',  update);   // desktop / Android
+    slider.addEventListener('change', update);   // iOS Safari fires this on touch drag
 
     // Redraw on resize/orientation change
     let resizeTimer;

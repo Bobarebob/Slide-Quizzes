@@ -15,23 +15,27 @@
             --text-gray: #e0e0e0;
         }
 
+        * { box-sizing: border-box; }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
             color: var(--text-gray);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
+            padding: 16px;
         }
 
         .container {
-            width: 1000px;
+            width: 100%;
+            max-width: 1000px;
             background: var(--panel-bg);
             border-radius: 20px;
             border: 1px solid rgba(77, 166, 255, 0.2);
-            padding: 30px;
+            padding: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
@@ -44,12 +48,17 @@
             padding-bottom: 10px;
         }
 
-        .header h1 { color: var(--accent-blue); margin: 0; font-size: 1.8em; }
+        .header h1 {
+            color: var(--accent-blue);
+            margin: 0;
+            font-size: clamp(1.1em, 4vw, 1.8em);
+        }
 
+        /* ── Desktop: side-by-side ── */
         .main-layout {
             display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 30px;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
             align-items: start;
         }
 
@@ -57,31 +66,30 @@
         .controls {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             background: rgba(10, 10, 26, 0.5);
-            padding: 20px;
+            padding: 16px;
             border-radius: 12px;
             border: 1px solid rgba(77, 166, 255, 0.1);
         }
 
         .slider-container { position: relative; }
-        
+
         input[type=range] { width: 100%; cursor: pointer; }
 
-        /* Dynamic mb Display [cite: 7, 8] */
         .mb-display {
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             text-align: center;
-            font-size: 1.4em;
+            font-size: clamp(1.1em, 3vw, 1.4em);
             font-weight: bold;
             transition: all 0.4s ease;
             margin-top: 10px;
         }
-        .theme-green { background: rgba(77, 255, 184, 0.2); color: var(--accent-green); border: 2px solid var(--accent-green); }
-        .theme-yellow { background: rgba(255, 235, 59, 0.2); color: var(--accent-yellow); border: 2px solid var(--accent-yellow); }
-        .theme-blue { background: rgba(77, 166, 255, 0.2); color: var(--accent-blue); border: 2px solid var(--accent-blue); }
-        .theme-gray { background: rgba(160, 160, 160, 0.15); color: #a0a0a0; border: 2px solid #a0a0a0; }
+        .theme-green  { background: rgba(77, 255, 184, 0.2); color: var(--accent-green);  border: 2px solid var(--accent-green);  }
+        .theme-yellow { background: rgba(255, 235, 59, 0.2);  color: var(--accent-yellow); border: 2px solid var(--accent-yellow); }
+        .theme-blue   { background: rgba(77, 166, 255, 0.2);  color: var(--accent-blue);   border: 2px solid var(--accent-blue);   }
+        .theme-gray   { background: rgba(160, 160, 160, 0.15); color: #a0a0a0;             border: 2px solid #a0a0a0;              }
 
         .readouts { display: flex; flex-direction: column; gap: 10px; }
 
@@ -91,7 +99,6 @@
             border-radius: 6px;
             border-left: 3px solid var(--accent-orange);
         }
-        /* Yellow theme for ATM [cite: 10] */
         .atm-readout { border-left: 3px solid var(--accent-yellow); }
 
         .label { font-size: 0.75em; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; }
@@ -106,7 +113,6 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Reset Button [cite: 6] */
         .reset-btn {
             background: #444;
             color: white;
@@ -123,8 +129,15 @@
         .visuals {
             background: #e8edf2;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             border: 3px solid #3a3a3a;
+        }
+
+        /* ── Canvas scales to fill its column ── */
+        #baroCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
         }
 
         .info-strip {
@@ -133,8 +146,17 @@
             padding: 10px;
             text-align: center;
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: clamp(0.75em, 2vw, 0.9em);
             border-radius: 0 0 15px 15px;
+        }
+
+        /* ── Mobile: stack controls above canvas ── */
+        @media (max-width: 700px) {
+            body { padding: 8px; align-items: flex-start; }
+            .container { padding: 14px; gap: 14px; border-radius: 14px; }
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -173,7 +195,7 @@
         </div>
 
         <div class="visuals">
-            <canvas id="baroCanvas" width="600" height="600"></canvas>
+            <canvas id="baroCanvas"></canvas>
         </div>
     </div>
 
@@ -183,14 +205,26 @@
 </div>
 
 <script>
-    const canvas = document.getElementById('baroCanvas');
-    const gc = canvas.getContext('2d');
-    const slider = document.getElementById('pressSlider');
-    const mbBox = document.getElementById('mbValueBox');
-    const valPa = document.getElementById('valPa');
-    const valAtm = document.getElementById('valAtm');
-    const valPsi = document.getElementById('valPsi');
+    const canvas  = document.getElementById('baroCanvas');
+    const gc      = canvas.getContext('2d');
+    const slider  = document.getElementById('pressSlider');
+    const mbBox   = document.getElementById('mbValueBox');
+    const valPa   = document.getElementById('valPa');
+    const valAtm  = document.getElementById('valAtm');
+    const valPsi  = document.getElementById('valPsi');
     const forecast = document.getElementById('forecast');
+
+    // ── Resize canvas bitmap to match its CSS display width ──────────────
+    function resizeCanvas() {
+        const displayW = canvas.clientWidth;
+        if (displayW < 10) return;               // not yet laid out
+        const displayH = displayW;               // keep 1:1 aspect ratio
+        if (canvas.width  !== displayW ||
+            canvas.height !== displayH) {
+            canvas.width  = displayW;
+            canvas.height = displayH;
+        }
+    }
 
     function resetSim() {
         slider.value = 1013.25;
@@ -198,145 +232,157 @@
     }
 
     function update() {
-        const mb = parseFloat(slider.value);
-        
-        // Data conversions
-        const pa = mb * 100;
+        resizeCanvas();
+
+        const mb  = parseFloat(slider.value);
+        const pa  = mb * 100;
         const atm = mb / 1013.25;
         const psi = mb * 0.0145038;
         const cmHg = atm * 76.0;
         const inHg = atm * 29.9213;
 
-        // Display updates
         mbBox.textContent = mb.toFixed(2) + " mb";
-        valPa.textContent = pa.toLocaleString(undefined, {minimumFractionDigits: 1});
+        valPa.textContent  = pa.toLocaleString(undefined, {minimumFractionDigits: 1});
         valAtm.textContent = atm.toPrecision(3);
         valPsi.textContent = psi.toFixed(3);
 
-        // Color Logic [cite: 8]
         mbBox.className = "mb-display";
-        if (mb >= 1008 && mb <= 1018) mbBox.classList.add('theme-green');
-        else if (mb > 1018) mbBox.classList.add('theme-yellow');
-        else if (mb >= 980) mbBox.classList.add('theme-blue');
-        else mbBox.classList.add('theme-gray');
+        if      (mb >= 1008 && mb <= 1018) mbBox.classList.add('theme-green');
+        else if (mb > 1018)                mbBox.classList.add('theme-yellow');
+        else if (mb >= 980)                mbBox.classList.add('theme-blue');
+        else                               mbBox.classList.add('theme-gray');
 
-        // Forecast Logic
-        if (mb >= 1020) forecast.textContent = "Forecast: Fair";
+        if      (mb >= 1020) forecast.textContent = "Forecast: Fair";
         else if (mb >= 1000) forecast.textContent = "Forecast: Uncertain";
-        else if (mb >= 980) forecast.textContent = "Forecast: Rain";
-        else forecast.textContent = "Forecast: PDS";
+        else if (mb >= 980)  forecast.textContent = "Forecast: Rain";
+        else                 forecast.textContent = "Forecast: PDS";
 
         draw(mb, cmHg, inHg);
     }
 
+    // ── All coordinates expressed as fractions of canvas size ─────────────
     function draw(mb, cmHg, inHg) {
-        gc.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2 - 50;
-        const tubeW = 40;
-        const resY = 480;
-        const tubeTop = 60;
-        const tubeH = resY - tubeTop;
+        const W = canvas.width;
+        const H = canvas.height;
+        gc.clearRect(0, 0, W, H);
 
-        // Mercury Column Height
+        // Scale factor relative to original 600×600 design
+        const S = W / 600;
+
+        const cx      = W / 2 - 50 * S;
+        const tubeW   = 40 * S;
+        const resY    = 480 * S;
+        const tubeTop = 60  * S;
+        const tubeH   = resY - tubeTop;
+
         const mercuryHeight = (mb / 1013.25) * (tubeH * 0.8);
-        const mercTopY = resY - mercuryHeight;
+        const mercTopY      = resY - mercuryHeight;
 
-        // 1. Draw Tube
-        gc.fillStyle = "#f0f8ff";
+        // 1. Glass tube
+        gc.fillStyle   = "#f0f8ff";
         gc.beginPath();
-        gc.roundRect(cx - tubeW/2, tubeTop, tubeW, tubeH, [20, 20, 0, 0]);
+        gc.roundRect(cx - tubeW/2, tubeTop, tubeW, tubeH, [20*S, 20*S, 0, 0]);
         gc.fill();
         gc.strokeStyle = "#5a3e2b";
-        gc.lineWidth = 3;
+        gc.lineWidth   = 3 * S;
         gc.stroke();
 
-        // 2. Mercury Fill
+        // 2. Mercury fill
         const mercGrad = gc.createLinearGradient(cx - tubeW/2, 0, cx + tubeW/2, 0);
-        mercGrad.addColorStop(0, "#999");
+        mercGrad.addColorStop(0,   "#999");
         mercGrad.addColorStop(0.5, "#eee");
-        mercGrad.addColorStop(1, "#999");
+        mercGrad.addColorStop(1,   "#999");
         gc.fillStyle = mercGrad;
-        gc.fillRect(cx - tubeW/2 + 3, mercTopY, tubeW - 6, mercuryHeight);
+        gc.fillRect(cx - tubeW/2 + 3*S, mercTopY, tubeW - 6*S, mercuryHeight);
 
-        // 3. Labels and Arrows [cite: 1, 2, 3, 4]
-        gc.fillStyle = "#1a1a2e";
-        gc.font = "bold 14px Arial";
-        gc.textAlign = "left";
+        // 3. Labels & arrows
+        gc.fillStyle  = "#1a1a2e";
+        gc.font       = `bold ${14*S}px Arial`;
+        gc.textAlign  = "left";
 
-        // Vacuum [cite: 1, 2]
-        gc.fillText("Vacuum", cx + tubeW, tubeTop + 20);
-        drawArrow(cx + tubeW - 5, tubeTop + 15, cx + 5, tubeTop + 15);
+        // Vacuum label
+        gc.fillText("Vacuum", cx + tubeW, tubeTop + 20*S);
+        drawArrow(cx + tubeW - 5*S, tubeTop + 15*S, cx + 5*S, tubeTop + 15*S, S);
 
-        // Mercury-filled tube [cite: 3, 4]
-        gc.fillText("mercury-filled tube", cx + tubeW, (mercTopY + resY)/2);
-        drawArrow(cx + tubeW - 5, (mercTopY + resY)/2 - 5, cx + 10, (mercTopY + resY)/2 - 5);
+        // Mercury-filled tube label
+        const midY = (mercTopY + resY) / 2;
+        gc.fillText("mercury-filled tube", cx + tubeW, midY);
+        drawArrow(cx + tubeW - 5*S, midY - 5*S, cx + 10*S, midY - 5*S, S);
 
-        // Meniscus Readings
-        gc.fillStyle = "#d32f2f";
-        gc.fillText(`${cmHg.toPrecision(4)} cm Hg`, cx + tubeW + 10, mercTopY);
-        gc.fillText(`${inHg.toPrecision(4)} in Hg`, cx + tubeW + 10, mercTopY + 18);
+        // Meniscus readings
+        gc.fillStyle  = "#d32f2f";
+        gc.fillText(`${cmHg.toPrecision(4)} cm Hg`, cx + tubeW + 10*S, mercTopY);
+        gc.fillText(`${inHg.toPrecision(4)} in Hg`, cx + tubeW + 10*S, mercTopY + 18*S);
 
-        // 4. Reservoir
-        const resW = 200;
-        const resH = 100;
+        // 4. Reservoir bowl
+        const resW = 200 * S;
+        const resH = 100 * S;
         gc.fillStyle = "#c8a882";
         gc.beginPath();
-        gc.roundRect(cx - resW/2, resY - 20, resW, resH, 10);
+        gc.roundRect(cx - resW/2, resY - 20*S, resW, resH, 10*S);
         gc.fill();
-        
-        // Reservoir Mercury (No glare/arrow artifacts)
-        gc.fillStyle = "#b0b0b0";
+
+        // Reservoir mercury pool
+        gc.fillStyle   = "#b0b0b0";
         gc.beginPath();
-        gc.ellipse(cx, resY - 10, (resW/2) - 15, 15, 0, 0, Math.PI * 2);
+        gc.ellipse(cx, resY - 10*S, resW/2 - 15*S, 15*S, 0, 0, Math.PI * 2);
         gc.fill();
         gc.strokeStyle = "#888";
+        gc.lineWidth   = S;
         gc.stroke();
 
-        // 5. Atmospheric Pressure Arrows [cite: 5]
-        gc.fillStyle = "#1a7abf";
-        gc.textAlign = "center";
-        
-        // Left Arrow
-        gc.fillText("Atmospheric", cx - 70, resY - 55);
-        drawArrowDown(gc, cx - 70, resY - 50);
-        
-        // Right Arrow
-        gc.fillText("Pressure", cx + 70, resY - 55);
-        drawArrowDown(gc, cx + 70, resY - 50);
+        // 5. Atmospheric pressure arrows
+        gc.fillStyle  = "#1a7abf";
+        gc.font       = `bold ${14*S}px Arial`;
+        gc.textAlign  = "center";
+
+        gc.fillText("Atmospheric", cx - 70*S, resY - 55*S);
+        drawArrowDown(cx - 70*S, resY - 50*S, S);
+
+        gc.fillText("Pressure", cx + 70*S, resY - 55*S);
+        drawArrowDown(cx + 70*S, resY - 50*S, S);
     }
 
-    function drawArrow(x1, y1, x2, y2) {
+    function drawArrow(x1, y1, x2, y2, S) {
         gc.strokeStyle = "#555";
-        gc.lineWidth = 1.5;
+        gc.lineWidth   = 1.5 * S;
         gc.beginPath();
         gc.moveTo(x1, y1);
         gc.lineTo(x2, y2);
         gc.stroke();
-        // Head
         gc.beginPath();
-        gc.moveTo(x2 + 5, y2 - 3);
+        gc.moveTo(x2 + 5*S, y2 - 3*S);
         gc.lineTo(x2, y2);
-        gc.lineTo(x2 + 5, y2 + 3);
+        gc.lineTo(x2 + 5*S, y2 + 3*S);
         gc.stroke();
     }
 
-    function drawArrowDown(ctx, x, y) {
-        ctx.strokeStyle = "#1a7abf";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, y + 30);
-        ctx.stroke();
-        // Head
-        ctx.beginPath();
-        ctx.moveTo(x - 8, y + 22);
-        ctx.lineTo(x, y + 32);
-        ctx.lineTo(x + 8, y + 22);
-        ctx.stroke();
+    function drawArrowDown(x, y, S) {
+        gc.strokeStyle = "#1a7abf";
+        gc.lineWidth   = 4 * S;
+        gc.beginPath();
+        gc.moveTo(x, y);
+        gc.lineTo(x, y + 30*S);
+        gc.stroke();
+        gc.beginPath();
+        gc.moveTo(x - 8*S, y + 22*S);
+        gc.lineTo(x,        y + 32*S);
+        gc.lineTo(x + 8*S, y + 22*S);
+        gc.stroke();
     }
 
+    // ── Event listeners ───────────────────────────────────────────────────
     slider.addEventListener('input', update);
-    update();
+
+    // Redraw on resize/orientation change
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(update, 60);
+    });
+
+    // Initial render (wait one frame so CSS has laid out the canvas width)
+    requestAnimationFrame(() => { resizeCanvas(); update(); });
 </script>
 
 </body>

@@ -78,8 +78,8 @@
         input[type=range] {
             width: 100%;
             cursor: pointer;
-            -webkit-appearance: auto;   /* iOS Safari: render as native slider */
-            touch-action: pan-y;        /* let horizontal drag reach the input */
+            -webkit-appearance: auto;
+            touch-action: none;         /* we handle all touch manually */
         }
 
         .mb-display {
@@ -378,7 +378,25 @@
 
     // ── Event listeners ───────────────────────────────────────────────────
     slider.addEventListener('input',  update);   // desktop / Android
-    slider.addEventListener('change', update);   // iOS Safari fires this on touch drag
+    slider.addEventListener('change', update);   // iOS fallback at finger-lift
+
+    // iOS Safari steals the touch stream from range inputs after the first
+    // interaction (scroll container wins). Fix: intercept touch events
+    // ourselves, prevent default to block scroll hijack, then compute the
+    // new slider value from the touch X position manually.
+    function applyTouchToSlider(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const touch  = e.touches[0];
+        const rect   = slider.getBoundingClientRect();
+        const ratio  = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const min    = parseFloat(slider.min);
+        const max    = parseFloat(slider.max);
+        slider.value = (min + ratio * (max - min)).toFixed(2);
+        update();
+    }
+    slider.addEventListener('touchstart', applyTouchToSlider, { passive: false });
+    slider.addEventListener('touchmove',  applyTouchToSlider, { passive: false });
 
     // Redraw on resize/orientation change
     let resizeTimer;

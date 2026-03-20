@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Pressure Interactive Demonstration</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a1a;
+            --panel-bg: rgba(30, 30, 50, 0.9);
+            --accent-blue: #4da6ff;
+            --accent-orange: #ffa64d;
+            --accent-yellow: #ffeb3b;
+            --accent-green: #4dffb8;
+            --text-gray: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            color: var(--text-gray);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: var(--accent-blue);
+            margin: 0;
+            font-size: clamp(1.1em, 4vw, 1.8em);
+        }
+
+        /* ── Desktop: side-by-side ── */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Controls Section */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: rgba(10, 10, 26, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(77, 166, 255, 0.1);
+        }
+
+        .slider-container { position: relative; }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            -webkit-appearance: none;   /* disable native iOS slider so pointer events own it fully */
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(77,166,255,0.3);
+            outline: none;
+            touch-action: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .mb-display {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: clamp(1.1em, 3vw, 1.4em);
+            font-weight: bold;
+            transition: all 0.4s ease;
+            margin-top: 10px;
+        }
+        .theme-green  { background: rgba(77, 255, 184, 0.2); color: var(--accent-green);  border: 2px solid var(--accent-green);  }
+        .theme-yellow { background: rgba(255, 235, 59, 0.2);  color: var(--accent-yellow); border: 2px solid var(--accent-yellow); }
+        .theme-blue   { background: rgba(77, 166, 255, 0.2);  color: var(--accent-blue);   border: 2px solid var(--accent-blue);   }
+        .theme-gray   { background: rgba(160, 160, 160, 0.15); color: #a0a0a0;             border: 2px solid #a0a0a0;              }
+
+        .readouts { display: flex; flex-direction: column; gap: 10px; }
+
+        .readout-box {
+            background: rgba(20, 20, 35, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-orange);
+        }
+        .atm-readout { border-left: 3px solid var(--accent-yellow); }
+
+        .label { font-size: 0.75em; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 1.2em; font-weight: bold; }
+
+        .forecast-box {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .reset-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .reset-btn:hover { background: #666; }
+
+        /* Visuals Section */
+        .visuals {
+            background: #e8edf2;
+            border-radius: 10px;
+            padding: 12px;
+            border: 3px solid #3a3a3a;
+        }
+
+        /* ── Canvas scales to fill its column ── */
+        #baroCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .info-strip {
+            background: white;
+            color: #1a1a2e;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: clamp(0.75em, 2vw, 0.9em);
+            border-radius: 0 0 15px 15px;
+        }
+
+        /* ── Mobile: stack controls above canvas ── */
+        @media (max-width: 700px) {
+            body { padding: 8px; align-items: flex-start; }
+            .container { padding: 14px; gap: 14px; border-radius: 14px; }
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Atmospheric Pressure Interactive Demonstration</h1>
+    </div>
+
+    <div class="main-layout">
+        <div class="controls">
+            <div class="slider-container">
+                <label class="label">Adjust Pressure (mb)</label>
+                <input type="range" id="pressSlider" min="900" max="1100" step="0.01" value="1013.25">
+                <div id="mbValueBox" class="mb-display">1013.25 mb</div>
+            </div>
+
+            <div class="readouts">
+                <div class="readout-box">
+                    <div class="label">Pascal (Pa)</div>
+                    <div class="value" id="valPa">101325.0</div>
+                </div>
+                <div class="readout-box atm-readout">
+                    <div class="label">Atmospheres (ATM)</div>
+                    <div class="value" id="valAtm" style="color: var(--accent-yellow);">1.00</div>
+                </div>
+                <div class="readout-box">
+                    <div class="label">Pounds/sq inch (psi)</div>
+                    <div class="value" id="valPsi">14.696</div>
+                </div>
+            </div>
+
+            <div id="forecast" class="forecast-box">Conditions: Fair</div>
+            <button class="reset-btn" onclick="resetSim()">RESET TO 1 ATM</button>
+        </div>
+
+        <div class="visuals">
+            <canvas id="baroCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="info-strip">
+        Mercury Barometer Simulation | One Atmosphere = 1013.25 mb (101325 Pa)
+    </div>
+</div>
+
+<script>
+    const canvas  = document.getElementById('baroCanvas');
+    const gc      = canvas.getContext('2d');
+    const slider  = document.getElementById('pressSlider');
+    const mbBox   = document.getElementById('mbValueBox');
+    const valPa   = document.getElementById('valPa');
+    const valAtm  = document.getElementById('valAtm');
+    const valPsi  = document.getElementById('valPsi');
+    const forecast = document.getElementById('forecast');
+
+    // ── Resize canvas bitmap to match its CSS display width ──────────────
+    function resizeCanvas() {
+        const displayW = canvas.clientWidth;
+        if (displayW < 10) return;               // not yet laid out
+        const displayH = displayW;               // keep 1:1 aspect ratio
+        if (canvas.width  !== displayW ||
+            canvas.height !== displayH) {
+            canvas.width  = displayW;
+            canvas.height = displayH;
+        }
+    }
+
+    function resetSim() {
+        slider.value = 1013.25;
+        // Use rAF so layout has settled before we measure canvas dimensions
+        requestAnimationFrame(update);
+    }
+
+    function update() {
+        resizeCanvas();
+
+        const mb  = parseFloat(slider.value);
+        const pa  = mb * 100;
+        const atm = mb / 1013.25;
+        const psi = mb * 0.0145038;
+        const cmHg = atm * 76.0;
+        const inHg = atm * 29.9213;
+
+        mbBox.textContent = mb.toFixed(2) + " mb";
+        valPa.textContent  = pa.toLocaleString(undefined, {minimumFractionDigits: 1});
+        valAtm.textContent = atm.toPrecision(3);
+        valPsi.textContent = psi.toFixed(3);
+
+        mbBox.className = "mb-display";
+        if      (mb >= 1008 && mb <= 1018) mbBox.classList.add('theme-green');
+        else if (mb > 1018)                mbBox.classList.add('theme-yellow');
+        else if (mb >= 980)                mbBox.classList.add('theme-blue');
+        else                               mbBox.classList.add('theme-gray');
+
+        if      (mb >= 1020) forecast.textContent = "Forecast: Fair";
+        else if (mb >= 1000) forecast.textContent = "Forecast: Uncertain";
+        else if (mb >= 980)  forecast.textContent = "Forecast: Rain";
+        else                 forecast.textContent = "Forecast: PDS";
+
+        draw(mb, cmHg, inHg);
+    }
+
+    // ── All coordinates expressed as fractions of canvas size ─────────────
+    function draw(mb, cmHg, inHg) {
+        const W = canvas.width;
+        const H = canvas.height;
+        gc.clearRect(0, 0, W, H);
+
+        // Scale factor relative to original 600×600 design
+        const S = W / 600;
+
+        const cx      = W / 2 - 50 * S;
+        const tubeW   = 40 * S;
+        const resY    = 480 * S;
+        const tubeTop = 60  * S;
+        const tubeH   = resY - tubeTop;
+
+        const mercuryHeight = (mb / 1013.25) * (tubeH * 0.8);
+        const mercTopY      = resY - mercuryHeight;
+
+        // 1. Glass tube
+        gc.fillStyle   = "#f0f8ff";
+        gc.beginPath();
+        gc.roundRect(cx - tubeW/2, tubeTop, tubeW, tubeH, [20*S, 20*S, 0, 0]);
+        gc.fill();
+        gc.strokeStyle = "#5a3e2b";
+        gc.lineWidth   = 3 * S;
+        gc.stroke();
+
+        // 2. Mercury fill
+        const mercGrad = gc.createLinearGradient(cx - tubeW/2, 0, cx + tubeW/2, 0);
+        mercGrad.addColorStop(0,   "#999");
+        mercGrad.addColorStop(0.5, "#eee");
+        mercGrad.addColorStop(1,   "#999");
+        gc.fillStyle = mercGrad;
+        gc.fillRect(cx - tubeW/2 + 3*S, mercTopY, tubeW - 6*S, mercuryHeight);
+
+        // 3. Labels & arrows
+        gc.fillStyle  = "#1a1a2e";
+        gc.font       = `bold ${14*S}px Arial`;
+        gc.textAlign  = "left";
+
+        // Vacuum label
+        gc.fillText("Vacuum", cx + tubeW, tubeTop + 20*S);
+        drawArrow(cx + tubeW - 5*S, tubeTop + 15*S, cx + 5*S, tubeTop + 15*S, S);
+
+        // Mercury-filled tube label
+        const midY = (mercTopY + resY) / 2;
+        gc.fillText("mercury-filled tube", cx + tubeW, midY);
+        drawArrow(cx + tubeW - 5*S, midY - 5*S, cx + 10*S, midY - 5*S, S);
+
+        // Meniscus readings
+        gc.fillStyle  = "#d32f2f";
+        gc.fillText(`${cmHg.toPrecision(4)} cm Hg`, cx + tubeW + 10*S, mercTopY);
+        gc.fillText(`${inHg.toPrecision(4)} in Hg`, cx + tubeW + 10*S, mercTopY + 18*S);
+
+        // 4. Reservoir bowl
+        const resW = 200 * S;
+        const resH = 100 * S;
+        gc.fillStyle = "#c8a882";
+        gc.beginPath();
+        gc.roundRect(cx - resW/2, resY - 20*S, resW, resH, 10*S);
+        gc.fill();
+
+        // Reservoir mercury pool
+        gc.fillStyle   = "#b0b0b0";
+        gc.beginPath();
+        gc.ellipse(cx, resY - 10*S, resW/2 - 15*S, 15*S, 0, 0, Math.PI * 2);
+        gc.fill();
+        gc.strokeStyle = "#888";
+        gc.lineWidth   = S;
+        gc.stroke();
+
+        // 5. Atmospheric pressure arrows
+        gc.fillStyle  = "#1a7abf";
+        gc.font       = `bold ${14*S}px Arial`;
+        gc.textAlign  = "center";
+
+        gc.fillText("Atmospheric", cx - 70*S, resY - 55*S);
+        drawArrowDown(cx - 70*S, resY - 50*S, S);
+
+        gc.fillText("Pressure", cx + 70*S, resY - 55*S);
+        drawArrowDown(cx + 70*S, resY - 50*S, S);
+    }
+
+    function drawArrow(x1, y1, x2, y2, S) {
+        gc.strokeStyle = "#555";
+        gc.lineWidth   = 1.5 * S;
+        gc.beginPath();
+        gc.moveTo(x1, y1);
+        gc.lineTo(x2, y2);
+        gc.stroke();
+        gc.beginPath();
+        gc.moveTo(x2 + 5*S, y2 - 3*S);
+        gc.lineTo(x2, y2);
+        gc.lineTo(x2 + 5*S, y2 + 3*S);
+        gc.stroke();
+    }
+
+    function drawArrowDown(x, y, S) {
+        gc.strokeStyle = "#1a7abf";
+        gc.lineWidth   = 4 * S;
+        gc.beginPath();
+        gc.moveTo(x, y);
+        gc.lineTo(x, y + 30*S);
+        gc.stroke();
+        gc.beginPath();
+        gc.moveTo(x - 8*S, y + 22*S);
+        gc.lineTo(x,        y + 32*S);
+        gc.lineTo(x + 8*S, y + 22*S);
+        gc.stroke();
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────
+    // ── Pointer Events replace all touch/mouse handling ───────────────────
+    // setPointerCapture explicitly claims the pointer for this element,
+    // overriding iOS's scroll-ownership system entirely — even after button taps.
+    slider.addEventListener('input',  update);   // desktop fallback
+
+    function applyPointer(e) {
+        const rect  = slider.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const min   = parseFloat(slider.min);
+        const max   = parseFloat(slider.max);
+        slider.value = (min + ratio * (max - min)).toFixed(2);
+        update();
+    }
+
+    slider.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        slider.setPointerCapture(e.pointerId);   // claim this pointer unconditionally
+        applyPointer(e);
+    }, { passive: false });
+
+    slider.addEventListener('pointermove', function(e) {
+        if (!slider.hasPointerCapture(e.pointerId)) return;
+        e.preventDefault();
+        applyPointer(e);
+    }, { passive: false });
+
+    // Reset button — pointer event so it also works on touch without waking issue
+    const resetBtn = document.querySelector('.reset-btn');
+    resetBtn.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        resetSim();
+    }, { passive: false });
+
+    // Redraw on resize/orientation change
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(update, 60);
+    });
+
+    // Initial render (wait one frame so CSS has laid out the canvas width)
+    requestAnimationFrame(() => { resizeCanvas(); update(); });
+</script>
+
+</body>
+</html>

@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Prehistoric Life — Hover to Animate</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prehistoric Life</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -17,7 +18,7 @@
     padding: 40px 20px;
   }
 
-  /* ── ENTER OVERLAY ───────────────────────────────────── */
+  /* ── ENTER OVERLAY ── */
   #overlay {
     position: fixed;
     inset: 0;
@@ -36,7 +37,7 @@
   }
   .overlay-title {
     color: #c8b89a;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: normal;
     letter-spacing: .18em;
     text-transform: uppercase;
@@ -57,11 +58,13 @@
     font-size: 13px;
     letter-spacing: .2em;
     text-transform: uppercase;
-    padding: 12px 36px;
+    padding: 14px 40px;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.3s, color 0.3s;
   }
-  .enter-btn:hover {
+  .enter-btn:hover,
+  .enter-btn:active {
     background: #c8b89a;
     color: #0a0a0a;
   }
@@ -71,38 +74,40 @@
     letter-spacing: .08em;
     margin-top: 20px;
     font-style: italic;
+    text-align: center;
+    padding: 0 20px;
   }
 
-  /* ── PAGE HEADER ─────────────────────────────────────── */
+  /* ── PAGE ── */
   .page-title {
     color: #c8b89a;
     font-size: 13px;
     letter-spacing: .22em;
     text-transform: uppercase;
-    margin-bottom: 48px;
+    margin-bottom: 40px;
     opacity: 0.7;
   }
 
-  /* ── GRID ────────────────────────────────────────────── */
   .grid {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
     justify-content: center;
     max-width: 1200px;
+    width: 100%;
   }
 
-  /* ── CARD ────────────────────────────────────────────── */
   .card {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    max-width: 560px;
   }
 
   .card-label {
     color: #c8b89a;
     font-size: 14px;
-    font-weight: normal;
     letter-spacing: .14em;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -113,23 +118,29 @@
     font-style: italic;
     letter-spacing: .06em;
     margin-bottom: 14px;
+    text-align: center;
   }
 
+  /* ── HOVER/TAP CONTAINER ── */
   .hover-container {
     position: relative;
-    display: inline-block;
+    display: block;
+    width: 100%;
     cursor: pointer;
     border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
+
   .hover-container img {
     display: block;
-    width: 560px;
-    max-width: 90vw;
+    width: 100%;
     height: auto;
     transition: opacity 0.4s ease;
   }
+
   .hover-container video {
     position: absolute;
     top: 0; left: 0;
@@ -138,8 +149,14 @@
     opacity: 0;
     transition: opacity 0.4s ease;
   }
-  .hover-container:hover img   { opacity: 0; }
-  .hover-container:hover video { opacity: 1; }
+
+  /* Desktop hover */
+  .hover-container.desktop:hover img   { opacity: 0; }
+  .hover-container.desktop:hover video { opacity: 1; }
+
+  /* Mobile tap-active state */
+  .hover-container.playing img   { opacity: 0; }
+  .hover-container.playing video { opacity: 1; }
 
   .hint {
     position: absolute;
@@ -157,52 +174,50 @@
     transition: opacity 0.3s;
     white-space: nowrap;
   }
-  .hover-container:hover .hint { opacity: 0; }
+  .hover-container.desktop:hover .hint { opacity: 0; }
+  .hover-container.playing .hint { opacity: 0; }
 
-  /* ── FOOTER ──────────────────────────────────────────── */
   .footer {
     color: #333;
     font-size: 10px;
     letter-spacing: .08em;
     font-style: italic;
     margin-top: 48px;
+    text-align: center;
   }
 </style>
 </head>
 <body>
 
-  <!-- CLICK-TO-ENTER OVERLAY -->
+  <!-- ENTER OVERLAY — unlocks audio on ALL browsers/devices -->
   <div id="overlay">
     <div class="overlay-title">Prehistoric Life</div>
     <div class="overlay-sub">Carboniferous &amp; Jurassic</div>
-    <button class="enter-btn" onclick="enterPage()">Enter</button>
-    <div class="overlay-note">hover over images to animate with sound</div>
+    <button class="enter-btn" id="enterBtn">Enter</button>
+    <div class="overlay-note" id="overlayNote">hover over images to animate with sound</div>
   </div>
 
-  <!-- PAGE CONTENT -->
-  <div class="page-title">Prehistoric Life — Hover to Animate</div>
+  <div class="page-title">Prehistoric Life — Tap or Hover to Animate</div>
 
   <div class="grid">
 
-    <!-- Card 1: Archaeopteryx -->
     <div class="card">
       <div class="card-label">Archaeopteryx</div>
       <div class="card-period">Late Jurassic · ~150 million years ago · The first bird</div>
-      <div class="hover-container">
+      <div class="hover-container" id="card0">
         <img src="Arc_Bird.jpeg" alt="Archaeopteryx">
-        <video loop playsinline src="Arc_Bird.mp4"></video>
-        <div class="hint">hover to animate</div>
+        <video playsinline webkit-playsinline src="Arc_Bird.mp4"></video>
+        <div class="hint" id="hint0">tap to animate</div>
       </div>
     </div>
 
-    <!-- Card 2: Giant Dragonfly -->
     <div class="card">
       <div class="card-label">Meganeura</div>
       <div class="card-period">Carboniferous · ~300 million years ago · Giant dragonfly</div>
-      <div class="hover-container">
-        <img src="Giant_Dragonfly.jpeg" alt="Meganeura giant dragonfly">
-        <video loop playsinline src="Giant_Dragonfly.mp4"></video>
-        <div class="hint">hover to animate</div>
+      <div class="hover-container" id="card1">
+        <img src="Giant_Dragonfly.jpeg" alt="Meganeura">
+        <video playsinline webkit-playsinline src="Giant_Dragonfly.mp4"></video>
+        <div class="hint" id="hint1">tap to animate</div>
       </div>
     </div>
 
@@ -211,22 +226,65 @@
   <div class="footer">Generated with Nano Banana Pro + Veo 3.1 Fast &nbsp;·&nbsp; Physics Water Cooler</div>
 
   <script>
-    function enterPage() {
-      // This click unlocks audio for the entire page session
-      document.getElementById('overlay').classList.add('hidden');
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const containers = document.querySelectorAll('.hover-container');
+    const note = document.getElementById('overlayNote');
 
-      // Preload all videos (muted briefly to trigger load, then unmute)
-      document.querySelectorAll('.hover-container').forEach(el => {
-        const vid = el.querySelector('video');
-        // Prime the video so first hover is instant
-        vid.load();
-        el.addEventListener('mouseenter', () => vid.play());
-        el.addEventListener('mouseleave', () => {
-          vid.pause();
-          vid.currentTime = 0;
-        });
-      });
+    // Update overlay hint text for device type
+    if (!isMobile) {
+      note.textContent = 'hover over images to animate with sound';
+      containers.forEach(c => c.querySelectorAll('.hint').forEach(h => h.textContent = 'hover to animate'));
+    } else {
+      note.textContent = 'tap images to animate with sound';
     }
+
+    document.getElementById('enterBtn').addEventListener('click', function() {
+      const overlay = document.getElementById('overlay');
+      overlay.classList.add('hidden');
+
+      containers.forEach(el => {
+        const vid = el.querySelector('video');
+        vid.load();
+
+        if (!isMobile) {
+          // ── DESKTOP: hover ──────────────────────────────
+          el.classList.add('desktop');
+          el.addEventListener('mouseenter', () => {
+            vid.play().catch(() => {});
+          });
+          el.addEventListener('mouseleave', () => {
+            vid.pause();
+            vid.currentTime = 0;
+          });
+
+        } else {
+          // ── MOBILE: tap toggle ──────────────────────────
+          // iOS requires play() called directly inside a touch handler
+          el.addEventListener('touchend', function(e) {
+            e.preventDefault();
+
+            if (el.classList.contains('playing')) {
+              // Stop this card
+              vid.pause();
+              vid.currentTime = 0;
+              el.classList.remove('playing');
+            } else {
+              // Stop any other playing card first
+              containers.forEach(other => {
+                if (other !== el && other.classList.contains('playing')) {
+                  other.querySelector('video').pause();
+                  other.querySelector('video').currentTime = 0;
+                  other.classList.remove('playing');
+                }
+              });
+              // Play this card
+              el.classList.add('playing');
+              vid.play().catch(() => {});
+            }
+          }, { passive: false });
+        }
+      });
+    });
   </script>
 
 </body>

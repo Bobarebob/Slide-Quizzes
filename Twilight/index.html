@@ -47,7 +47,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </head>
 <body>
 <div id="app">
-<header>Twilight Duration<small>Evening Twilight · Equinoxes &amp; Solstices</small></header>
+<header>Twilight Duration<small>Evening Twilight · Equinoxes &amp; Solstices · Northern Hemisphere</small></header>
 <div id="controls">
   <div class="ctrl-group"><label>&nbsp;</label><button id="btn-fs" title="Toggle Fullscreen">⛶ Full</button></div>
   <div id="info-box"></div>
@@ -73,7 +73,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div id="alt-label">+6.0°</div>
   <div id="float-panels">
     <div class="fcard" id="card-timer">
-      <h3>Elapsed Time Since Sunset</h3>
+      <h3 id="timer-title">Elapsed Time Since Sunset</h3>
       <div id="elapsed-clock">00:00</div>
       <div class="segment-row"><span class="seg-label"><span class="seg-dot" style="background:var(--civil)"></span>Civil (0°→−6°)</span><span class="seg-time" id="t-civil">──:──</span></div>
       <div class="segment-row"><span class="seg-label"><span class="seg-dot" style="background:var(--nautical)"></span>Nautical (−6°→−12°)</span><span class="seg-time" id="t-nautical">──:──</span></div>
@@ -171,14 +171,24 @@ function resize(){
 }
 
 function positionAzCard(){
-  // Position azimuth card so its top aligns with bottom of ground clutter
+  // Position azimuth card so top is at -3° vertical and bottom at -19° vertical
   const card=document.getElementById('card-azimuth');
-  const groundY=HY+6; // bottom of silhouette
-  const panelTop=8; // float-panels top offset
-  const timerCard=document.getElementById('card-timer');
-  // We'll use marginTop to push it down
-  // Can't perfectly position since it flows after timer, but we can estimate
-  card.style.marginTop='0px'; // reset
+  const topY=pY(-3);
+  const botY=pY(-19);
+  const cardH=botY-topY;
+  card.style.position='absolute';
+  card.style.top=topY+'px';
+  card.style.right='8px';
+  card.style.width='235px';
+  card.style.height=cardH+'px';
+  card.style.overflow='hidden';
+  // Resize the azimuth canvas to fit
+  const azCanvas=document.getElementById('azimuth-canvas');
+  const infoH=30; // approx space for az-info text
+  const titleH=20; // approx space for h3
+  const pad=18; // card padding
+  const availH=cardH-titleH-infoH-pad;
+  if(availH>60){azCanvas.height=availH;azCanvas.width=Math.round(availH*1.3);}
 }
 
 let abTime=0,abAngle=null,abPos=null,abDir=null,prevAV=99;
@@ -234,7 +244,7 @@ function drawSky(sunAlt,sunAz,aP,sel,ts){
         const lx=pX(pt.az),ly=pY(pt.alt);
         ctx.font=(bold?'bold ':'')+'10px Nunito, sans-serif';
         ctx.fillStyle=color;ctx.textAlign='right';
-        ctx.fillText(name,lx-12,ly);
+        ctx.fillText(name,lx-72,ly);
         return;
       }
     }
@@ -244,7 +254,7 @@ function drawSky(sunAlt,sunAz,aP,sel,ts){
       if(x>20&&x<W-20&&y>20&&y<H-20){
         ctx.font=(bold?'bold ':'')+'10px Nunito, sans-serif';
         ctx.fillStyle=color;ctx.textAlign='right';
-        ctx.fillText(name,x-12,y);
+        ctx.fillText(name,x-72,y);
         return;
       }
     }
@@ -329,6 +339,9 @@ const azC=document.getElementById('azimuth-canvas'),azX=azC.getContext('2d');
 const DC2={vernal:'#ffff66',summer:'#ff6666',autumnal:'#66ff66',winter:'#6699ff'};
 
 function drawAzDiag(latD,sel){
+  // Force full canvas clear by resetting dimensions
+  const savedW=azC.width,savedH=azC.height;
+  azC.width=savedW; // this resets the canvas state completely
   azX.clearRect(0,0,azC.width,azC.height);
   const cw=azC.width,ch=azC.height,cx=cw/2,cy=ch-14,Rd=58;
   azX.strokeStyle='rgba(255,255,255,0.2)';azX.lineWidth=1;
@@ -371,16 +384,15 @@ function drawAzDiag(latD,sel){
     azX.beginPath();azX.moveTo(cx,cy);azX.lineTo(ex,ey);azX.stroke();azX.setLineDash([]);
     const tx=cx+(ll+12)*Math.cos(cA),ty=cy-(ll+12)*Math.sin(cA);
     azX.textAlign='center';
-    // Clean labels: W shown when neither equinox selected, just one label when equinox selected
+    // Clean labels: W when neither equinox selected, just AE or VE when selected
     if(isEq&&noEq){
       // Neither equinox selected — show W only
       azX.fillStyle='rgba(255,255,255,0.5)';azX.font='9px Orbitron, monospace';azX.fillText('W',tx,ty+2);
     }else if(isAct&&isEq){
-      // This equinox selected — show just its name
+      // This equinox selected — show just its name (AE or VE)
       azX.font='bold 9px Nunito, sans-serif';azX.fillStyle=DC2[dk];azX.fillText(DSH[dk],tx,ty+2);
     }else if(isEq&&!noEq&&!isAct){
-      // Other equinox dim
-      azX.font='8px Nunito, sans-serif';azX.fillStyle=DC2[dk]+'66';azX.fillText(DSH[dk],tx,ty);
+      // Other equinox not selected — show nothing (no dim label)
     }else if(!isEq){
       azX.font=isAct?'bold 9px Nunito, sans-serif':'8px Nunito, sans-serif';azX.fillStyle=isAct?DC2[dk]:DC2[dk]+'88';azX.fillText(DSH[dk],tx,ty);
     }
@@ -415,12 +427,19 @@ function recalc(){
   S.allPaths={};for(const dk of['vernal','summer','autumnal','winter'])S.allPaths[dk]=mkPath(lat,DECL[dk]);
   const ct=t2alt(lat,dec,-6,day),nt=t2alt(lat,dec,-12,day),at2=t2alt(lat,dec,-18,day);
   S.segDur={civil:ct,nautical:nt!==null&&ct!==null?nt-ct:null,astro:at2!==null&&nt!==null?at2-nt:null,total:at2};
-  S.maxElapsed=(ct===null)?120:null;
+  S.maxElapsed=null; // no artificial cap
+  // For no-sunset cases, set haEnd to 45° HA beyond haStart
+  if(S.haSunset===null){
+    S.haEnd=S.haStart+45*D;
+  }
+  // Update timer title
+  document.getElementById('timer-title').textContent=S.haSunset?'Elapsed Time Since Sunset':'Elapsed Time';
   // Check if CP hits azimuth box for this day
   S.azBlankNeeded=cpHitsBox(S.allPaths,day);
 
   S.currentHA=S.haStart;S.finished=false;S.playing=false;prevAV=99;abAngle=null;abPos=null;abDir=null;
   document.getElementById('btn-play').textContent='▶ Play';
+  positionAzCard();
   updTimers(0);drawAzDiag(lat,day);updInfoBox();
   // Show azimuth at full opacity until Play (don't blank yet)
   document.getElementById('card-azimuth').style.opacity='1';
@@ -429,14 +448,14 @@ function recalc(){
 }
 
 function updAzOp(){
-  // Only blank during play, and only if CP hits box for selected day
-  if(!S.playing){document.getElementById('card-azimuth').style.opacity='1';return;}
+  // Only blank during play or when finished, and only if CP hits box for selected day
+  if(!S.playing&&!S.finished){document.getElementById('card-azimuth').style.opacity='1';return;}
   document.getElementById('card-azimuth').style.opacity=S.azBlankNeeded?'0.25':'1';
 }
 function updTimerOp(sunAz,sunAlt){
   // Dim timer if sun passes behind it (high lat, sun doesn't set)
   const sx=pX(sunAz),sy=pY(sunAlt);
-  const overlaps=sx>W-260&&sy<200&&S.playing;
+  const overlaps=sx>W-260&&sy<200&&(S.playing||S.finished);
   document.getElementById('card-timer').style.opacity=overlaps?'0.25':'1';
 }
 
@@ -454,8 +473,8 @@ function curAlt(){return sAlt(S.lat*D,DECL[S.day]*D,S.currentHA)*RD;}
 function curAz(){return sAz(S.lat*D,DECL[S.day]*D,S.currentHA)*RD;}
 
 function updTimers(eM){
-  let dE=eM;if(S.maxElapsed!==null&&eM>S.maxElapsed)dE=S.maxElapsed;
-  document.getElementById('elapsed-clock').textContent=(S.haSunset&&S.currentHA>=S.haSunset)?fmtT(dE):(S.haSunset===null&&S.playing)?fmtT(dE):'00:00';
+  let dE=eM;
+  document.getElementById('elapsed-clock').textContent=(S.haSunset&&S.currentHA>=S.haSunset)?fmtT(dE):(S.haSunset===null&&(S.playing||S.finished))?fmtT(dE):'00:00';
   const{segDur:sd,haPhases:hp}=S;
   const up=(id,ph,v)=>{const e=document.getElementById(id);if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent=hp[ph]===null?'N/A':'──:──';e.classList.remove('filled');}};
   up('t-civil','civil',sd.civil);up('t-nautical','nautical',sd.nautical);up('t-astro','astro',sd.astro);
@@ -475,7 +494,7 @@ function drawFrame(ts){
   drawSky(alt,az,S.allPaths,S.day,ts);
   let eM=0;
   if(S.haSunset&&S.currentHA>=S.haSunset){eM=(S.currentHA-S.haSunset)*RD/(15/ovf(DOY[S.day]))*60;}
-  else if(S.haSunset===null&&S.playing){
+  else if(S.haSunset===null&&(S.playing||S.finished)){
     // Sun doesn't set — elapsed from start of play
     eM=(S.currentHA-S.haStart)*RD/(15/ovf(DOY[S.day]))*60;
   }
@@ -489,9 +508,14 @@ function animate(ts){
   let eM=0;
   if(S.haSunset&&S.currentHA>=S.haSunset){eM=(S.currentHA-S.haSunset)*RD/(15/ovf(DOY[S.day]))*60;}
   else if(S.haSunset===null){eM=(S.currentHA-S.haStart)*RD/(15/ovf(DOY[S.day]))*60;}
+  // Check current azimuth for due-N stop in no-sunset cases
+  const curAzNow=sAz(S.lat*D,DECL[S.day]*D,S.currentHA)*RD;
   let stop=false;
   if(S.currentHA>=S.haEnd)stop=true;
-  if(S.maxElapsed!==null&&eM>=S.maxElapsed)stop=true;
+  // At high latitudes with no sunset, stop when sun reaches due N (az≈360/0)
+  // Detect: azimuth was >350 and now wraps to <10, or azimuth reaches >=359
+  if(S.haSunset===null&&curAzNow>=358)stop=true;
+  if(S.haSunset===null&&curAzNow<90&&S.currentHA>S.haStart+5*D)stop=true; // wrapped past N
   if(stop){if(S.currentHA>S.haEnd)S.currentHA=S.haEnd;S.playing=false;S.finished=true;document.getElementById('btn-play').textContent='▶ Play';}
   drawFrame(ts);if(S.playing)requestAnimationFrame(animate);
 }
@@ -519,9 +543,9 @@ for(const c of CITIES){const o=document.createElement('option');o.value=c.id;
 lSel.value='default';
 const lSl=document.getElementById('sl-lat'),lDis=document.getElementById('lat-display');
 
-// Year/Day change → reset to Default(35), reset viewpoint
-ySel.addEventListener('change',()=>{S.year=+ySel.value;resetToDefault();recalc();});
-dSel.addEventListener('change',()=>{S.day=dSel.value;resetToDefault();recalc();});
+// Year/Day change → just recalc, preserve current location/lat/viewpoint
+ySel.addEventListener('change',()=>{S.year=+ySel.value;recalc();});
+dSel.addEventListener('change',()=>{S.day=dSel.value;recalc();});
 
 // Latitude slider → set location to None, no viewpoint change
 lSl.addEventListener('input',()=>{S.lat=+lSl.value;lDis.textContent=S.lat+'°N';S.city=CITIES[0];lSel.value='none';recalc();});
@@ -546,7 +570,7 @@ document.getElementById('vp-sel').addEventListener('change',e=>{S.viewpoint=e.ta
   // Redraw without recalc to avoid resetting state
   S.allPaths={};for(const dk of['vernal','summer','autumnal','winter'])S.allPaths[dk]=mkPath(S.lat,DECL[dk]);
   S.azBlankNeeded=cpHitsBox(S.allPaths,S.day);
-  drawAzDiag(S.lat,S.day);updInfoBox();drawFrame(performance.now());
+  positionAzCard();drawAzDiag(S.lat,S.day);updInfoBox();drawFrame(performance.now());
 });
 
 document.getElementById('sel-speed').addEventListener('change',e=>{S.speed=+e.target.value;});

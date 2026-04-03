@@ -131,8 +131,17 @@ function sAz(lR,dR,hR){const a=sAlt(lR,dR,hR),ca=Math.cos(a);if(ca<1e-10)return 
 function haAt(lR,dR,aD){const c2=(Math.sin(aD*D)-Math.sin(lR)*Math.sin(dR))/(Math.cos(lR)*Math.cos(dR));return(c2<-1||c2>1)?null:Math.acos(c2);}
 function mkPath(latD,decD){
   const lR=latD*D,dR=decD*D;
-  let h6=haAt(lR,dR,6);if(!h6)h6=haAt(lR,dR,2);if(!h6)h6=haAt(lR,dR,0);if(!h6)return null;
-  let hE=haAt(lR,dR,-20);if(!hE)hE=Math.PI;
+  let h6=haAt(lR,dR,6);if(!h6)h6=haAt(lR,dR,2);if(!h6)h6=haAt(lR,dR,0);
+  if(!h6){
+    // Sun never rises — compute below-horizon path from just past transit to near due N
+    const p=[];
+    for(let i=0;i<=500;i++){
+      const ha=0.01+(Math.PI+0.02-0.01)*i/500;
+      p.push({ha,alt:sAlt(lR,dR,ha)*RD,az:sAz(lR,dR,ha)*RD});
+    }
+    return p;
+  }
+  let hE=haAt(lR,dR,-20);if(!hE)hE=Math.PI+0.02; // extend ~1° past due N
   const p=[];for(let i=0;i<=500;i++){const ha=h6+(hE-h6)*i/500;p.push({ha,alt:sAlt(lR,dR,ha)*RD,az:sAz(lR,dR,ha)*RD});}return p;
 }
 function t2alt(latD,decD,aD,dk){const lR=latD*D,dR=decD*D;const h0=haAt(lR,dR,0),ht=haAt(lR,dR,aD);if(!h0||!ht)return null;return(ht-h0)*RD/(15/ovf(DOY[dk]))*60;}
@@ -420,17 +429,26 @@ function applyVP(){const vp=VP[S.viewpoint];AZ0=vp.az0;AZ1=vp.az1;AZR=AZ1-AZ0;HY
 function recalc(){
   const{lat,day}=S,dec=DECL[day],lR=lat*D,dR=dec*D;
   applyVP();
-  S.haStart=haAt(lR,dR,6)||haAt(lR,dR,2)||haAt(lR,dR,0)||0;
+  S.haStart=haAt(lR,dR,6)||haAt(lR,dR,2)||haAt(lR,dR,0)||0.01;
   S.haSunset=haAt(lR,dR,0);
-  let he=haAt(lR,dR,-20);S.haEnd=he||Math.PI;
+  let he=haAt(lR,dR,-20);S.haEnd=he||Math.PI+0.02;
   S.haPhases={civil:haAt(lR,dR,-6),nautical:haAt(lR,dR,-12),astro:haAt(lR,dR,-18)};
   S.allPaths={};for(const dk of['vernal','summer','autumnal','winter'])S.allPaths[dk]=mkPath(lat,DECL[dk]);
   const ct=t2alt(lat,dec,-6,day),nt=t2alt(lat,dec,-12,day),at2=t2alt(lat,dec,-18,day);
-  S.segDur={civil:ct,nautical:nt!==null&&ct!==null?nt-ct:null,astro:at2!==null&&nt!==null?at2-nt:null,total:at2};
-  S.maxElapsed=null; // no artificial cap
-  // For no-sunset cases, set haEnd to 45° HA beyond haStart
+  if(ct!==null){
+    // Normal case: sun sets
+    S.segDur={civil:ct,nautical:nt!==null?nt-ct:null,astro:at2!==null&&nt!==null?at2-nt:null,total:at2};
+  }else{
+    // Sun never truly sets — compute segment durations between altitude thresholds directly
+    const h6=haAt(lR,dR,-6),h12=haAt(lR,dR,-12),h18=haAt(lR,dR,-18);
+    const nautDur=(h6!==null&&h12!==null)?((h12-h6)*RD/(15/ovf(DOY[day]))*60):null;
+    const astrDur=(h12!==null&&h18!==null)?((h18-h12)*RD/(15/ovf(DOY[day]))*60):null;
+    S.segDur={civil:null,nautical:nautDur,astro:astrDur,total:null};
+  }
+  S.maxElapsed=null;
+  // For no-sunset cases, set haEnd to π (due N) — animate() due-N stop will handle early termination
   if(S.haSunset===null){
-    S.haEnd=S.haStart+45*D;
+    S.haEnd=Math.PI+0.02;
   }
   // Update timer title
   document.getElementById('timer-title').textContent=S.haSunset?'Elapsed Time Since Sunset':'Elapsed Time';
@@ -461,7 +479,7 @@ function updTimerOp(sunAz,sunAlt){
 
 function updInfoBox(){
   const c=S.city,ld=locDate(S.year,S.day,c);
-  let t=`<b>${DL[S.day]}</b>\n${ld}, ${S.year} · ${S.lat.toFixed(0)}°N`;
+  let t=`<b>${DL[S.day]}</b>\n${ld}, ${S.year} · ${S.lat.toFixed(1)}°N`;
   if(c.id!=='none'&&c.id!=='default'&&c.lon!==null)t+=`\n${c.name} (${fLon(c.lon)})`;
   else if(c.id==='default')t+='\nDefault · GMT/UTC';
   else t+='\nGMT/UTC';
@@ -476,10 +494,11 @@ function updTimers(eM){
   let dE=eM;
   document.getElementById('elapsed-clock').textContent=(S.haSunset&&S.currentHA>=S.haSunset)?fmtT(dE):(S.haSunset===null&&(S.playing||S.finished))?fmtT(dE):'00:00';
   const{segDur:sd,haPhases:hp}=S;
-  const up=(id,ph,v)=>{const e=document.getElementById(id);if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent=hp[ph]===null?'N/A':'──:──';e.classList.remove('filled');}};
+  const up=(id,ph,v)=>{const e=document.getElementById(id);if(v===null){e.textContent='N/A';e.classList.remove('filled');}else if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent=hp[ph]===null?'N/A':'──:──';e.classList.remove('filled');}};
   up('t-civil','civil',sd.civil);up('t-nautical','nautical',sd.nautical);up('t-astro','astro',sd.astro);
   const tt=document.getElementById('t-total');
-  if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=fmtT(sd.total);else tt.textContent=hp.astro===null?'N/A':'──:──';
+  if(sd.total===null){tt.textContent='N/A';}
+  else if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=fmtT(sd.total);else tt.textContent=hp.astro===null?'N/A':'──:──';
   const al=curAlt(),pe=document.getElementById('phase-label');
   if(al>0){pe.textContent='DAYLIGHT';pe.style.color='#ffdd44';}
   else if(al>-6){pe.textContent='CIVIL TWILIGHT';pe.style.color='#ff6b35';}
@@ -508,14 +527,22 @@ function animate(ts){
   let eM=0;
   if(S.haSunset&&S.currentHA>=S.haSunset){eM=(S.currentHA-S.haSunset)*RD/(15/ovf(DOY[S.day]))*60;}
   else if(S.haSunset===null){eM=(S.currentHA-S.haStart)*RD/(15/ovf(DOY[S.day]))*60;}
-  // Check current azimuth for due-N stop in no-sunset cases
+  const curAltNow=sAlt(S.lat*D,DECL[S.day]*D,S.currentHA)*RD;
   const curAzNow=sAz(S.lat*D,DECL[S.day]*D,S.currentHA)*RD;
   let stop=false;
   if(S.currentHA>=S.haEnd)stop=true;
-  // At high latitudes with no sunset, stop when sun reaches due N (az≈360/0)
-  // Detect: azimuth was >350 and now wraps to <10, or azimuth reaches >=359
-  if(S.haSunset===null&&curAzNow>=358)stop=true;
-  if(S.haSunset===null&&curAzNow<90&&S.currentHA>S.haStart+5*D)stop=true; // wrapped past N
+  if(S.haSunset===null){
+    // Check if sun never rises (WS-like) or never sets (SS-like)
+    const transitAlt=sAlt(S.lat*D,DECL[S.day]*D,0)*RD;
+    if(transitAlt<0){
+      // Sun never rises — stop when altitude reaches -20°
+      if(curAltNow<=-20)stop=true;
+    }else{
+      // Sun never sets — stop within 1° of due N
+      if(curAzNow>=359)stop=true;
+      if(curAzNow<90&&S.currentHA>S.haStart+10*D)stop=true;
+    }
+  }
   if(stop){if(S.currentHA>S.haEnd)S.currentHA=S.haEnd;S.playing=false;S.finished=true;document.getElementById('btn-play').textContent='▶ Play';}
   drawFrame(ts);if(S.playing)requestAnimationFrame(animate);
 }
@@ -559,7 +586,7 @@ lSel.addEventListener('change',()=>{
     S.city=c;recalc();return;
   }
   S.city=c;
-  if(c.lat!==null){S.lat=Math.round(c.lat);lSl.value=S.lat;lDis.textContent=S.lat+'°N';}
+  if(c.lat!==null){S.lat=c.lat;lSl.value=Math.round(c.lat);lDis.textContent=Math.round(c.lat)+'°N';}
   S.day='vernal';dSel.value='vernal';
   S.viewpoint='W';document.getElementById('vp-sel').value='W';
   recalc();
@@ -596,6 +623,8 @@ document.getElementById('btn-fs').addEventListener('click',()=>{
 
 window.addEventListener('resize',resize);
 resize();recalc();
+// Redraw after fonts load to fix compass/label font on first paint
+document.fonts.ready.then(()=>{drawFrame(performance.now());drawAzDiag(S.lat,S.day);});
 </script>
 </body>
 </html>

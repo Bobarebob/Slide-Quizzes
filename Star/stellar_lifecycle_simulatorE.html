@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Lifecycle Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&display=swap');
+        :root {
+            --bg-color: #04060e;
+            --panel-bg: rgba(8, 12, 24, 0.92);
+            --text-main: #c8d0df;
+            --accent: #5b8def;
+            --border: #1a2240;
+            --dim: #5a6580;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            width: 100%; height: 100%;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            display: flex;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas { display: block; }
+        #bottom-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .info-box {
+            background: rgba(6, 10, 22, 0.88);
+            border: 1px solid #1e2a4a;
+            border-radius: 5px;
+            padding: 7px 10px;
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+            min-width: 0;
+        }
+        .info-box h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 3px;
+        }
+        #box-nucleo { flex: 1.3; max-width: 320px; }
+        #box-nucleo h4 { color: #ffaa00; }
+        #box-nucleo .content { color: #e0a030; }
+        #box-core { flex: 0.8; max-width: 200px; }
+        #box-core h4 { color: #4ade80; }
+        #box-core .content { color: #4ade80; }
+        #box-shell { flex: 0.8; max-width: 200px; }
+        #box-shell h4 { color: #40c8a0; }
+        #box-shell .content { color: #40c8a0; }
+        .info-box .content {
+            font-size: 0.7em;
+            line-height: 1.5;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+        .info-box .content::-webkit-scrollbar { width: 4px; }
+        .info-box .content::-webkit-scrollbar-thumb { background: #2a3560; border-radius: 2px; }
+        .info-box.grayed .content { color: #445 !important; }
+        .info-box.grayed h4 { color: #445 !important; }
+
+        #ui-panel {
+            width: 310px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border);
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+            overflow-y: auto;
+        }
+        #ui-panel h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 1.05em;
+            letter-spacing: 0.04em; margin-bottom: 14px; color: #e8ecf4;
+        }
+        .control-group { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .control-group:last-child { border-bottom: none; }
+        label.section-label { font-size: 0.66em; text-transform: uppercase; letter-spacing: 0.1em; color: var(--dim); display: block; margin-bottom: 4px; }
+        select, button {
+            width: 100%; padding: 7px 9px; margin-top: 3px;
+            background: #0c1225; color: var(--text-main); border: 1px solid var(--border);
+            border-radius: 4px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 0.78em;
+        }
+        button:hover, select:hover { background: #141e38; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.76em; }
+        .stat-label { color: var(--dim); }
+        .stat-value { font-weight: 500; text-align: right; color: #e0e8f4; }
+        input[type=range] { width: 100%; cursor: pointer; margin: 4px 0; accent-color: var(--accent); }
+        .slider-row { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+        .slider-row input[type=range] { flex: 1; }
+        .slider-row .slider-val { font-size: 0.7em; color: var(--accent); min-width: 32px; text-align: right; }
+        .btn-row { display: flex; gap: 7px; margin-top: 7px; }
+        .btn-row button { flex: 1; }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container">
+    <canvas id="simCanvas"></canvas>
+    <div id="bottom-info">
+        <div class="info-box" id="box-nucleo" style="display:none;">
+            <h4>Nucleosynthesis (Incomplete)</h4>
+            <div class="content" id="nucleo-content"></div>
+        </div>
+        <div class="info-box" id="box-core">
+            <h4>Core Fusion</h4>
+            <div class="content" id="core-content">—</div>
+        </div>
+        <div class="info-box" id="box-shell">
+            <h4>Shell Fusion</h4>
+            <div class="content" id="shell-content">—</div>
+        </div>
+    </div>
+</div>
+
+<div id="ui-panel">
+    <h2>✦ Stellar Lifecycle</h2>
+    <div class="control-group">
+        <label class="section-label">Star Class (by mass)</label>
+        <select id="star-selector">
+            <option value="M">M (0.2 M☉) — Red Dwarf</option>
+            <option value="K">K (0.7 M☉) — Orange Dwarf</option>
+            <option value="G" selected>G (1.0 M☉) — Yellow Dwarf (Sun)</option>
+            <option value="F">F (1.4 M☉) — Yellow-White</option>
+            <option value="A">A (2.1 M☉) — White Main Seq.</option>
+            <option value="B">B (10 M☉) — Blue-White Giant</option>
+            <option value="O">O (40 M☉) — Blue Hypergiant</option>
+        </select>
+    </div>
+    <div class="control-group">
+        <div class="stat-row"><span class="stat-label">Initial Mass</span><span id="val-mass" class="stat-value">—</span></div>
+        <div class="stat-row"><span class="stat-label">Lifespan</span><span id="val-lifespan" class="stat-value">—</span></div>
+        <div class="stat-row"><span class="stat-label">Current Age</span><span id="val-age" class="stat-value">—</span></div>
+        <div class="stat-row"><span class="stat-label">Phase</span><span id="val-phase" class="stat-value">—</span></div>
+    </div>
+    <div class="control-group">
+        <div class="stat-row"><span class="stat-label">End-of-Life Event</span><span id="val-event" class="stat-value">—</span></div>
+        <div class="stat-row"><span class="stat-label">Remnant</span><span id="val-outcome" class="stat-value">—</span></div>
+        <div class="stat-row"><span class="stat-label">Remnant Mass</span><span id="val-corpse" class="stat-value">—</span></div>
+    </div>
+    <div class="control-group">
+        <label class="section-label">Age Progression</label>
+        <input type="range" id="timeline" min="0" max="1000" value="0">
+        <label class="section-label" style="margin-top:6px">End-Phase Slowdown</label>
+        <div class="slider-row">
+            <input type="range" id="slowdown" min="50" max="90" value="50">
+            <span class="slider-val" id="slowdown-val">50%</span>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button id="btn-play">▶ Play</button>
+        <button id="btn-reset">↺ Reset</button>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+function resize() {
+    const c = document.getElementById('canvas-container');
+    W = c.clientWidth; H = c.clientHeight;
+    canvas.width = W; canvas.height = H;
+    cx = W / 2; cy = H / 2 - 25;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ═══════════════════════════════════════════════════════════
+// COLOR UTILITY — always produce valid hex colors
+// ═══════════════════════════════════════════════════════════
+function rgbHex(r, g, b) {
+    r = Math.max(0, Math.min(255, Math.round(r)));
+    g = Math.max(0, Math.min(255, Math.round(g)));
+    b = Math.max(0, Math.min(255, Math.round(b)));
+    return '#' + r.toString(16).padStart(2,'0') + g.toString(16).padStart(2,'0') + b.toString(16).padStart(2,'0');
+}
+
+function lerpColor(hex1, hex2, t) {
+    // Lerp between two hex colors
+    t = Math.max(0, Math.min(1, t));
+    const r1 = parseInt(hex1.slice(1,3),16), g1 = parseInt(hex1.slice(3,5),16), b1 = parseInt(hex1.slice(5,7),16);
+    const r2 = parseInt(hex2.slice(1,3),16), g2 = parseInt(hex2.slice(3,5),16), b2 = parseInt(hex2.slice(5,7),16);
+    return rgbHex(r1 + (r2-r1)*t, g1 + (g2-g1)*t, b1 + (b2-b1)*t);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROCEDURAL NOISE
+// ═══════════════════════════════════════════════════════════
+function makeNoise(seed) {
+    function hash(x, y) {
+        let h = seed + x * 374761393 + y * 668265263;
+        h = (h ^ (h >> 13)) * 1274126177;
+        return ((h ^ (h >> 16)) & 0x7fffffff) / 0x7fffffff;
+    }
+    function smooth(x, y) {
+        const ix = Math.floor(x), iy = Math.floor(y);
+        const fx = x - ix, fy = y - iy;
+        const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy);
+        return hash(ix,iy)*(1-sx)*(1-sy) + hash(ix+1,iy)*sx*(1-sy) + hash(ix,iy+1)*(1-sx)*sy + hash(ix+1,iy+1)*sx*sy;
+    }
+    return (x, y, oct=4) => {
+        let v=0, a=1, f=1, m=0;
+        for (let i=0; i<oct; i++) { v += smooth(x*f,y*f)*a; m+=a; a*=0.5; f*=2; }
+        return v/m;
+    };
+}
+
+// Pre-generate nebula ring textures
+const NUM_RINGS = 5;
+const ringTextures = [];
+let ringsReady = false;
+function ensureRings() {
+    if (ringsReady) return;
+    for (let idx = 0; idx < NUM_RINGS; idx++) {
+        const sz = 400;
+        const off = document.createElement('canvas');
+        off.width = sz; off.height = sz;
+        const oc = off.getContext('2d');
+        const id = oc.createImageData(sz, sz);
+        const d = id.data;
+        const nz = makeNoise(idx * 37 + 11);
+        const c2 = sz/2, inR = sz*0.28, outR = sz*0.46, rw = outR-inR;
+        for (let y = 0; y < sz; y++) {
+            for (let x = 0; x < sz; x++) {
+                const dx = x-c2, dy = y-c2;
+                const dist = Math.sqrt(dx*dx+dy*dy);
+                const ang = Math.atan2(dy, dx);
+                let ra = 0;
+                if (dist > inR && dist < outR) ra = Math.sin(((dist-inR)/rw)*Math.PI);
+                const nx = x/sz*5+idx*8, ny = y/sz*5;
+                const n1 = nz(nx,ny,5), n2 = nz(nx+40,ny+40,3);
+                const angV = nz(ang*2.5+idx, dist*0.015, 3);
+                const filament = Math.pow(nz(x/sz*12+idx*5, y/sz*12, 4), 1.5);
+                const dens = ra * (0.25+n1*0.45+angV*0.35) * (0.5+n2*0.5) * (0.6+filament*0.6);
+                const i = (y*sz+x)*4;
+                d[i]   = Math.floor(90+n1*70);
+                d[i+1] = Math.floor(30+n2*25);
+                d[i+2] = Math.floor(18+n1*12);
+                d[i+3] = Math.floor(Math.min(255, dens*300));
+            }
+        }
+        oc.putImageData(id, 0, 0);
+        ringTextures.push(off);
+    }
+    ringsReady = true;
+}
+
+// ═══════════════════════════════════════════════════════════
+// STAR DATA
+// Default slowdown: B,O = 65%; all others = 50%
+// ═══════════════════════════════════════════════════════════
+const starData = {
+    "M": {
+        mass:"0.2 M☉", massVal:0.2, lifespan:1000000, lifespanStr:"~1 Trillion Yrs",
+        color:"#ff8b52", endEvent:"Planetary Nebula (faint)", outcome:"White Dwarf (He)", corpse:"~0.2 M☉",
+        defaultSlowdown:50, deathType:"m_class",
+        stages:[
+            {start:0, end:0.80, name:"Red Dwarf (Main Seq.)", color:"#ff8b52", size:0.35,
+             coreFusion:"H → He (pp chain)", shellFusion:"None"},
+            {start:0.80, end:0.90, name:"Blue Dwarf", color:"#8cb8ff", size:0.28,
+             coreFusion:"H → He (final burn)", shellFusion:"None"},
+            {start:0.90, end:1.0, name:"White Dwarf (He)", color:"#ffffff", size:0.06,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "K": {
+        mass:"0.7 M☉", massVal:0.7, lifespan:30000, lifespanStr:"~30 Billion Yrs",
+        color:"#ffd2a1", endEvent:"Planetary Nebula", outcome:"White Dwarf (C/O)", corpse:"~0.5 M☉",
+        defaultSlowdown:50, deathType:"pn",
+        stages:[
+            {start:0, end:0.80, name:"Main Sequence", color:"#ffd2a1", size:0.7,
+             coreFusion:"H → He (pp chain)", shellFusion:"None"},
+            {start:0.80, end:0.94, name:"Red Giant", color:"#ff5200", size:2.8,
+             coreFusion:"He → C, O", shellFusion:"H → He"},
+            {start:0.94, end:1.0, name:"White Dwarf (C/O)", color:"#e0f0ff", size:0.08,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "G": {
+        mass:"1.0 M☉", massVal:1.0, lifespan:10000, lifespanStr:"~10 Billion Yrs",
+        color:"#fff4ea", endEvent:"Planetary Nebula", outcome:"White Dwarf (C/O)", corpse:"~0.54 M☉",
+        defaultSlowdown:50, deathType:"pn",
+        stages:[
+            {start:0, end:0.82, name:"Main Sequence", color:"#fff4ea", size:1.0,
+             coreFusion:"H → He (pp chain)", shellFusion:"None"},
+            {start:0.82, end:0.94, name:"Red Giant", color:"#ff3300", size:4.0,
+             coreFusion:"He → C, O", shellFusion:"H → He"},
+            {start:0.94, end:1.0, name:"White Dwarf (C/O)", color:"#ffffff", size:0.1,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "F": {
+        mass:"1.4 M☉", massVal:1.4, lifespan:3000, lifespanStr:"~3 Billion Yrs",
+        color:"#f8f9ff", endEvent:"Planetary Nebula", outcome:"White Dwarf (C/O)", corpse:"~0.6 M☉",
+        defaultSlowdown:50, deathType:"pn",
+        stages:[
+            {start:0, end:0.80, name:"Main Sequence", color:"#f8f9ff", size:1.3,
+             coreFusion:"H → He (CNO cycle)", shellFusion:"None"},
+            {start:0.80, end:0.94, name:"Red Giant", color:"#ff4400", size:5.0,
+             coreFusion:"He → C, O", shellFusion:"H → He"},
+            {start:0.94, end:1.0, name:"White Dwarf (C/O)", color:"#ffffff", size:0.1,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "A": {
+        mass:"2.1 M☉", massVal:2.1, lifespan:1000, lifespanStr:"~1 Billion Yrs",
+        color:"#dce4ff", endEvent:"Planetary Nebula", outcome:"White Dwarf (C/O)", corpse:"~0.9 M☉",
+        defaultSlowdown:50, deathType:"pn",
+        stages:[
+            {start:0, end:0.78, name:"Main Sequence", color:"#dce4ff", size:1.8,
+             coreFusion:"H → He (CNO cycle)", shellFusion:"None"},
+            {start:0.78, end:0.94, name:"Red Giant", color:"#e84000", size:6.5,
+             coreFusion:"He → C, O", shellFusion:"H → He"},
+            {start:0.94, end:1.0, name:"White Dwarf (C/O)", color:"#ffffff", size:0.12,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "B": {
+        mass:"10 M☉", massVal:10.0, lifespan:20, lifespanStr:"~20 Million Yrs",
+        color:"#a2c0ff", endEvent:"Type II Supernova", outcome:"Neutron Star", corpse:"~1.4 M☉",
+        defaultSlowdown:65, deathType:"ns",
+        stages:[
+            {start:0, end:0.82, name:"Main Sequence", color:"#a2c0ff", size:4.0,
+             coreFusion:"H → He (CNO cycle)", shellFusion:"None"},
+            {start:0.82, end:0.955, name:"Red Supergiant", color:"#ff2200", size:14.0,
+             coreFusion:"Fe accumulating", shellFusion:"H, He, C, Ne, O, Si", isSupergiant:true},
+            {start:0.955, end:1.0, name:"Neutron Star", color:"#c0e8ff", size:0.025,
+             coreFusion:"None", shellFusion:"None"}
+        ]
+    },
+    "O": {
+        mass:"40 M☉", massVal:40.0, lifespan:3, lifespanStr:"~3 Million Yrs",
+        color:"#7a9cff", endEvent:"Type Ib/Ic Supernova", outcome:"Black Hole", corpse:"~8 M☉",
+        defaultSlowdown:65, deathType:"bh",
+        stages:[
+            {start:0, end:0.78, name:"Main Sequence", color:"#7a9cff", size:7.0,
+             coreFusion:"H → He (CNO cycle)", shellFusion:"None"},
+            {start:0.78, end:0.955, name:"Blue/Red Hypergiant", color:"#ff1100", size:22.0,
+             coreFusion:"Fe collapse imminent", shellFusion:"H, He, C, Ne, O, Si (rapid)", isSupergiant:true},
+            {start:0.955, end:1.0, name:"Black Hole", color:"#000000", size:0.2,
+             coreFusion:"Singularity", shellFusion:"None"}
+        ]
+    }
+};
+
+const snElements = [
+    "Sulfur (S) — Explosive O burning",
+    "Argon (Ar) — Explosive O burning",
+    "Calcium (Ca) — Explosive O/Si burning",
+    "Titanium (Ti-44) — Alpha-rich freezeout",
+    "Chromium (Cr) — Explosive Si burning",
+    "Manganese (Mn) — Explosive Si burning",
+    "Cobalt (Co-56) — Radioactive decay",
+    "Nickel (Ni-56) — Primary shockwave product",
+    "Zinc (Zn) — Neutrino wind",
+    "Gallium (Ga) — Neutrino wind",
+    "Germanium (Ge) — Weak R-process",
+    "Strontium (Sr) — R-process",
+    "Yttrium (Y) — R-process",
+    "Zirconium (Zr) — R-process",
+    "Silver (Ag) — R-process",
+    "Iodine (I) — R-process",
+    "Barium (Ba) — R-process",
+    "Gold (Au) — R-process",
+    "Platinum (Pt) — R-process",
+    "Lead (Pb) — R-process endpoint",
+    "Thorium (Th) — R-process actinide",
+    "Uranium (U) — Extreme R-process"
+];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let currentClass = "G";
+let progress = 0;
+let isPlaying = false;
+let baseRadius = 14;
+let accAngle = 0;
+let frozenAtEnd = false;
+let lastCoreFusion = "—";
+let lastShellFusion = "—";
+
+const bgStars = [];
+for (let i = 0; i < 150; i++) {
+    bgStars.push({ x: Math.random(), y: Math.random(), b: Math.random()*0.35+0.05, s: Math.random()<0.08?1.5:0.8 });
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOM
+// ═══════════════════════════════════════════════════════════
+const selClass = document.getElementById('star-selector');
+const slider = document.getElementById('timeline');
+const btnPlay = document.getElementById('btn-play');
+const btnReset = document.getElementById('btn-reset');
+const slowSl = document.getElementById('slowdown');
+const slowVal = document.getElementById('slowdown-val');
+const boxN = document.getElementById('box-nucleo');
+const boxC = document.getElementById('box-core');
+const boxS = document.getElementById('box-shell');
+const nucC = document.getElementById('nucleo-content');
+const coreC = document.getElementById('core-content');
+const shellC = document.getElementById('shell-content');
+
+// ═══════════════════════════════════════════════════════════
+// UI FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function initUI() {
+    const d = starData[currentClass];
+    document.getElementById('val-mass').innerText = d.mass;
+    document.getElementById('val-lifespan').innerText = d.lifespanStr;
+    document.getElementById('val-event').innerText = d.endEvent;
+    document.getElementById('val-outcome').innerText = d.outcome;
+    document.getElementById('val-corpse').innerText = d.corpse;
+    nucC.innerHTML = snElements.map(e => `<div>• ${e}</div>`).join('');
+    slowSl.value = d.defaultSlowdown;
+    slowVal.textContent = d.defaultSlowdown + '%';
+    lastCoreFusion = "—";
+    lastShellFusion = "—";
+    frozenAtEnd = false;
+}
+
+// Reset current class to beginning, do NOT autostart
+function resetSim() {
+    progress = 0;
+    slider.value = 0;
+    accAngle = 0;
+    frozenAtEnd = false;
+    isPlaying = false;
+    btnPlay.innerText = "▶ Play";
+    boxN.style.display = 'none';
+    boxC.classList.remove('grayed');
+    boxS.classList.remove('grayed');
+    initUI();
+}
+
+// Escape: full reset to G class cold open
+function fullReset() {
+    currentClass = "G";
+    selClass.selectedIndex = 2; // G is index 2 (M=0, K=1, G=2)
+    isPlaying = false;
+    btnPlay.innerText = "▶ Play";
+    resetSim();
+}
+
+// ═══════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════
+selClass.addEventListener('change', e => {
+    currentClass = e.target.value;
+    resetSim(); // Reset to beginning, no autostart
+});
+
+slider.addEventListener('input', e => {
+    progress = e.target.value / 1000;
+    frozenAtEnd = false;
+    boxC.classList.remove('grayed');
+    boxS.classList.remove('grayed');
+});
+
+btnPlay.addEventListener('click', () => {
+    if (frozenAtEnd) {
+        // If frozen, play does nothing — must reset first
+        return;
+    }
+    isPlaying = !isPlaying;
+    btnPlay.innerText = isPlaying ? "❚❚ Pause" : "▶ Play";
+});
+
+btnReset.addEventListener('click', resetSim);
+slowSl.addEventListener('input', e => { slowVal.textContent = e.target.value + '%'; });
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); fullReset(); }
+});
+
+// ═══════════════════════════════════════════════════════════
+// STAGE HELPERS
+// ═══════════════════════════════════════════════════════════
+function getDeathStart() {
+    const d = starData[currentClass];
+    return d.stages.length >= 3 ? d.stages[d.stages.length - 2].start : d.stages[d.stages.length - 1].start;
+}
+
+function getCurrentStage() {
+    const d = starData[currentClass];
+    for (let i = d.stages.length - 1; i >= 0; i--) {
+        if (progress >= d.stages[i].start) return d.stages[i];
+    }
+    return d.stages[0];
+}
+
+function getDeathT() {
+    const ds = getDeathStart();
+    if (progress < ds) return 0;
+    return Math.min(1.0, (progress - ds) / (1.0 - ds));
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAWING: Background
+// ═══════════════════════════════════════════════════════════
+function drawBg() {
+    ctx.fillStyle = '#04060e';
+    ctx.fillRect(0, 0, W, H);
+    const t = Date.now() * 0.001;
+    for (const s of bgStars) {
+        ctx.globalAlpha = s.b + Math.sin(t + s.x * 80) * 0.025;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(s.x * W, s.y * H, s.s, s.s);
+    }
+    ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAWING: Glowing star
+// Color MUST be a hex string (e.g. "#ff8b52") — never rgb()
+// ═══════════════════════════════════════════════════════════
+function drawStar(x, y, hexColor, r, intensity) {
+    if (r <= 0.1) r = 0.1;
+    if (intensity === undefined) intensity = 1;
+    const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r * 2.5);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.12, hexColor);
+    g.addColorStop(0.5, hexColor + '30'); // hex + alpha — ONLY works with hex colors
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = intensity;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hexColor;
+    ctx.shadowColor = hexColor;
+    ctx.shadowBlur = r * 0.6 * intensity;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+}
+
+function drawShells(x, y, r, n) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1;
+    for (let i = 1; i <= n; i++) { ctx.beginPath(); ctx.arc(x, y, r*(i/n), 0, Math.PI*2); ctx.stroke(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Ring Nebula glow: yellow → orange → red → brown (inside→outside)
+// ═══════════════════════════════════════════════════════════
+function drawRingNebulaGlow(x, y, innerR, outerR, alpha) {
+    if (alpha <= 0.01 || outerR <= innerR) return;
+    const g = ctx.createRadialGradient(x, y, innerR, x, y, outerR);
+    g.addColorStop(0,    `rgba(255,240,180,${alpha * 0.15})`);
+    g.addColorStop(0.15, `rgba(255,220,100,${alpha * 0.35})`);
+    g.addColorStop(0.35, `rgba(240,160,50,${alpha * 0.40})`);
+    g.addColorStop(0.55, `rgba(200,80,30,${alpha * 0.35})`);
+    g.addColorStop(0.75, `rgba(140,45,20,${alpha * 0.22})`);
+    g.addColorStop(0.90, `rgba(80,25,10,${alpha * 0.10})`);
+    g.addColorStop(1,    'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, outerR, 0, Math.PI * 2); ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════
+// Supernova explosion (single event, no double-pump)
+// ═══════════════════════════════════════════════════════════
+function drawSupernova(t) {
+    const maxR = Math.min(W, H) * 0.42;
+    if (t < 0.15) {
+        const fa = 1 - t / 0.15;
+        ctx.globalAlpha = fa * 0.9;
+        const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR*0.5);
+        fg.addColorStop(0, '#ffffff'); fg.addColorStop(0.3, '#ffffdd');
+        fg.addColorStop(0.6, '#ffaa44'); fg.addColorStop(1, 'rgba(255,80,0,0)');
+        ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(cx, cy, maxR*0.5, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+    const ringR = t * maxR, ringW = maxR * 0.05 * Math.max(0, 1 - t);
+    ctx.globalAlpha = Math.max(0, 1 - t*1.4); ctx.strokeStyle = '#ffcc44'; ctx.lineWidth = ringW;
+    ctx.beginPath(); ctx.arc(cx, cy, ringR, 0, Math.PI*2); ctx.stroke();
+    const cols = ['#ff5500','#ff8833','#ffbb66','#ff3300']; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 20; i++) {
+        const a = (i/20)*Math.PI*2 + t*0.3, len = ringR * (0.6 + Math.sin(i*5.7)*0.35);
+        ctx.strokeStyle = cols[i%4]; ctx.globalAlpha = Math.max(0, (1-t*1.2)*0.45);
+        ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*3, cy+Math.sin(a)*3);
+        ctx.lineTo(cx+Math.cos(a)*len, cy+Math.sin(a)*len); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEATH: PLANETARY NEBULA (K, G, F, A)
+// Freeze at dt >= 0.99 so star reaches full lifespan
+// ═══════════════════════════════════════════════════════════
+function drawPN(dt, data) {
+    ensureRings();
+    const rg = data.stages[data.stages.length - 2];
+    const wd = data.stages[data.stages.length - 1];
+    const deathLen = 1.0 - rg.start;
+    const rgFrac = (wd.start - rg.start) / deathLen;
+    const maxNR = Math.min(W, H) * 0.36;
+    const wdR = wd.size * baseRadius;
+    // Transition zone runs from rgFrac to 0.99
+    const transEnd = 0.99;
+
+    if (dt < rgFrac) {
+        // Red giant shedding dark cloud rings
+        const t = dt / rgFrac;
+        const pulse = 1 + Math.sin(t * Math.PI * 10) * 0.03;
+        const shrink = 1 - t * 0.45;
+        const r = rg.size * baseRadius * pulse * shrink;
+        drawStar(cx, cy, rg.color, r);
+        const numShed = Math.floor(t * NUM_RINGS);
+        for (let i = 0; i < numShed; i++) {
+            const age = t - i / NUM_RINGS;
+            const texSz = maxNR * (0.5 + age * 1.0);
+            const sc = (texSz * 2) / 400;
+            ctx.globalAlpha = Math.min(0.6, 0.15 + age * 1.8);
+            ctx.save(); ctx.translate(cx-texSz, cy-texSz); ctx.scale(sc, sc);
+            ctx.drawImage(ringTextures[i], 0, 0); ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+
+    } else if (dt < transEnd) {
+        // Dark clouds → Ring Nebula glow (smooth transition)
+        const gt = (dt - rgFrac) / (transEnd - rgFrac); // 0→1
+        // Dark textures fading
+        const darkAlpha = Math.max(0, 1 - gt * 2.5);
+        if (darkAlpha > 0.01) {
+            const texSz = maxNR * 0.85, sc = (texSz*2)/400;
+            for (let i = 0; i < NUM_RINGS; i++) {
+                ctx.globalAlpha = darkAlpha * 0.5;
+                ctx.save(); ctx.translate(cx-texSz, cy-texSz); ctx.scale(sc, sc);
+                ctx.drawImage(ringTextures[i], 0, 0); ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+        // Ring Nebula glow intensifying
+        drawRingNebulaGlow(cx, cy, wdR * 5, maxNR, Math.min(1, gt * 1.3));
+        // Cleared center
+        const clearR = wdR * (6 + gt * 6);
+        const clG = ctx.createRadialGradient(cx, cy, 0, cx, cy, clearR);
+        clG.addColorStop(0, 'rgba(4,6,14,0.93)'); clG.addColorStop(0.55, 'rgba(4,6,14,0.4)');
+        clG.addColorStop(1, 'rgba(4,6,14,0)');
+        ctx.fillStyle = clG; ctx.beginPath(); ctx.arc(cx, cy, clearR, 0, Math.PI*2); ctx.fill();
+        drawStar(cx, cy, '#e8f4ff', wdR * 1.1, 0.5 + gt * 0.5);
+
+    } else {
+        // FROZEN
+        drawRingNebulaGlow(cx, cy, wdR * 5, maxNR, 1.0);
+        const clG = ctx.createRadialGradient(cx, cy, 0, cx, cy, wdR*12);
+        clG.addColorStop(0, 'rgba(4,6,14,0.94)'); clG.addColorStop(0.5, 'rgba(4,6,14,0.35)');
+        clG.addColorStop(1, 'rgba(4,6,14,0)');
+        ctx.fillStyle = clG; ctx.beginPath(); ctx.arc(cx, cy, wdR*12, 0, Math.PI*2); ctx.fill();
+        drawStar(cx, cy, '#e8f4ff', wdR * 1.1);
+        frozenAtEnd = true;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEATH: NEUTRON STAR (B class)
+// Brighter neutron star glow
+// ═══════════════════════════════════════════════════════════
+function drawNS(dt) {
+    const d = starData[currentClass];
+    const sg = d.stages[d.stages.length - 2];
+    const ns = d.stages[d.stages.length - 1];
+    const dLen = 1 - sg.start;
+    const sgFrac = (ns.start - sg.start) / dLen;
+
+    if (dt < sgFrac) {
+        const t = dt / sgFrac, shrink = 1 - t * 0.25;
+        const r = sg.size * baseRadius * shrink;
+        drawStar(cx, cy, sg.color, r + Math.sin(t*Math.PI*14)*r*0.015);
+        drawShells(cx, cy, r, 6);
+    } else if (dt < sgFrac + 0.12) {
+        drawSupernova((dt - sgFrac) / 0.12);
+        boxN.style.display = 'block';
+    } else if (dt < 0.99) {
+        const et = (dt - sgFrac - 0.12) / (0.99 - sgFrac - 0.12);
+        drawNSSteady(et);
+    } else {
+        drawNSSteady(1);
+        frozenAtEnd = true;
+    }
+}
+
+function drawNSSteady(t) {
+    const ns = starData[currentClass].stages[starData[currentClass].stages.length - 1];
+    const gasR = Math.min(W, H) * 0.20;
+    const ga = Math.min(1, t);
+
+    // Supernova remnant gas cloud
+    const gg = ctx.createRadialGradient(cx, cy, 6, cx, cy, gasR);
+    gg.addColorStop(0, `rgba(200,100,60,${ga * 0.10})`);
+    gg.addColorStop(0.25, `rgba(170,70,40,${ga * 0.20})`);
+    gg.addColorStop(0.50, `rgba(120,45,25,${ga * 0.16})`);
+    gg.addColorStop(0.75, `rgba(80,25,15,${ga * 0.08})`);
+    gg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cx, cy, gasR, 0, Math.PI*2); ctx.fill();
+
+    // Wisps (brighter)
+    ctx.globalAlpha = 0.10 * ga;
+    for (let i = 0; i < 6; i++) {
+        const a = (i/6)*Math.PI*2 + 0.3, wr = gasR*(0.45+Math.sin(i*3.1)*0.25);
+        ctx.strokeStyle = '#cc6644'; ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a)*wr*0.2, cy + Math.sin(a)*wr*0.2, wr*0.4, a-0.5, a+0.5);
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Neutron star: BRIGHT blue-white orb with intense glow
+    const nsR = ns.size * baseRadius * (0.5 + Math.min(1, t) * 0.5);
+    const hR = nsR * 35; // much larger halo
+
+    // Outer halo (very wide, bright)
+    const h2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, hR);
+    h2.addColorStop(0, `rgba(240,250,255,${0.5 + ga * 0.5})`);
+    h2.addColorStop(0.02, `rgba(210,235,255,${0.35 + ga * 0.45})`);
+    h2.addColorStop(0.06, `rgba(160,210,255,${ga * 0.30})`);
+    h2.addColorStop(0.15, `rgba(100,160,240,${ga * 0.15})`);
+    h2.addColorStop(0.35, `rgba(60,100,200,${ga * 0.05})`);
+    h2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = h2; ctx.beginPath(); ctx.arc(cx, cy, hR, 0, Math.PI*2); ctx.fill();
+
+    // Core — bright white
+    ctx.fillStyle = '#eef4ff';
+    ctx.shadowColor = '#aaccff';
+    ctx.shadowBlur = 40 * ga;
+    ctx.beginPath(); ctx.arc(cx, cy, nsR, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Inner white-hot glow ring
+    ctx.globalAlpha = 0.4 * ga;
+    ctx.strokeStyle = '#ddeeff';
+    ctx.lineWidth = nsR * 0.5;
+    ctx.beginPath(); ctx.arc(cx, cy, nsR * 1.8, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEATH: BLACK HOLE (O class)
+// ═══════════════════════════════════════════════════════════
+function drawBH(dt) {
+    const d = starData[currentClass];
+    const sg = d.stages[d.stages.length - 2];
+    const bh = d.stages[d.stages.length - 1];
+    const dLen = 1 - sg.start;
+    const sgFrac = (bh.start - sg.start) / dLen;
+
+    if (dt < sgFrac) {
+        const t = dt / sgFrac, r = sg.size * baseRadius * (1 - t * 0.15);
+        drawStar(cx, cy, sg.color, r); drawShells(cx, cy, r, 6);
+    } else if (dt < sgFrac + 0.10) {
+        drawSupernova((dt - sgFrac) / 0.10); boxN.style.display = 'block';
+    } else if (dt < 0.99) {
+        const ft = (dt - sgFrac - 0.10) / (0.99 - sgFrac - 0.10);
+        drawBHSteady(ft);
+    } else {
+        drawBHSteady(1);
+        frozenAtEnd = true;
+    }
+}
+
+function drawBHSteady(t) {
+    accAngle += 0.005;
+    const r = starData[currentClass].stages[starData[currentClass].stages.length-1].size * baseRadius;
+    const dR = r*7, tilt = 0.35, al = Math.min(1, t);
+    const hg = ctx.createRadialGradient(cx,cy,dR*0.3,cx,cy,dR*2);
+    hg.addColorStop(0,`rgba(255,160,40,${al*0.22})`); hg.addColorStop(0.3,`rgba(200,80,10,${al*0.10})`);
+    hg.addColorStop(0.6,`rgba(120,30,5,${al*0.04})`); hg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(cx,cy,dR*2,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.translate(cx,cy);
+    for(let l=4;l>=0;l--){ctx.globalAlpha=al*(0.12+l*0.04);ctx.strokeStyle=l<2?'#ffcc55':'#ff8820';ctx.lineWidth=6-l;ctx.beginPath();ctx.ellipse(0,0,dR+l*3,dR*tilt+l,0,Math.PI,Math.PI*2);ctx.stroke();}
+    for(let i=0;i<14;i++){const a=accAngle+(i/14)*Math.PI*2,px=Math.cos(a)*dR,py=Math.sin(a)*dR*tilt;if(py>0)continue;const dp=0.3+Math.max(0,-Math.cos(a))*0.5;ctx.globalAlpha=dp*al;ctx.fillStyle='#ffdd66';ctx.beginPath();ctx.arc(px,py,2+dp*2,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;ctx.restore();
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(cx,cy,r*1.3,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=`rgba(255,200,100,${al*0.3})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,r*1.8,0,Math.PI*2);ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);
+    for(let l=4;l>=0;l--){ctx.globalAlpha=al*(0.17+l*0.05);ctx.strokeStyle=l<2?'#ffdd66':'#ff9930';ctx.lineWidth=7-l;ctx.beginPath();ctx.ellipse(0,0,dR+l*3,dR*tilt+l,0,0,Math.PI);ctx.stroke();}
+    for(let i=0;i<14;i++){const a=accAngle+(i/14)*Math.PI*2,px=Math.cos(a)*dR,py=Math.sin(a)*dR*tilt;if(py<=0)continue;const dp=0.4+Math.max(0,-Math.cos(a))*0.5;ctx.globalAlpha=dp*al;ctx.fillStyle='#ffee88';ctx.beginPath();ctx.arc(px,py,2+dp*2,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEATH: M-CLASS — Red Dwarf → Blue Dwarf → White Dwarf
+//
+// ALL colors computed as HEX via rgbHex() to avoid the
+// color+'30' crash in drawStar gradients.
+//
+// Phases (dt 0→1):
+//   0.00–0.40: Red→Blue color transition
+//   0.40–0.60: Blue dwarf + blue-white PN forming
+//   0.60–0.85: Blue→White dwarf, PN transitions to Ring Nebula
+//   0.85–0.99: frozen approach
+//   ≥0.99: frozen
+// ═══════════════════════════════════════════════════════════
+function drawMClass(dt) {
+    const stages = starData[currentClass].stages;
+    const maxNR = Math.min(W, H) * 0.28;
+    const rSz = stages[0].size * baseRadius; // 4.9
+    const bSz = stages[1].size * baseRadius; // 3.92
+    const wSz = stages[2].size * baseRadius; // 0.84
+
+    if (dt < 0.40) {
+        // ── Red Dwarf → Blue Dwarf color shift ──
+        const t = dt / 0.40;
+        const r = rSz + (bSz - rSz) * t;
+        const col = lerpColor('#ff8b52', '#8cb8ff', t);
+        drawStar(cx, cy, col, r);
+
+    } else if (dt < 0.60) {
+        // ── Blue Dwarf with blue-white PN forming ──
+        const t = (dt - 0.40) / 0.20;
+        drawStar(cx, cy, '#8cb8ff', bSz);
+        // Blue-white PN glow
+        const pnAlpha = t * 0.5;
+        const pnG = ctx.createRadialGradient(cx, cy, bSz*3, cx, cy, maxNR);
+        pnG.addColorStop(0, `rgba(180,220,255,${pnAlpha * 0.1})`);
+        pnG.addColorStop(0.3, `rgba(140,200,240,${pnAlpha * 0.22})`);
+        pnG.addColorStop(0.6, `rgba(100,170,220,${pnAlpha * 0.18})`);
+        pnG.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = pnG; ctx.beginPath(); ctx.arc(cx, cy, maxNR, 0, Math.PI*2); ctx.fill();
+
+    } else if (dt < 0.85) {
+        // ── Blue→White Dwarf, PN blue→Ring Nebula colors ──
+        const t = (dt - 0.60) / 0.25;
+        const r = bSz + (wSz - bSz) * t;
+        const col = lerpColor('#8cb8ff', '#ffffff', t);
+        drawStar(cx, cy, col, r);
+        // Blue PN fading
+        const blueAlpha = Math.max(0, 1 - t * 2.5);
+        if (blueAlpha > 0.01) {
+            const bG = ctx.createRadialGradient(cx, cy, r*3, cx, cy, maxNR);
+            bG.addColorStop(0, `rgba(180,220,255,${blueAlpha * 0.05})`);
+            bG.addColorStop(0.4, `rgba(140,200,240,${blueAlpha * 0.12})`);
+            bG.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = bG; ctx.beginPath(); ctx.arc(cx, cy, maxNR, 0, Math.PI*2); ctx.fill();
+        }
+        // Ring Nebula glow fading in
+        drawRingNebulaGlow(cx, cy, Math.max(r*4, wSz*4), maxNR, Math.min(1, t * 1.4));
+
+    } else {
+        // ── FROZEN: White Dwarf + Ring Nebula ──
+        drawRingNebulaGlow(cx, cy, wSz * 4, maxNR, 1.0);
+        const clG = ctx.createRadialGradient(cx, cy, 0, cx, cy, wSz * 8);
+        clG.addColorStop(0, 'rgba(4,6,14,0.92)'); clG.addColorStop(0.5, 'rgba(4,6,14,0.3)');
+        clG.addColorStop(1, 'rgba(4,6,14,0)');
+        ctx.fillStyle = clG; ctx.beginPath(); ctx.arc(cx, cy, wSz*8, 0, Math.PI*2); ctx.fill();
+        drawStar(cx, cy, '#ffffff', wSz);
+        if (dt >= 0.99) frozenAtEnd = true;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════
+function update() {
+    const data = starData[currentClass];
+    const slow = parseInt(slowSl.value) / 100;
+
+    if (isPlaying && progress < 1.0 && !frozenAtEnd) {
+        const ds = getDeathStart();
+        let speed = 0.0012;
+        if (progress >= ds) speed *= (1 - slow);
+        progress += speed;
+        if (progress > 1) progress = 1;
+        slider.value = progress * 1000;
+    }
+
+    const stage = getCurrentStage();
+    const dt = getDeathT();
+    const ds = getDeathStart();
+    const inDeath = progress >= ds;
+
+    // Age display
+    const ageM = progress * data.lifespan;
+    let ageStr;
+    if (data.lifespan >= 100000) {
+        // Very long-lived stars: show in Byr
+        ageStr = (ageM / 1000).toFixed(2) + " Byr";
+    } else if (ageM > 1000) {
+        ageStr = (ageM / 1000).toFixed(2) + " Byr";
+    } else {
+        ageStr = ageM.toFixed(1) + " Myr";
+    }
+    document.getElementById('val-age').innerText = ageStr;
+    document.getElementById('val-phase').innerText = stage.name;
+
+    // Fusion info boxes
+    const finalStage = data.stages[data.stages.length - 1];
+    if (inDeath && stage === finalStage) {
+        boxC.classList.add('grayed'); boxS.classList.add('grayed');
+        coreC.textContent = lastCoreFusion; shellC.textContent = lastShellFusion;
+        if (data.deathType === 'ns' || data.deathType === 'bh') boxN.style.display = 'block';
+    } else {
+        boxC.classList.remove('grayed'); boxS.classList.remove('grayed');
+        coreC.textContent = stage.coreFusion || "—"; shellC.textContent = stage.shellFusion || "—";
+        lastCoreFusion = stage.coreFusion || "—"; lastShellFusion = stage.shellFusion || "—";
+    }
+
+    // Draw
+    drawBg();
+    if (inDeath) {
+        switch (data.deathType) {
+            case 'pn':      drawPN(dt, data); break;
+            case 'ns':      drawNS(dt); break;
+            case 'bh':      drawBH(dt); break;
+            case 'm_class': drawMClass(dt); break;
+        }
+    } else {
+        let r = stage.size * baseRadius;
+        if (stage.name.includes('Giant') || stage.name.includes('Supergiant') || stage.name.includes('Hypergiant'))
+            r += Math.sin(Date.now() / 200) * r * 0.012;
+        drawStar(cx, cy, stage.color, r);
+        if (stage.isSupergiant) drawShells(cx, cy, r, 5);
+    }
+
+    requestAnimationFrame(update);
+}
+
+initUI();
+update();
+</script>
+</body>
+</html>

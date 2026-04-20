@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Lifecycle – Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%);
+            color: #e0e0e0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        /* Starfield */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 40%, rgba(200,220,255,0.6) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 45% 10%, rgba(255,240,200,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 65% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 25%, rgba(200,200,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 15% 80%, rgba(255,220,150,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 85%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 35% 65%, rgba(180,200,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 72% 90%, rgba(255,255,255,0.4) 0%, transparent 100%);
+        }
+
+        .login-box {
+            position: relative; z-index: 1;
+            background: rgba(12, 12, 30, 0.95);
+            padding: 50px 40px; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(77,166,255,0.08);
+            border: 1px solid rgba(77, 166, 255, 0.25);
+            text-align: center; max-width: 500px; width: 100%;
+        }
+        .star-icon { font-size: 3em; margin-bottom: 10px; display: block; }
+        .login-box h2 {
+            color: #4da6ff; font-size: 1.9em; margin-bottom: 6px;
+            text-shadow: 0 0 20px rgba(77,166,255,0.5);
+            display: flex; align-items: center; justify-content: center; gap: 14px;
+        }
+        /* Animated colored stars flanking the title */
+        .title-star {
+            display: inline-block; width: 1em; height: 1em;
+            transform-origin: center;
+            filter: drop-shadow(0 0 8px rgba(255,200,90,0.85))
+                    drop-shadow(0 0 16px rgba(255,140,40,0.5));
+            animation: starSpin 9s linear infinite, starPulse 2.6s ease-in-out infinite;
+        }
+        .title-star.right { animation-direction: reverse, normal; animation-delay: 0s, 1.3s; }
+        @keyframes starSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        @keyframes starPulse {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(255,200,90,0.7))
+                               drop-shadow(0 0 14px rgba(255,140,40,0.45)); }
+            50%      { filter: drop-shadow(0 0 14px rgba(255,230,140,1))
+                               drop-shadow(0 0 26px rgba(255,160,60,0.85))
+                               drop-shadow(0 0 36px rgba(120,180,255,0.55)); }
+        }
+        .login-box .subtitle {
+            color: #8a9abf; margin-bottom: 35px; font-size: 1.0em; font-style: italic;
+        }
+        .login-box input {
+            width: 100%; padding: 15px 18px; margin-bottom: 16px;
+            background: rgba(6, 6, 18, 0.8);
+            border: 2px solid rgba(77, 166, 255, 0.25);
+            border-radius: 10px; color: #e0e0e0; font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .login-box input:focus {
+            outline: none; border-color: #4da6ff;
+            box-shadow: 0 0 15px rgba(77, 166, 255, 0.25);
+        }
+        .login-box input::placeholder { color: #556080; }
+        .login-box button {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, #4da6ff 0%, #2a6dd9 100%);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1.1em; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(77,166,255,0.35);
+            transition: all 0.3s ease; letter-spacing: 0.03em;
+        }
+        .login-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(77,166,255,0.55);
+        }
+        #loginError {
+            color: #ff7070; margin-top: 16px; margin-bottom: 10px;
+            display: none; padding: 12px 16px;
+            background: rgba(255, 80, 80, 0.1);
+            border: 1px solid rgba(255,80,80,0.3);
+            border-radius: 8px; text-align: left; font-size: 0.95em;
+        }
+        .module-tag {
+            display: inline-block; margin-bottom: 18px;
+            padding: 4px 14px;
+            background: rgba(77,166,255,0.1);
+            border: 1px solid rgba(77,166,255,0.3);
+            border-radius: 20px; color: #4dffb8; font-size: 0.85em;
+            letter-spacing: 0.06em; text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        
+        <h2>
+            <svg class="title-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                    <radialGradient id="starGradL" cx="50%" cy="50%" r="55%">
+                        <stop offset="0%"   stop-color="#fff8d8"/>
+                        <stop offset="35%"  stop-color="#ffd76a"/>
+                        <stop offset="75%"  stop-color="#ff9b3d"/>
+                        <stop offset="100%" stop-color="#c14a1f"/>
+                    </radialGradient>
+                </defs>
+                <polygon points="50,4 61,38 96,38 67,59 78,94 50,73 22,94 33,59 4,38 39,38"
+                         fill="url(#starGradL)" stroke="#ffe7a0" stroke-width="1.5"/>
+            </svg>
+            Star Lifecycle
+            <svg class="title-star right" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                    <radialGradient id="starGradR" cx="50%" cy="50%" r="55%">
+                        <stop offset="0%"   stop-color="#e8f0ff"/>
+                        <stop offset="35%"  stop-color="#9ec6ff"/>
+                        <stop offset="75%"  stop-color="#4da6ff"/>
+                        <stop offset="100%" stop-color="#1d4f8f"/>
+                    </radialGradient>
+                </defs>
+                <polygon points="50,4 61,38 96,38 67,59 78,94 50,73 22,94 33,59 4,38 39,38"
+                         fill="url(#starGradR)" stroke="#cfe3ff" stroke-width="1.5"/>
+            </svg>
+        </h2>
+		
+        <p class="subtitle">Stars, In Their Multitudes</p>
+
+        <input type="text" id="studentName" placeholder="Student Name" autocomplete="off">
+        <input type="text" id="studentID" placeholder="Student ID" autocomplete="off">
+        <input type="password" id="studentPassword" placeholder="Quiz Password">
+        <div id="loginError"></div>
+        <button onclick="startQuiz()">Begin Exercise →</button>
+    </div>
+
+    <script src="star-shared.js"></script>
+    <script>
+        async function startQuiz() {
+            const name       = document.getElementById('studentName').value.trim();
+            const studentID  = document.getElementById('studentID').value.trim();
+            const password   = document.getElementById('studentPassword').value.trim();
+            const errorDiv   = document.getElementById('loginError');
+
+            errorDiv.style.display = 'none';
+
+            if (!name || !studentID || !password) {
+                errorDiv.textContent = 'Please fill in all fields.';
+                errorDiv.style.display = 'block'; return;
+            }
+
+            try {
+                if (db) {
+                    const dbSnapshot = await db.collection('databases')
+                        .where('password', '==', password)
+                        .where('active', '==', true)
+                        .limit(1).get();
+
+                    if (dbSnapshot.empty) {
+                        errorDiv.textContent = 'Invalid or inactive quiz password.';
+                        errorDiv.style.display = 'block'; return;
+                    }
+
+                    const activeDb = dbSnapshot.docs[0].data();
+                    quizConfig.className  = activeDb.className;
+                    quizConfig.quizName   = activeDb.quizName;
+                    quizConfig.databaseId = dbSnapshot.docs[0].id;
+
+                    const settingsDoc = await db.collection('quizSettings')
+                        .doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+                    if (settingsDoc.exists) {
+                        const s = settingsDoc.data();
+                        if (s.loginDescriptors) quizConfig.loginDescriptors = s.loginDescriptors;
+                        if (s.restrictions)     quizConfig.restrictions     = s.restrictions;
+                        if (s.idValidation)     quizConfig.idValidation     = s.idValidation;
+                    }
+
+                    // ID format validation
+                    if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                        const vt = quizConfig.idValidation.type;
+                        const vv = quizConfig.idValidation.value;
+                        if (vt === 'digits') {
+                            const re = new RegExp(`^\\d{${parseInt(vv,10)}}$`);
+                            if (!re.test(studentID)) {
+                                errorDiv.textContent = `Invalid ID: must be exactly ${vv} digits.`;
+                                errorDiv.style.display = 'block'; return;
+                            }
+                        } else if (vt === 'startsWith') {
+                            if (!studentID.startsWith(vv)) {
+                                errorDiv.textContent = `Invalid ID: must start with "${vv}".`;
+                                errorDiv.style.display = 'block'; return;
+                            }
+                        }
+                    }
+
+                    // Date/time restrictions
+                    const now = new Date();
+                    if (quizConfig.restrictions.startDateTime) {
+                        const st = new Date(quizConfig.restrictions.startDateTime);
+                        if (now < st) {
+                            errorDiv.textContent = `Quiz not yet open. Opens ${st.toLocaleDateString()} at ${st.toLocaleTimeString()}.`;
+                            errorDiv.style.display = 'block'; return;
+                        }
+                    }
+                    if (quizConfig.restrictions.stopDateTime) {
+                        const sp = new Date(quizConfig.restrictions.stopDateTime);
+                        if (now > sp) {
+                            errorDiv.textContent = `Quiz has closed. Deadline was ${sp.toLocaleDateString()} at ${sp.toLocaleTimeString()}.`;
+                            errorDiv.style.display = 'block'; return;
+                        }
+                    }
+
+                    // Attempt limits
+                    if (quizConfig.restrictions.attemptsAllowed > 0) {
+                        const snap = await db.collection('students')
+                            .where('studentID', '==', studentID)
+                            .where('databaseId', '==', quizConfig.databaseId).get();
+                        if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
+                            errorDiv.textContent = `Access denied: all ${quizConfig.restrictions.attemptsAllowed} attempts used.`;
+                            errorDiv.style.display = 'block'; return;
+                        }
+                        sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
+                        sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+                    } else {
+                        sessionStorage.setItem('attemptNumber', '1');
+                        sessionStorage.setItem('maxAttempts', '0');
+                    }
+                } else {
+                    // Standalone mode – just check password locally
+                    if (password !== QUIZ_PASSWORD) {
+                        errorDiv.textContent = 'Invalid quiz password.';
+                        errorDiv.style.display = 'block'; return;
+                    }
+                    sessionStorage.setItem('attemptNumber', '1');
+                    sessionStorage.setItem('maxAttempts', '0');
+                }
+
+                const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('studentName', name);
+                sessionStorage.setItem('studentID',   studentID);
+                sessionStorage.setItem('sessionId',   sessionId);
+                sessionStorage.setItem('quizConfig',  JSON.stringify(quizConfig));
+                sessionStorage.setItem('answers',     '{}');
+                sessionStorage.setItem('score',       '0');
+
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    const nowMs = Date.now();
+                    sessionStorage.setItem('quizStartTime', nowMs.toString());
+                    sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
+                }
+
+                if (db) {
+                    await db.collection('students').doc(sessionId).set({
+                        name, studentID,
+                        className: quizConfig.className || 'star-lifecycle',
+                        quizName:  quizConfig.quizName  || 'star-lifecycle',
+                        quizPassword: password,
+                        databaseId: quizConfig.databaseId || 'standalone',
+                        startTime:  firebase.firestore.Timestamp.now(),
+                        answers: {}, score: 0, completed: false
+                    });
+                }
+
+                window.location.href = 'intro.html';
+
+            } catch (e) {
+                errorDiv.textContent = 'Database connection error. Please notify your instructor.';
+                console.error(e);
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

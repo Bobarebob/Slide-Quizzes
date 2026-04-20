@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Lifecycle – Conclusion</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(12,12,28,0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); border: 1px solid rgba(77,166,255,0.2); overflow: hidden; min-height: 100vh; }
+        .student-info { background: rgba(8,8,20,0.95); padding: 15px 40px; border-bottom: 2px solid rgba(77,166,255,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name  { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer   { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 20px rgba(77,166,255,0.4);
+            display: flex; align-items: center; justify-content: center; gap: 14px;
+        }
+        .title-star {
+            display: inline-block; width: 1em; height: 1em;
+            transform-origin: center;
+            filter: drop-shadow(0 0 8px rgba(255,200,90,0.85)) drop-shadow(0 0 16px rgba(255,140,40,0.5));
+            animation: starSpin 9s linear infinite, starPulse 2.6s ease-in-out infinite;
+        }
+        .title-star.right { animation-direction: reverse, normal; animation-delay: 0s, 1.3s; }
+        @keyframes starSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes starPulse {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(255,200,90,0.7)) drop-shadow(0 0 14px rgba(255,140,40,0.45)); }
+            50%      { filter: drop-shadow(0 0 14px rgba(255,230,140,1)) drop-shadow(0 0 26px rgba(255,160,60,0.85)) drop-shadow(0 0 36px rgba(120,180,255,0.55)); }
+        }
+        .page-subtitle { font-size: 1.4em; color: #b0b0b0; font-style: italic; }
+        .outro-content { padding: 0 40px 40px; max-width: 960px; margin: 0 auto; }
+
+        /* Video frame — snug fit to actual 1106 × 814 video (aspect 553/407) */
+        .video-container {
+            width: 100%; max-width: 760px; margin: 0 auto 40px;
+            background: #000; border: 2px solid rgba(77,166,255,0.4);
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            aspect-ratio: 553 / 407; position: relative;
+        }
+        video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+        .video-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,6,20,0.9); color: #557799; border-radius: 10px; }
+        .video-placeholder .vp-icon { font-size: 3.5em; opacity: 0.5; }
+        .video-placeholder p { font-size: 1.0em; font-style: italic; }
+        .video-placeholder .vp-note { font-size: 0.85em; color: #445566; }
+
+        /* Score display */
+        .score-display { background: linear-gradient(135deg, rgba(77,166,255,0.1) 0%, rgba(40,100,180,0.1) 100%); border: 2px solid rgba(77,166,255,0.4); border-radius: 16px; padding: 30px; margin: 30px 0; text-align: center; }
+        .score-display h2 { color: #4da6ff; font-size: 1.8em; margin-bottom: 16px; }
+        .score-value { font-size: 3.2em; color: #4dffb8; font-weight: bold; }
+        .score-label  { color: #888; font-size: 1.0em; margin-top: 6px; }
+        .score-grade-bar { height: 12px; background: rgba(255,255,255,0.08); border-radius: 6px; margin: 20px auto; max-width: 360px; overflow: hidden; }
+        .score-grade-fill { height: 100%; background: linear-gradient(90deg, #4da6ff 0%, #4dffb8 100%); border-radius: 6px; transition: width 1.2s ease; }
+
+        /* Submit button */
+        .submit-btn-wrap { text-align: center; margin: 28px 0 10px; }
+        .submit-quiz-btn { padding: 16px 55px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: #fff; border: none; border-radius: 30px; cursor: pointer; font-size: 1.25em; font-weight: 700; letter-spacing: 0.03em; transition: all 0.3s ease; box-shadow: 0 4px 18px rgba(76,175,80,0.35); }
+        .submit-quiz-btn:hover:not(:disabled) { background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.5); }
+        .submit-quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        #submitConfirmMsg { color: #4dffb8; font-size: 1.1em; font-weight: bold; margin-top: 14px; display: none; text-align: center; }
+
+        /* Learning outcomes */
+        .outcomes-box { background: linear-gradient(135deg, rgba(76,175,80,0.07) 0%, rgba(46,125,50,0.07) 100%); border-left: 4px solid #4caf50; padding: 24px 28px; margin: 28px 0; border-radius: 8px; }
+        .outcomes-title { font-size: 1.2em; color: #4caf50; font-weight: bold; margin-bottom: 16px; }
+        .outcomes-box ul { list-style: none; font-size: 1.05em; }
+        .outcomes-box li { padding-left: 28px; position: relative; margin-top: 11px; color: #ccc; }
+        .outcomes-box li::before { content: "✓"; position: absolute; left: 0; color: #4caf50; font-weight: bold; }
+
+        /* Nav */
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(8,8,20,0.9); border-top: 2px solid rgba(77,166,255,0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .nav-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(8,8,20,0.6); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77,166,255,0.3); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77,166,255,0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77,166,255,0.8); }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .outro-content { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display:none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display:none;">
+                <span id="timeWarningMessage" style="display:none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <svg class="title-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <defs><radialGradient id="sgL" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#fff8d8"/><stop offset="35%" stop-color="#ffd76a"/><stop offset="75%" stop-color="#ff9b3d"/><stop offset="100%" stop-color="#c14a1f"/></radialGradient></defs>
+                        <polygon points="50,4 61,38 96,38 67,59 78,94 50,73 22,94 33,59 4,38 39,38" fill="url(#sgL)" stroke="#ffe7a0" stroke-width="1.5"/>
+                    </svg>
+                    Congratulations!
+                    <svg class="title-star right" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <defs><radialGradient id="sgR" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#e8f0ff"/><stop offset="35%" stop-color="#9ec6ff"/><stop offset="75%" stop-color="#4da6ff"/><stop offset="100%" stop-color="#1d4f8f"/></radialGradient></defs>
+                        <polygon points="50,4 61,38 96,38 67,59 78,94 50,73 22,94 33,59 4,38 39,38" fill="url(#sgR)" stroke="#cfe3ff" stroke-width="1.5"/>
+                    </svg>
+                </h1>
+                <p class="page-subtitle">You've Completed the Star Lifecycles Exercise</p>
+            </div>
+
+            <div class="outro-content">
+
+                <!-- Outro video (1106 × 814) -->
+                <div class="video-container">
+                    <video controls preload="metadata" playsinline>
+                        <source src="videos/star_outro.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <!-- Score display -->
+                <div class="score-display">
+                    <h2>🏆 Your Final Score</h2>
+                    <div class="score-value" id="finalScore">— / 8</div>
+                    <div class="score-label" id="scoreLabel">questions answered correctly</div>
+                    <div class="score-grade-bar">
+                        <div class="score-grade-fill" id="scoreFill" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Submit button -->
+                <div class="submit-btn-wrap">
+                    <button class="submit-quiz-btn" id="submitBtn" onclick="submitQuiz()">
+                        ✓ Submit Quiz
+                    </button>
+                    <p id="submitConfirmMsg"></p>
+                </div>
+
+                <!-- Learning Outcomes – content to be supplied by instructor -->
+                <div class="outcomes-box">
+                    <div class="outcomes-title">📌 What You Learned in This Module</div>
+                    <ul>
+                        <li><em>We learned how stars form</em></li>
+						<li><em>We learned about classes of stars</em></li>
+                        <li><em>We learned about lifetimes of stars</em></li>
+                        <li><em>We learned about the death of small and medium sized stars</em></li>
+                        <li><em>We learned about the death of large stars</em></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='slide4.html'">← Previous</button>
+            <div class="page-counter">7 / 7</div>
+            <button class="nav-button" disabled>Finished</button>
+        </div>
+
+        <div class="timeline-indicator">
+            <div class="timeline-dot"        onclick="window.location.href='intro.html'"  title="Introduction"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide1.html'" title="Slide 1: Nucleosynthesis"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide2.html'" title="Slide 2: Counting Stars"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide3.html'" title="Slide 3: How Stars Die"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide4.html'" title="Slide 4: Red Dwarfs & Remnants"></div>
+            <div class="timeline-dot active" onclick="window.location.href='outro.html'"  title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="star-shared.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rawScore  = parseFloat(sessionStorage.getItem('score') || '0');
+            const storedCfg = JSON.parse(sessionStorage.getItem('quizConfig') || '{}');
+            const ptsPerQ   = parseFloat((storedCfg.restrictions && storedCfg.restrictions.pointsPerQuestion) || 1.0);
+            const maxPts    = TOTAL_QUESTIONS * ptsPerQ;
+            const curPts    = rawScore * ptsPerQ;
+            const pctFill   = Math.round((rawScore / TOTAL_QUESTIONS) * 100);
+
+            const finalEl = document.getElementById('finalScore');
+            const labelEl = document.getElementById('scoreLabel');
+            const fillEl  = document.getElementById('scoreFill');
+
+            if (finalEl) {
+                const curStr = (curPts % 1 !== 0) ? curPts.toFixed(1) : curPts.toFixed(0);
+                const maxStr = (maxPts % 1 !== 0) ? maxPts.toFixed(1) : maxPts.toFixed(0);
+                finalEl.textContent = `${curStr} / ${maxStr}`;
+            }
+            if (labelEl) {
+                const qRight = Math.round(rawScore);
+                if (ptsPerQ !== 1.0) {
+                    labelEl.textContent = `${qRight} question${qRight !== 1 ? 's' : ''} right out of ${TOTAL_QUESTIONS} (${ptsPerQ} pt${ptsPerQ !== 1 ? 's' : ''} each)`;
+                } else {
+                    labelEl.textContent = `${qRight} question${qRight !== 1 ? 's' : ''} answered correctly out of ${TOTAL_QUESTIONS}`;
+                }
+            }
+            if (fillEl) {
+                setTimeout(() => { fillEl.style.width = pctFill + '%'; }, 400);
+            }
+            // Update banner score to match
+            const bse = document.getElementById('displayScore');
+            if (bse) {
+                const curStr = (curPts % 1 !== 0) ? curPts.toFixed(1) : curPts.toFixed(0);
+                const maxStr = (maxPts % 1 !== 0) ? maxPts.toFixed(1) : maxPts.toFixed(0);
+                bse.textContent = `${curStr} / ${maxStr}`;
+            }
+            // If quiz was auto-submitted by timer, show that state
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                const btn = document.getElementById('submitBtn');
+                const msg = document.getElementById('submitConfirmMsg');
+                if (btn) btn.disabled = true;
+                if (msg) { msg.style.display = 'block'; msg.textContent = '✓ Quiz auto-submitted (time expired).'; }
+            }
+        });
+    </script>
+</body>
+</html>

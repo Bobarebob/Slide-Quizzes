@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Lifecycle – Slide 3: How Stars Die</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(12,12,28,0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); border: 1px solid rgba(77,166,255,0.2); overflow: hidden; min-height: 100vh; }
+        .student-info { background: rgba(8,8,20,0.95); padding: 15px 40px; border-bottom: 2px solid rgba(77,166,255,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name  { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer   { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+        .page-content { padding: 40px; }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 20px rgba(77,166,255,0.4); }
+        .page-subtitle { font-size: 1.4em; color: #ffa64d; font-style: italic; }
+        .audio-instruction-panel { background: rgba(10,15,30,0.85); border: 2px solid rgba(77,166,255,0.3); border-radius: 12px; padding: 25px; margin: 0 auto 40px; max-width: 1000px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .audio-header { text-align: center; color: #4da6ff; font-size: 1.3em; font-weight: bold; margin-bottom: 20px; }
+        .audio-controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .audio-controls button { background: linear-gradient(135deg, #4da6ff 0%, #2a6dd9 100%); color: white; border: none; padding: 11px 32px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em; transition: all 0.3s ease; }
+        .audio-controls button:hover { box-shadow: 0 0 20px rgba(77,166,255,0.55); transform: translateY(-2px); }
+        .audio-script-box { background: rgba(6,10,22,0.7); border-radius: 8px; min-height: 30px; padding: 0; overflow: hidden; transition: all 0.5s ease; }
+        .audio-script-box.expanded { padding: 22px 25px; border: 1px solid rgba(77,166,255,0.1); }
+        .script-text { display: none; color: #8fa3bf; font-style: italic; text-align: center; line-height: 1.65; font-size: 1.05em; }
+        .script-text p { margin-bottom: 15px; }
+        .script-text p:last-child { margin-bottom: 0; }
+        .script-text.show { display: block; }
+        .audio-placeholder { text-align: center; color: #4a5870; font-size: 0.9em; font-style: italic; margin-top: 8px; }
+        .content-section { background: rgba(6,6,20,0.9); border-radius: 12px; padding: 30px; margin: 20px 0; border: 1px solid rgba(77,166,255,0.2); }
+        .section-heading { color: #4dffb8; font-size: 1.25em; font-weight: bold; margin-bottom: 18px; border-bottom: 1px solid rgba(77,255,184,0.2); padding-bottom: 8px; }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+        @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+        .content-text p { margin-bottom: 15px; font-size: 1.05em; line-height: 1.8; }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        .hl-blue  { color: #4da6ff; font-weight: bold; }
+        .hl-green { color: #4dffb8; font-weight: bold; }
+        .definition-box { background: linear-gradient(135deg, rgba(77,166,255,0.08) 0%, rgba(40,100,180,0.08) 100%); border-left: 4px solid #4da6ff; padding: 16px 20px; margin: 16px 0; border-radius: 8px; }
+        .definition-box .def-title { color: #4dffb8; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .definition-box .def-text  { color: #d0d0d0; font-size: 1.0em; line-height: 1.65; }
+        .divider-card { background: linear-gradient(135deg, rgba(255,166,77,0.06) 0%, rgba(255,100,50,0.06) 100%); border: 2px solid rgba(255,150,50,0.35); border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+        .divider-card h4 { color: #ff9a44; font-size: 1.15em; margin-bottom: 10px; }
+        .divider-card p  { color: #ccc; font-size: 1.0em; line-height: 1.75; }
+        .outcome-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+        @media (max-width: 900px) { .outcome-grid { grid-template-columns: 1fr; } }
+        .outcome-card { border-radius: 10px; padding: 18px; }
+        .outcome-card h4 { font-size: 1.05em; margin-bottom: 10px; }
+        .outcome-card p  { font-size: 0.95em; line-height: 1.7; color: #bbb; }
+        .oc-wd { background: rgba(200,220,255,0.06); border: 1px solid rgba(200,220,255,0.25); }
+        .oc-wd h4 { color: #c8dcff; }
+        .oc-ns { background: rgba(80,200,255,0.06); border: 1px solid rgba(80,200,255,0.25); }
+        .oc-ns h4 { color: #55ccff; }
+        .oc-bh { background: rgba(180,80,255,0.06); border: 1px solid rgba(180,80,255,0.25); }
+        .oc-bh h4 { color: #cc66ff; }
+
+        /* White-dwarf icon — proper circle, not square */
+        .wd-circle-icon {
+            display: inline-block; width: 1em; height: 1em;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e0e8ff 55%, #a8b8e8 100%);
+            box-shadow: 0 0 8px rgba(200,220,255,0.7), inset 0 0 4px rgba(255,255,255,0.6);
+            vertical-align: -0.08em; margin-right: 6px;
+        }
+
+        /* ── Figure 3 container (corpse-mass strip + stellar death) ── */
+        .figure3-wrap {
+            background: rgba(4,4,16,0.9); border-radius: 12px;
+            padding: 22px 22px 16px; border: 1px solid rgba(77,166,255,0.25);
+            margin: 18px 0;
+        }
+        .figure3-wrap .fig-title {
+            color: #4dffb8; font-size: 1.0em; font-weight: bold;
+            text-align: center; margin-bottom: 14px;
+            letter-spacing: 0.02em;
+        }
+        .figure3-wrap .panel-label {
+            color: #8899cc; font-size: 0.88em; text-align: center;
+            margin: 16px 0 8px; font-style: italic;
+        }
+
+        /* Corpse-mass strip — proportions now reflect real mass ranges (0–5 M☉ scale) */
+        .mass-scale-wrap {
+            position: relative; margin: 0 auto;
+            max-width: 640px; padding: 10px 20px 40px;
+            background: rgba(8,10,22,0.6); border-radius: 8px;
+            border: 1px solid rgba(77,166,255,0.15);
+        }
+        .mass-scale-label {
+            font-size: 0.85em; color: #8899bb; text-align: center;
+            margin-bottom: 8px; font-weight: 500;
+        }
+        .mass-scale-bar {
+            height: 34px; border-radius: 5px; display: flex;
+            overflow: hidden; border: 1px solid rgba(120,140,180,0.4);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        /* Widths: 0-1.4 = 28%, 1.4-2.2 = 16%, 2.2-5 = 56% */
+        .ms-seg1 { background: linear-gradient(90deg, #2244aa 0%, #4488cc 100%); width: 28%;
+                   display:flex; align-items:center; justify-content:center;
+                   color:#e8f0ff; font-size:0.78em; font-weight:bold; text-align:center; padding:0 4px; }
+        .ms-seg2 { background: linear-gradient(90deg, #0a7aaa 0%, #0aabd0 100%); width: 16%;
+                   display:flex; align-items:center; justify-content:center;
+                   color:#ffffff; font-size:0.72em; font-weight:bold; text-align:center; padding:0 2px;
+                   border-left: 2px solid rgba(255,255,255,0.35);
+                   border-right: 2px solid rgba(255,255,255,0.35); }
+        .ms-seg3 { background: linear-gradient(90deg, #660077 0%, #aa22bb 100%); width: 56%;
+                   display:flex; align-items:center; justify-content:center;
+                   color:#ffe8ff; font-size:0.82em; font-weight:bold; text-align:center; padding:0 4px; }
+        /* Position ticks beneath the segment boundaries: 0%, 28%, 44%, 100% of the inner bar */
+        .ms-ticks {
+            position: relative; height: 22px; margin-top: 6px;
+            border-top: 1px solid rgba(120,140,180,0.3); padding-top: 4px;
+        }
+        .ms-ticks span {
+            position: absolute; transform: translateX(-50%);
+            font-size: 0.78em; color: #8899bb; white-space: nowrap;
+        }
+        .ms-ticks span::before {
+            content: ''; position: absolute; top: -5px; left: 50%;
+            width: 1px; height: 4px; background: #8899bb;
+            transform: translateX(-50%);
+        }
+        .ms-tick-0    { left: 0%; }
+        .ms-tick-14   { left: 28%; }
+        .ms-tick-22   { left: 44%; }
+        .ms-tick-end  { left: 100%; transform: translateX(-100%) !important; }
+        .ms-tick-end::before { left: 100% !important; transform: translateX(-100%) !important; }
+
+        /* Stellar death SVG embed */
+        .stellar-death-wrap {
+            background: #fff; border-radius: 8px; padding: 8px;
+            border: 1px solid rgba(77,166,255,0.25);
+            cursor: zoom-in; position: relative;
+            transition: all 0.25s ease;
+        }
+        .stellar-death-wrap:hover { box-shadow: 0 0 24px rgba(77,166,255,0.35); border-color: #4da6ff; }
+        .stellar-death-wrap img { width: 100%; height: auto; display: block; border-radius: 4px; }
+        .stellar-death-wrap .zoom-hint {
+            position: absolute; top: 14px; right: 14px;
+            background: rgba(30,10,60,0.88); color: #c080ff;
+            border: 1px solid rgba(150,100,255,0.5);
+            border-radius: 6px; padding: 4px 10px;
+            font-size: 0.8em; font-weight: bold;
+            pointer-events: none; opacity: 0.85;
+        }
+
+        /* Stellar death popout overlay (same style as animation popout) */
+        #stellarDeathOverlay {
+            display: none; position: fixed; inset: 0; z-index: 9997;
+            background: rgba(0,0,0,0.95);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        #stellarDeathOverlay.open { display: flex; }
+        #stellarDeathOverlay img {
+            max-width: 96vw; max-height: 94vh; object-fit: contain;
+            border-radius: 8px; background: #fff;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        #stellarDeathCloseBtn {
+            position: fixed; top: 14px; left: 18px; z-index: 2147483647;
+            background: rgba(30,10,60,0.95); color: #c080ff;
+            border: 2px solid rgba(150,100,255,0.7); border-radius: 8px;
+            padding: 8px 20px; font-size: 1.05em; font-weight: bold;
+            cursor: pointer; transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+        }
+        #stellarDeathOverlay:not(.open) #stellarDeathCloseBtn { display: none; }
+        #stellarDeathCloseBtn:hover { background: rgba(80,40,160,0.98); color: #fff; box-shadow: 0 0 20px rgba(150,100,255,0.7); }
+
+        /* Animation strip (same style as slide2) */
+        .anim-strip { margin: 36px auto 0; max-width: 1000px; background: linear-gradient(135deg, rgba(20,10,50,0.9) 0%, rgba(10,8,30,0.9) 100%); border: 2px solid rgba(120,80,220,0.45); border-radius: 12px; padding: 22px 30px; display: flex; align-items: center; justify-content: space-between; gap: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 24px rgba(80,40,180,0.2); }
+        .anim-strip:hover { border-color: rgba(150,100,255,0.8); box-shadow: 0 6px 30px rgba(80,40,180,0.45); transform: translateY(-2px); }
+        .anim-strip .anim-text h3 { color: #c080ff; font-size: 1.2em; margin-bottom: 4px; }
+        .anim-strip .anim-text p  { color: #8880b0; font-size: 0.95em; }
+        .anim-strip .anim-launch-btn { background: linear-gradient(135deg, #9060dd 0%, #5030aa 100%); color: #fff; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em; white-space: nowrap; transition: all 0.3s ease; }
+        .anim-strip .anim-launch-btn:hover { box-shadow: 0 0 20px rgba(150,100,255,0.6); }
+        #animOverlay { display: none; position: fixed; inset: 0; z-index: 9999; background: #000; }
+        #animOverlay.open { display: block; }
+        #animOverlay iframe { width: 100%; height: 100%; border: none; display: block; }
+        #animCloseBtn {
+            position: fixed; top: 14px; left: 18px; z-index: 2147483647;
+            background: rgba(30,10,60,0.95); color: #c080ff;
+            border: 2px solid rgba(150,100,255,0.7); border-radius: 8px;
+            padding: 8px 20px; font-size: 1.05em; font-weight: bold;
+            cursor: pointer; transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+        }
+        #animOverlay:not(.open) #animCloseBtn { display: none; }
+        #animCloseBtn:hover { background: rgba(80,40,160,0.98); color: #fff; box-shadow: 0 0 20px rgba(150,100,255,0.7); }
+
+        /* Quiz */
+        .quiz-container { margin: 30px auto 0; max-width: 1000px; padding: 30px; background: rgba(255,193,7,0.04); border: 2px solid rgba(255,193,7,0.6); border-radius: 12px; }
+        .quiz-container h2 { color: #ffc207; font-size: 2em; margin-bottom: 30px; text-align: center; }
+        .quiz-question-block { margin-bottom: 22px; padding: 25px; background: rgba(16,16,36,0.7); border-radius: 10px; border: 1px solid rgba(77,166,255,0.2); }
+        .question-text { font-size: 1.15em; margin-bottom: 18px; font-weight: 500; }
+        .quiz-option { background: rgba(12,12,28,0.8); padding: 14px 20px; border-radius: 8px; border: 1px solid rgba(77,166,255,0.25); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0; margin-bottom: 10px; }
+        .quiz-option:hover:not(.locked) { background: rgba(77,166,255,0.15); border-color: #4da6ff; }
+        .quiz-option.correct   { background: rgba(46,125,50,0.2);  border-color: #4caf50; color: #e0e0e0; }
+        .quiz-option.incorrect { background: rgba(198,40,40,0.2);  border-color: #f44336; color: #e0e0e0; }
+        .quiz-option.locked:not(.correct):not(.incorrect) { opacity: 0.6; cursor: not-allowed; }
+        .quiz-feedback-box { padding: 14px 18px; border-radius: 8px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-feedback-box.show-correct   { display: block; background: rgba(46,125,50,0.15);  border: 1px solid #4caf50; color: #4caf50; }
+        .quiz-feedback-box.show-incorrect { display: block; background: rgba(198,40,40,0.15);  border: 1px solid #f44336; color: #f44336; }
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(8,8,20,0.9); border-top: 2px solid rgba(77,166,255,0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .nav-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(8,8,20,0.6); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77,166,255,0.3); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77,166,255,0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77,166,255,0.8); }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .navigation { padding: 15px 20px; } .anim-strip { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div id="animOverlay">
+        <button id="animCloseBtn" onclick="closeAnimation()">✕ Close &amp; Return to Slide</button>
+        <iframe id="animFrame" src="" title="Stellar Lifecycle Simulator" allowfullscreen></iframe>
+    </div>
+
+    <!-- Figure 3(b) full-size popout -->
+    <div id="stellarDeathOverlay" onclick="closeStellarDeath(event)">
+        <button id="stellarDeathCloseBtn" onclick="closeStellarDeath(event, true)">✕ Close &amp; Return to Slide</button>
+        <img id="stellarDeathImg" src="images/stellar_death.svg" alt="Stellar death pathway diagram (enlarged)">
+    </div>
+
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display:none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display:none;">
+                <span id="timeWarningMessage" style="display:none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">How Stars Die</h1>
+                <p class="page-subtitle">The 8 Solar Mass Divide — White Dwarfs, Neutron Stars &amp; Black Holes</p>
+            </div>
+
+            <!-- Audio Panel -->
+            <div class="audio-instruction-panel">
+                <div class="audio-header">🔊 Instructions</div>
+                <audio id="pageAudio" preload="none">
+                    <source src="audio/slide3.mp3" type="audio/mpeg">
+                </audio>
+                <div class="audio-controls">
+                    <button onclick="startInstructions()">▶ Play</button>
+                    <button onclick="resumeInstructions()">⏸ Resume</button>
+                    <button onclick="stopInstructions()">⏹ Stop</button>
+                </div>
+                <div class="audio-script-box" id="instructionScriptBox">
+                    <div class="script-text" id="scriptText"></div>
+                </div>
+                
+            </div>
+
+            <!-- The 8 Solar Mass Dividing Line -->
+            <div class="content-section">
+                <div class="section-heading">⚖️ The 8 Solar Mass Dividing Line</div>
+                <div class="content-grid">
+                    <div class="content-text">
+                        <p>Once a star exhausts its core hydrogen, it expands into either a <strong class="hl-blue">Red Giant</strong> (for small stars), or a <strong class="hl-blue">Red Supergiant</strong> (for massive stars), during which it fuses helium into carbon in the core, and hydrogen to helium in a shell just outside the core. After core carbon fusion finishes, the star's fate depends almost entirely on one number: <strong class="highlight">its initial (or Zero Age Main Sequence) mass relative to 8 solar masses (M☉)</strong>.</p>
+
+                        <div class="divider-card">
+                            <h4>The 8 M☉ Rule</h4>
+                            <p><strong style="color:#4dffb8;">Below 8 M☉:</strong> The star dies <em>non-explosively</em>. Gravity's implosion is halted by <span class="hl-red">electron degeneracy pressure</span>. The remnant becomes a <strong>White Dwarf</strong>, surrounded by a glowing shell of expelled gas called a <strong>Planetary Nebula</strong>.</p>
+                            <br>
+                            <p><strong style="color:#ff9a44;">Above 8 M☉:</strong> The star continues fusing heavier elements in layered shells — all the way up to <strong>iron</strong>. When iron builds up in the core, fusion ceases, because fusing of heavier elements requires more energy than is released by the fusion process. The star catastrophically collapses (because of gravity) in under a second, only to bounce back as a violent explosive shock wave: a <strong>Supernova</strong>.</p>
+                        </div>
+
+                        <p>The material blasted outward in a supernova carries enough energy to forge all naturally occurring elements <em>heavier than iron</em> — e.g., cobalt, nickel, gold, uranium — scattering them into space as the raw material for future generations of stars and planets.</p>
+                    </div>
+                    <div>
+                        <!-- ── FIGURE 3 (corpse-mass strip + stellar death pathway) ── -->
+                        <div class="figure3-wrap">
+                            <div class="fig-title">Figure 3 — Stellar Death Pathways</div>
+
+                            <!-- (a) Corpse Mass Strip -->
+                            <div class="panel-label">(a) Corpse mass strip (solar masses)</div>
+                            <div class="mass-scale-wrap">
+                                <div class="mass-scale-label">Remnant type vs. corpse mass</div>
+                                <div class="mass-scale-bar">
+                                    <div class="ms-seg1">White Dwarf<br>&lt; 1.4 M☉</div>
+                                    <div class="ms-seg2">Neutron<br>Star</div>
+                                    <div class="ms-seg3">Black Hole &nbsp; &gt; 2.2 M☉</div>
+                                </div>
+                                <div class="ms-ticks">
+                                    <span class="ms-tick-0">0</span>
+                                    <span class="ms-tick-14">1.4 M☉<br><small>(C-limit)</small></span>
+                                    <span class="ms-tick-22">2.2 M☉<br><small>(TOV)</small></span>
+                                    <span class="ms-tick-end">→ higher</span>
+                                </div>
+                            </div>
+
+                            <!-- (b) Stellar Death Diagram (clickable to enlarge) -->
+                            <div class="panel-label">(b) Stellar death pathway diagram — click to enlarge</div>
+                            <div class="stellar-death-wrap" onclick="openStellarDeath()">
+                                <img src="images/stellar_death.svg" alt="Stellar death pathway diagram">
+                                <div class="zoom-hint">🔍 Click to enlarge</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Chandrasekhar & TOV Limits -->
+            <div class="content-section">
+                <div class="section-heading">📏 The Corpse Mass Critical Boundary Limits — the C-Limit and the TOV-Limit</div>
+                <div class="outcome-grid">
+                    <div class="outcome-card oc-wd">
+                        <h4><span class="wd-circle-icon" aria-hidden="true"></span> White Dwarf</h4>
+                        <p><strong>Corpse Mass &lt; 1.4 M☉</strong> (the Chandrasekhar Limit, or C-Limit)</p>
+                        <p style="margin-top:8px;"><strong>Electron Degeneracy Pressure</strong> — the quantum-mechanical resistance of electrons to sharing the same state — prevents further gravitational collapse. The remnant stabilizes as a hot, dense <strong>White Dwarf</strong>, about the size of Earth, with a surface temperature of ~100,000 K.</p>
+                    </div>
+                    <div class="outcome-card oc-ns">
+                        <h4>💠 Neutron Star</h4>
+                        <p><strong>C-limit &lt; Corpse Mass &lt; ~2.2 M☉</strong> (the Tolman–Oppenheimer–Volkoff Limit or TOV-Limit)</p>
+                        <p style="margin-top:8px;">Gravity overcomes <strong>Electron Degeneracy Pressure</strong> — electrons are forced into nuclei, merging with protons to form neutrons. The entire remnant becomes a <strong>Neutron Star</strong>, literally a ball of neutrons. <strong>Neutron Degeneracy Pressure</strong> then halts further collapse. A teaspoon of neutron star material has the mass of Mount Everest.</p>
+                    </div>
+                    <div class="outcome-card oc-bh">
+                        <h4>⚫ Black Hole</h4>
+                        <p><strong>Corpse Mass &gt; ~2.2 M☉</strong> (exceeds TOV Limit)</p>
+                        <p style="margin-top:8px;">Gravity overwhelms even <strong>Neutron Degeneracy Pressure</strong>. The Tolman-Oppenheimer-Volkoff (TOV) Limit marks the point beyond which no known force can resist further collapse. The remnant implodes into a <strong>Black Hole</strong> — a region where gravity is so extreme that not even light can escape beyond the <strong>Schwarzschild Radius</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animation Strip -->
+            <div class="anim-strip" onclick="openAnimation()">
+                <div class="anim-text">
+                    <h3>🔭 Stellar Lifecycle Simulator</h3>
+                    <p>Watch a star's death play out — White Dwarf with Planetary Nebula,  or Supernova, with Neutron Star or Black Hole outcomes — depending on the star's initial mass.</p>
+                </div>
+                <button class="anim-launch-btn">▶ Open Full-Screen Animation</button>
+            </div>
+
+            <!-- Quiz -->
+            <div class="quiz-container">
+                <h2>📝 Quiz Questions</h2>
+
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 5:</strong> When a star's supernova corpse mass exceeds the Chandrasekhar Limit (1.4 M☉) but does NOT exceed the TOV Limit (~2.2 M☉), what stellar remnant is formed?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s3Q1', this, 'A')">A) A black hole</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s3Q1', this, 'B')">B) A white dwarf</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s3Q1', this, 'C')">C) A neutron star</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s3Q1', this, 'D')">D) A planetary nebula</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 6:</strong> What quantum pressure force prevents the collapse of a white dwarf from continuing?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s3Q2', this, 'A')">A) Neutron degeneracy pressure</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s3Q2', this, 'B')">B) Electron degeneracy pressure</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s3Q2', this, 'C')">C) Thermal pressure from residual fusion</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s3Q2', this, 'D')">D) Electromagnetic repulsion between atoms</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='slide2.html'">← Previous</button>
+            <div class="page-counter">4 / 7</div>
+            <button class="nav-button" onclick="window.location.href='slide4.html'">Next →</button>
+        </div>
+
+        <div class="timeline-indicator">
+            <div class="timeline-dot"        onclick="window.location.href='intro.html'"  title="Introduction"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide1.html'" title="Slide 1: Nucleosynthesis"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide2.html'" title="Slide 2: Counting Stars"></div>
+            <div class="timeline-dot active" onclick="window.location.href='slide3.html'" title="Slide 3: How Stars Die"></div>
+            <div class="timeline-dot"        onclick="window.location.href='slide4.html'" title="Slide 4: Red Dwarfs & Remnants"></div>
+            <div class="timeline-dot"        onclick="window.location.href='outro.html'"  title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="scripts/slide3_script.js" onerror=""></script>
+    <script src="star-shared.js"></script>
+    <script>
+        const audioEl = document.getElementById('pageAudio');
+        const scriptBox = document.getElementById('instructionScriptBox');
+        const scriptTextEl = document.getElementById('scriptText');
+        (function() {
+            const raw = (typeof slideScriptText !== 'undefined') ? slideScriptText : '[Voiceover script not yet loaded.]';
+            scriptTextEl.innerHTML = '';
+            raw.trim().split(/\n\s*\n/).forEach(p => {
+                const el = document.createElement('p'); el.textContent = p.replace(/\n/g, ' ').trim(); scriptTextEl.appendChild(el);
+            });
+        })();
+        function startInstructions() { scriptBox.classList.add('expanded'); scriptTextEl.classList.add('show'); audioEl.currentTime = 0; setTimeout(() => { audioEl.play().catch(e=>{}); }, 500); }
+        function stopInstructions()  { audioEl.pause(); scriptBox.classList.remove('expanded'); scriptTextEl.classList.remove('show'); }
+        function resumeInstructions(){ scriptBox.classList.add('expanded'); scriptTextEl.classList.add('show'); setTimeout(() => { audioEl.play().catch(e=>{}); }, 300); }
+        function openAnimation()  { const o=document.getElementById('animOverlay'),f=document.getElementById('animFrame'); f.src='stellar_lifecycle_simulatorE.html'; o.classList.add('open'); document.body.style.overflow='hidden'; }
+        function closeAnimation() { const o=document.getElementById('animOverlay'),f=document.getElementById('animFrame'); o.classList.remove('open'); document.body.style.overflow=''; setTimeout(()=>{f.src='';},300); }
+
+        // Stellar death diagram popout
+        function openStellarDeath() {
+            const o = document.getElementById('stellarDeathOverlay');
+            o.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeStellarDeath(ev, forceClose) {
+            if (forceClose || !ev || ev.target.id === 'stellarDeathOverlay') {
+                const o = document.getElementById('stellarDeathOverlay');
+                o.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        }
+        // ESC closes any open overlay
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sd = document.getElementById('stellarDeathOverlay');
+                const an = document.getElementById('animOverlay');
+                if (sd && sd.classList.contains('open')) {
+                    sd.classList.remove('open'); document.body.style.overflow = '';
+                } else if (an && an.classList.contains('open')) {
+                    closeAnimation();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

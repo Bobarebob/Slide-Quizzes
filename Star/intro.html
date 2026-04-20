@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Lifecycle – Introduction</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(12, 12, 28, 0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); border: 1px solid rgba(77,166,255,0.2); overflow: hidden; min-height: 100vh; }
+
+        /* Student banner */
+        .student-info { background: rgba(8, 8, 20, 0.95); padding: 15px 40px; border-bottom: 2px solid rgba(77,166,255,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name  { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer   { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 20px rgba(77,166,255,0.4); }
+        .page-subtitle { font-size: 1.4em; color: #b0b0b0; font-style: italic; }
+        .intro-content { text-align: center; padding: 20px 40px 40px; max-width: 960px; margin: 0 auto; }
+
+        /* Video frame — snug fit to actual 1106 × 814 video (aspect 553/407) */
+        .video-container {
+            width: 100%; max-width: 760px; margin: 0 auto 40px;
+            background: #000; border: 2px solid rgba(77,166,255,0.4);
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            aspect-ratio: 553 / 407; position: relative;
+        }
+        video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+        .video-placeholder {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px;
+            background: rgba(6,6,20,0.9);
+            color: #557799; border-radius: 10px;
+        }
+        .video-placeholder .vp-icon { font-size: 3.5em; opacity: 0.5; }
+        .video-placeholder p { font-size: 1.0em; font-style: italic; }
+        .video-placeholder .vp-note { font-size: 0.85em; color: #445566; }
+
+        .intro-text { font-size: 1.15em; line-height: 1.85; margin: 20px 0; color: #d0d0d0; text-align: left; }
+        .highlight { color: #ffa64d; font-weight: bold; }
+
+        /* Glowing copyright line */
+        .copyright-line {
+            color: #e8d9ff;
+            text-shadow:
+                0 0 6px  rgba(177,156,217,0.75),
+                0 0 14px rgba(140,110,220,0.55),
+                0 0 28px rgba(100,80,200,0.35);
+            animation: copyrightGlow 3.5s ease-in-out infinite;
+        }
+        @keyframes copyrightGlow {
+            0%, 100% {
+                color: #e8d9ff;
+                text-shadow:
+                    0 0 6px  rgba(177,156,217,0.70),
+                    0 0 14px rgba(140,110,220,0.50),
+                    0 0 28px rgba(100,80,200,0.30);
+            }
+            50% {
+                color: #fff5ff;
+                text-shadow:
+                    0 0 10px rgba(210,185,255,1),
+                    0 0 22px rgba(180,140,255,0.85),
+                    0 0 38px rgba(130,100,230,0.65),
+                    0 0 55px rgba(90, 70,200,0.45);
+            }
+        }
+
+        /* Learning objectives box */
+        .key-fact {
+            background: linear-gradient(135deg, rgba(255,193,7,0.07) 0%, rgba(255,152,0,0.07) 100%);
+            border-left: 4px solid #ffaa00; padding: 22px 28px; margin: 28px 0;
+            border-radius: 8px; text-align: left;
+        }
+        .key-fact-title { font-size: 1.2em; color: #4dffb8; font-weight: bold; margin-bottom: 14px; }
+        .key-fact ul { list-style: none; margin-top: 8px; font-size: 1.05em; }
+        .key-fact li { padding-left: 28px; position: relative; margin-top: 10px; color: #d0d0d0; }
+        .key-fact li::before { content: "→"; position: absolute; left: 0; color: #4dffb8; font-weight: bold; }
+
+        /* Navigation */
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(8,8,20,0.9); border-top: 2px solid rgba(77,166,255,0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .nav-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(8,8,20,0.6); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77,166,255,0.3); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77,166,255,0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77,166,255,0.8); }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .navigation { padding: 15px 20px; } .intro-content { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Student Banner -->
+        <div class="student-info" id="studentBanner" style="display:none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display:none;">
+                <span id="timeWarningMessage" style="display:none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Star Lifecycles</h1>
+                <p class="page-subtitle">Stars, In Their Multitudes</p>
+            </div>
+
+            <div class="intro-content">
+
+                <!-- Intro video (1106 × 814) -->
+                <div class="video-container">
+                    <video controls preload="metadata" playsinline>
+                        <source src="videos/star_intro.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div class="intro-text">
+                    <p>Welcome to <strong class="highlight">Star Lifecycles Exercise</strong>. Stars are the fundamental building blocks of the visible Universe — forging the very atoms that make up everything around us, including ourselves. This exercise traces a typical star's journey from the primordial gases of the Big Bang through either a violent implosive death, ending up as a white dwarf with a planetary nebula, or a fiery explosive death, called a supernova, ending up as a neutron star or black hole.</p>
+                </div>
+
+                <!-- Learning Objectives – content to be supplied by instructor -->
+                <div class="key-fact">
+                    <div class="key-fact-title">📌 Learning Objectives</div>
+                    <ul>
+                        <li><em>We'll learn how stars formed from gas alone, or from gas and dust</em></li>
+                        <li><em>We'll learn about classes of stars</em></li>
+                        <li><em>We'll learn about lifetimes of stars</em></li>
+                        <li><em>We'll learn about the death of small and medium sized stars</em></li>
+                        <li><em>We'll learn about the death of large stars</em></li>
+                    </ul>
+                </div>
+				<div class="intro-text copyright-line" style="margin-top: 40px; text-align: center; font-family: Calibri, 'Trebuchet MS', sans-serif; font-size: 0.95em; letter-spacing: 0.5px;">
+                    Interactive Visualization with Quiz on Star Lifecycles &nbsp;|&nbsp; © 2026 Magellica Press, R. Mahoney
+                </div>
+
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" disabled>← Previous</button>
+            <div class="page-counter">1 / 7</div>
+            <button class="nav-button" onclick="window.location.href='slide1.html'">Next →</button>
+        </div>
+
+        <div class="timeline-indicator">
+            <div class="timeline-dot active"  onclick="window.location.href='intro.html'"  title="Introduction"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide1.html'" title="Slide 1: Nucleosynthesis"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide2.html'" title="Slide 2: Counting Stars"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide3.html'" title="Slide 3: How Stars Die"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide4.html'" title="Slide 4: Red Dwarfs & Remnants"></div>
+            <div class="timeline-dot"         onclick="window.location.href='outro.html'"  title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="star-shared.js"></script>
+</body>
+</html>

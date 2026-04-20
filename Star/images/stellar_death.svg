@@ -1,0 +1,295 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200">
+  <defs>
+    <!-- Gradients for various stellar objects -->
+    <radialGradient id="mainSequence" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFEE;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFFFCC;stop-opacity:1" />
+    </radialGradient>
+    
+    <radialGradient id="redGiant" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FF6B4A;stop-opacity:0.9" />
+      <stop offset="70%" style="stop-color:#CC0000;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#660000;stop-opacity:0.6" />
+    </radialGradient>
+    
+    <radialGradient id="whiteDwarf" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E0E0FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B0B0FF;stop-opacity:1" />
+    </radialGradient>
+    
+    <radialGradient id="neutronStar" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#CCFFFF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#66CCFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099CC;stop-opacity:1" />
+    </radialGradient>
+    
+    <radialGradient id="blackHole" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+      <stop offset="85%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6600;stop-opacity:0.8" />
+    </radialGradient>
+    
+    <radialGradient id="supernova" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#FFFF00;stop-opacity:0.9" />
+      <stop offset="60%" style="stop-color:#FF6600;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#CC0000;stop-opacity:0.5" />
+    </radialGradient>
+    
+    <!-- Arrow markers -->
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0066CC" />
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#CC0000" />
+    </marker>
+    <marker id="arrowBlack" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#660066" />
+    </marker>
+    <marker id="arrowMediumBlue" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4DA6FF" />
+    </marker>
+  </defs>
+  
+  <!-- White background -->
+  <rect width="1600" height="1200" fill="white"/>
+  
+  <!-- Title -->
+  <text x="700" y="40" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="#333">
+    Stellar Death: Two Pathways
+  </text>
+  
+  <!-- Main Sequence Star (Starting Point) -->
+  <circle cx="700" cy="120" r="40" fill="url(#mainSequence)" stroke="#CC9900" stroke-width="2"/>
+  <text x="700" y="195" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#333" font-weight="bold">
+    Main Sequence Star
+  </text>
+  <text x="700" y="213" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666">
+    (Fusing H → He in core)
+  </text>
+  
+  <!-- Split arrows -->
+  <path d="M 680 160 L 350 240" stroke="#333" stroke-width="3" fill="none" marker-end="url(#arrowBlack)"/>
+  <path d="M 720 160 L 1030 235" stroke="#333" stroke-width="3" fill="none" marker-end="url(#arrowBlack)"/>
+  
+  <!-- LEFT PATH: Red Giant -->
+  <ellipse cx="300" cy="290" rx="70" ry="60" fill="url(#redGiant)" stroke="#990000" stroke-width="2" opacity="0.9"/>
+  <text x="300" y="375" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#333" font-weight="bold">
+    Red Giant
+  </text>
+  <text x="300" y="393" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666">
+    &lt; 8 Solar Masses
+  </text>
+  <text x="300" y="411" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666">
+    (Fusing He → C in core)
+  </text>
+  
+  <!-- RIGHT PATH: Red Supergiant -->
+  <ellipse cx="1100" cy="290" rx="85" ry="75" fill="url(#redGiant)" stroke="#990000" stroke-width="2" opacity="0.9"/>
+  <text x="1100" y="390" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#333" font-weight="bold">
+    Red Supergiant
+  </text>
+  <text x="1100" y="408" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666">
+    ≥ 8 Solar Masses
+  </text>
+  <text x="1100" y="426" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#666">
+    (Fusing He → C in core)
+  </text>
+  
+  <!-- Arrows converging to decision point -->
+  <path d="M 350 340 L 630 450" stroke="#333" stroke-width="3" fill="none" marker-end="url(#arrowBlack)"/>
+  <path d="M 1050 350 L 770 450" stroke="#333" stroke-width="3" fill="none" marker-end="url(#arrowBlack)"/>
+  
+  <!-- Decision Diamond -->
+  <polygon points="700,460 780,510 700,560 620,510" fill="#FFE6CC" stroke="#CC6600" stroke-width="3"/>
+  <text x="700" y="505" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#CC6600" font-weight="bold">
+    After Carbon
+  </text>
+  <text x="700" y="525" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#CC6600" font-weight="bold">
+    Fusion?
+  </text>
+  
+  <!-- LEFT PATH from decision -->
+  <path d="M 620 510 L 300 510" stroke="#0066CC" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="460" y="500" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#0066CC" font-weight="bold">
+    &lt; 8 Solar Masses
+  </text>
+  
+  <!-- RIGHT PATH from decision -->
+  <path d="M 780 510 L 1100 510" stroke="#CC0000" stroke-width="3" fill="none" marker-end="url(#arrowRed)"/>
+  <text x="940" y="500" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#CC0000" font-weight="bold">
+    ≥ 8 Solar Masses
+  </text>
+  
+  <!-- LEFT SIDE: SCENARIO ONE -->
+  <text x="300" y="490" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#0066CC" font-weight="bold">
+    SCENARIO ONE
+  </text>
+  
+  <!-- Shell Fusion Ceases Box -->
+  <rect x="200" y="530" width="200" height="60" fill="#E6F2FF" stroke="#0066CC" stroke-width="2" rx="5"/>
+  <text x="300" y="555" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#0066CC" font-weight="bold">
+    Shell Fusion Ceases
+  </text>
+  <text x="300" y="575" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">
+    Gravity causes implosion
+  </text>
+  
+  <!-- Arrow down to Planetary Nebula -->
+  <path d="M 300 590 L 300 640" stroke="#0066CC" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  
+  <!-- Planetary Nebula -->
+  <circle cx="300" cy="710" r="60" fill="none" stroke="#66CCFF" stroke-width="3" opacity="0.7"/>
+  <circle cx="300" cy="710" r="45" fill="none" stroke="#66CCFF" stroke-width="2" opacity="0.5"/>
+  <circle cx="300" cy="710" r="30" fill="none" stroke="#66CCFF" stroke-width="1.5" opacity="0.4"/>
+  <circle cx="300" cy="710" r="12" fill="url(#whiteDwarf)" stroke="#9999FF" stroke-width="2"/>
+  <text x="300" y="790" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#333" font-weight="bold">
+    Planetary Nebula
+  </text>
+  <text x="300" y="808" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">
+    (Outer atmosphere ejected)
+  </text>
+  
+  <!-- Arrow down to White Dwarf -->
+  <path d="M 300 820 L 300 870" stroke="#0066CC" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  
+  <!-- White Dwarf Final State -->
+  <circle cx="300" cy="930" r="30" fill="url(#whiteDwarf)" stroke="#6666FF" stroke-width="3"/>
+  <text x="300" y="980" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#333" font-weight="bold">
+    White Dwarf
+  </text>
+  <text x="300" y="998" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">
+    Temp: 100,000 K
+  </text>
+  <text x="300" y="1013" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">
+    Size: 1/100 original
+  </text>
+  <text x="300" y="1028" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#999">
+    (Electron degeneracy pressure)
+  </text>
+  
+  <!-- RIGHT SIDE: SCENARIO TWO -->
+  <text x="1100" y="490" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#CC0000" font-weight="bold">
+    SCENARIO TWO
+  </text>
+  
+  <!-- Shell Fusion Continues Box -->
+  <rect x="1000" y="530" width="200" height="70" fill="#FFE6E6" stroke="#CC0000" stroke-width="2" rx="5"/>
+  <text x="1100" y="555" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#CC0000" font-weight="bold">
+    Shell Fusion Continues
+  </text>
+  <text x="1100" y="573" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#666">
+    He → C → O → Ne → Mg
+  </text>
+  <text x="1100" y="588" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#666">
+    → Si → Fe (iron core)
+  </text>
+  
+  <!-- Arrow down to Supernova -->
+  <path d="M 1100 600 L 1100 645" stroke="#CC0000" stroke-width="3" fill="none" marker-end="url(#arrowRed)"/>
+  
+  <!-- Supernova -->
+  <circle cx="1100" cy="720" r="70" fill="url(#supernova)" stroke="#FF0000" stroke-width="3"/>
+  <circle cx="1100" cy="720" r="55" fill="none" stroke="#FFFF00" stroke-width="2" opacity="0.6"/>
+  <circle cx="1100" cy="720" r="40" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.8"/>
+  <text x="1100" y="820" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#333" font-weight="bold">
+    SUPERNOVA!
+  </text>
+  <text x="1100" y="838" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#666">
+    Core temp &gt; 100 billion K
+  </text>
+  <text x="1100" y="853" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#666">
+    Creates elements Co → U
+  </text>
+  
+  <!-- Arrow down to Corpse Mass decision -->
+  <path d="M 1100 860 L 1100 900" stroke="#660066" stroke-width="3" fill="none" marker-end="url(#arrowPurple)"/>
+  
+  <!-- Corpse Mass Decision Diamond -->
+  <polygon points="1100,910 1170,950 1100,990 1030,950" fill="#F0E6FF" stroke="#660066" stroke-width="3"/>
+  <text x="1100" y="945" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#660066" font-weight="bold">
+    Corpse
+  </text>
+  <text x="1100" y="965" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#660066" font-weight="bold">
+    Mass?
+  </text>
+  
+  <!-- Arrow to Neutron Star -->
+  <path d="M 1030 950 L 930 1020" stroke="#0066CC" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="900" y="975" font-family="Arial, sans-serif" font-size="12" text-anchor="end" fill="#0066CC" font-weight="bold">
+    1.4-2.2
+  </text>
+  <text x="900" y="990" font-family="Arial, sans-serif" font-size="12" text-anchor="end" fill="#0066CC" font-weight="bold">
+    solar masses
+  </text>
+  
+  <!-- Neutron Star -->
+  <circle cx="880" cy="1070" r="30" fill="url(#neutronStar)" stroke="#006699" stroke-width="3"/>
+  <!-- Inward pointing arrows on neutron star -->
+  <path d="M 850 1070 L 863 1070" stroke="#4DA6FF" stroke-width="2" fill="none" marker-end="url(#arrowMediumBlue)"/>
+  <path d="M 910 1070 L 897 1070" stroke="#4DA6FF" stroke-width="2" fill="none" marker-end="url(#arrowMediumBlue)"/>
+  <path d="M 880 1040 L 880 1053" stroke="#4DA6FF" stroke-width="2" fill="none" marker-end="url(#arrowMediumBlue)"/>
+  <path d="M 880 1100 L 880 1087" stroke="#4DA6FF" stroke-width="2" fill="none" marker-end="url(#arrowMediumBlue)"/>
+  
+  <text x="800" y="1050" font-family="Arial, sans-serif" font-size="14" text-anchor="end" fill="#333" font-weight="bold">
+    Neutron Star
+  </text>
+  <text x="800" y="1067" font-family="Arial, sans-serif" font-size="11" text-anchor="end" fill="#666">
+    Temp: 600,000 K
+  </text>
+  <text x="800" y="1082" font-family="Arial, sans-serif" font-size="11" text-anchor="end" fill="#666">
+    Extremely dense
+  </text>
+  <text x="800" y="1097" font-family="Arial, sans-serif" font-size="10" text-anchor="end" fill="#999">
+    (Neutron degeneracy)
+  </text>
+  
+  <!-- Arrow to Black Hole -->
+  <path d="M 1170 950 L 1270 1020" stroke="#0066CC" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="1300" y="975" font-family="Arial, sans-serif" font-size="12" text-anchor="start" fill="#0066CC" font-weight="bold">
+    &gt; 2.2
+  </text>
+  <text x="1300" y="990" font-family="Arial, sans-serif" font-size="12" text-anchor="start" fill="#0066CC" font-weight="bold">
+    solar masses
+  </text>
+  
+  <!-- Black Hole -->
+  <circle cx="1320" cy="1070" r="30" fill="url(#blackHole)" stroke="#FF6600" stroke-width="2"/>
+  <circle cx="1320" cy="1070" r="18" fill="#000000"/>
+  
+  <!-- Black Hole Description (to the right) -->
+  <text x="1365" y="1055" font-family="Arial, sans-serif" font-size="14" text-anchor="start" fill="#333" font-weight="bold">
+    Black Hole
+  </text>
+  <text x="1365" y="1072" font-family="Arial, sans-serif" font-size="11" text-anchor="start" fill="#666">
+    Schwarzschild radius:
+  </text>
+  <text x="1365" y="1087" font-family="Arial, sans-serif" font-size="11" text-anchor="start" fill="#666">
+    edge of no return
+  </text>
+  <text x="1365" y="1102" font-family="Arial, sans-serif" font-size="10" text-anchor="start" fill="#999">
+    (Nothing can escape)
+  </text>
+  
+  <!-- Legend Box (centered between Neutron Star and Black Hole) -->
+  <rect x="1020" y="1025" width="160" height="105" fill="#F5F5F5" stroke="#999" stroke-width="2" rx="5"/>
+  <text x="1100" y="1047" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#333" font-weight="bold">
+    Key Points
+  </text>
+  <text x="1100" y="1065" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">
+    • Fusion stops at Fe
+  </text>
+  <text x="1100" y="1083" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">
+    • Chandrasekhar limit:
+  </text>
+  <text x="1100" y="1098" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#666">
+    1.44 solar masses
+  </text>
+  <text x="1100" y="1115" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">
+    • TOV limit: 2.2
+  </text>
+</svg>

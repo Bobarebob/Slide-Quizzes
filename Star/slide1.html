@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Lifecycle – Slide 1: Origin of the First Elements</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(12,12,28,0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); border: 1px solid rgba(77,166,255,0.2); overflow: hidden; min-height: 100vh; }
+
+        /* Banner */
+        .student-info { background: rgba(8,8,20,0.95); padding: 15px 40px; border-bottom: 2px solid rgba(77,166,255,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name  { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer   { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        /* Page */
+        .page-content { padding: 40px; }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 20px rgba(77,166,255,0.4); }
+        .page-subtitle { font-size: 1.4em; color: #ffa64d; font-style: italic; }
+
+        /* Audio panel */
+        .audio-instruction-panel { background: rgba(10,15,30,0.85); border: 2px solid rgba(77,166,255,0.3); border-radius: 12px; padding: 25px; margin: 0 auto 40px; max-width: 1000px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .audio-header { text-align: center; color: #4da6ff; font-size: 1.3em; font-weight: bold; margin-bottom: 20px; }
+        .audio-controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .audio-controls button { background: linear-gradient(135deg, #4da6ff 0%, #2a6dd9 100%); color: white; border: none; padding: 11px 32px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em; transition: all 0.3s ease; }
+        .audio-controls button:hover { box-shadow: 0 0 20px rgba(77,166,255,0.55); transform: translateY(-2px); }
+        .audio-script-box { background: rgba(6,10,22,0.7); border-radius: 8px; min-height: 30px; padding: 0; overflow: hidden; transition: all 0.5s ease; }
+        .audio-script-box.expanded { padding: 22px 25px; border: 1px solid rgba(77,166,255,0.1); }
+        .script-text { display: none; color: #8fa3bf; font-style: italic; text-align: center; line-height: 1.65; font-size: 1.05em; }
+        .script-text p { margin-bottom: 15px; }
+        .script-text p:last-child { margin-bottom: 0; }
+        .script-text.show { display: block; }
+        .audio-placeholder { text-align: center; color: #4a5870; font-size: 0.9em; font-style: italic; margin-top: 8px; }
+
+        /* Content */
+        .content-section { background: rgba(6,6,20,0.9); border-radius: 12px; padding: 30px; margin: 20px 0; border: 1px solid rgba(77,166,255,0.2); }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; margin-bottom: 20px; }
+        @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+        .content-text p { margin-bottom: 15px; font-size: 1.05em; line-height: 1.8; }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        .hl-blue  { color: #4da6ff; font-weight: bold; }
+        .hl-green { color: #4dffb8; font-weight: bold; }
+        .definition-box { background: linear-gradient(135deg, rgba(77,166,255,0.08) 0%, rgba(40,100,180,0.08) 100%); border-left: 4px solid #4da6ff; padding: 16px 20px; margin: 16px 0; border-radius: 8px; }
+        .definition-box .def-title { color: #4dffb8; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .definition-box .def-text  { color: #d0d0d0; font-size: 1.0em; line-height: 1.65; }
+        .key-fact-inline { background: rgba(255,166,77,0.06); border-left: 4px solid #ffa64d; padding: 14px 18px; margin: 14px 0; border-radius: 5px; font-size: 1.0em; line-height: 1.7; color: #ffa64d; }
+
+        /* Timeline SVG diagram */
+        .diagram-panel { background: rgba(4,4,16,0.9); border-radius: 10px; padding: 15px; border: 1px solid rgba(77,166,255,0.2); display: flex; flex-direction: column; align-items: center; }
+        .diagram-panel .diagram-caption { text-align: center; color: #6678a0; font-size: 0.88em; margin-top: 10px; font-style: italic; }
+
+        /* Second content block – full width */
+        .content-section-full { background: rgba(6,6,20,0.9); border-radius: 12px; padding: 30px; margin: 20px 0; border: 1px solid rgba(77,166,255,0.2); }
+        .section-heading { color: #4dffb8; font-size: 1.25em; font-weight: bold; margin-bottom: 18px; border-bottom: 1px solid rgba(77,255,184,0.2); padding-bottom: 8px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+        .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        @media (max-width: 1100px) { .three-col { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 720px)  { .three-col { grid-template-columns: 1fr; } }
+        .pop-card { background: rgba(10,12,28,0.8); border-radius: 10px; padding: 20px; border: 1px solid rgba(77,166,255,0.15); }
+        .pop-card h4 { color: #4da6ff; margin-bottom: 12px; font-size: 1.1em; }
+        .pop-card p  { font-size: 1.0em; line-height: 1.75; color: #ccc; margin-bottom: 10px; }
+        .pop-card p:last-child { margin-bottom: 0; }
+
+        /* Quiz */
+        .quiz-container { margin: 30px auto 0; max-width: 1000px; padding: 30px; background: rgba(255,193,7,0.04); border: 2px solid rgba(255,193,7,0.6); border-radius: 12px; }
+        .quiz-container h2 { color: #ffc207; font-size: 2em; margin-bottom: 30px; text-align: center; }
+        .quiz-question-block { margin-bottom: 22px; padding: 25px; background: rgba(16,16,36,0.7); border-radius: 10px; border: 1px solid rgba(77,166,255,0.2); }
+        .question-text { font-size: 1.15em; margin-bottom: 18px; font-weight: 500; }
+        .quiz-option { background: rgba(12,12,28,0.8); padding: 14px 20px; border-radius: 8px; border: 1px solid rgba(77,166,255,0.25); cursor: pointer; transition: all 0.3s ease; color: #d0d0d0; margin-bottom: 10px; }
+        .quiz-option:hover:not(.locked) { background: rgba(77,166,255,0.15); border-color: #4da6ff; }
+        .quiz-option.correct   { background: rgba(46,125,50,0.2);  border-color: #4caf50; color: #e0e0e0; }
+        .quiz-option.incorrect { background: rgba(198,40,40,0.2);  border-color: #f44336; color: #e0e0e0; }
+        .quiz-option.locked:not(.correct):not(.incorrect) { opacity: 0.6; cursor: not-allowed; }
+        .quiz-feedback-box { padding: 14px 18px; border-radius: 8px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-feedback-box.show-correct   { display: block; background: rgba(46,125,50,0.15);  border: 1px solid #4caf50; color: #4caf50; }
+        .quiz-feedback-box.show-incorrect { display: block; background: rgba(198,40,40,0.15);  border: 1px solid #f44336; color: #f44336; }
+
+        /* Nav */
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(8,8,20,0.9); border-top: 2px solid rgba(77,166,255,0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .nav-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(8,8,20,0.6); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77,166,255,0.3); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(77,166,255,0.6); transform: scale(1.2); }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77,166,255,0.8); }
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 2em; } .navigation { padding: 15px 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Student Banner -->
+        <div class="student-info" id="studentBanner" style="display:none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 8</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display:none;">
+                <span id="timeWarningMessage" style="display:none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Origin of the First Elements</h1>
+                <p class="page-subtitle">Primordial Nucleosynthesis &amp; and the Three Epochs of Stars</p>
+            </div>
+
+            <!-- ── Audio / Instruction Panel ── -->
+            <div class="audio-instruction-panel">
+                <div class="audio-header">🔊 Instructions</div>
+                <audio id="pageAudio" preload="none">
+                    <!-- Place slide 1 audio file in an "audio/" subfolder -->
+                    <source src="audio/slide1.mp3" type="audio/mpeg">
+                </audio>
+                <div class="audio-controls">
+                    <button onclick="startInstructions()">▶ Play</button>
+                    <button onclick="resumeInstructions()">⏸ Resume</button>
+                    <button onclick="stopInstructions()">⏹ Stop</button>
+                </div>
+                <div class="audio-script-box" id="instructionScriptBox">
+                    <div class="script-text" id="scriptText"></div>
+                </div>
+                
+            </div>
+
+            <!-- ── Content Block 1 – Primordial Nucleosynthesis ── -->
+            <div class="content-section">
+                <div class="content-grid">
+                    <div class="content-text">
+                        <p>In the first twenty minutes after the <span class="hl-blue">Big Bang</span> (roughly 13.8 billion years ago), the Universe was unimaginably hot and dense. Protons and neutrons were created (and then in some cases fused together) to form the first atomic nuclei — a process called <strong class="highlight">Primordial Nucleosynthesis</strong>.</p>
+
+                        <div class="definition-box">
+                            <div class="def-title">Primordial Nucleosynthesis</div>
+                            <div class="def-text">The formation of atomic nuclei during the first ~20 minutes after the Big Bang (sometimes called Big Bang Nucelosynthesis or BBN). The products were approximately <strong>75% hydrogen</strong> and <strong>25% helium</strong> by mass, with trace amounts of deuterium and tritium (hydrogen isotopes), and a smattering of the "metal" lithium.</div>
+                        </div>
+
+                        <p>Crucially, no heavier elements — carbon, oxygen, iron, gold — were produced during BBN. The Universe essentially began as a vast sea of hydrogen and helium, which eventually condensed into the <span class="hl-blue">first stars</span> — and from that point on, stars themselves would forge every heavier element. As we'll see, astronomers divide stars into <strong class="highlight">three populations</strong> — Population III, II, and I — based on when they formed and what raw material they formed from.</p>
+
+                        <div class="key-fact-inline">
+                            With some exotic exceptions, all elements heavier than helium were forged either inside stellar furnaces (C, O, Ne … Fe) or in the extreme energy of stellar explosions — supernovae — (Co, Ni … U) or neutron star collisions.
+                        </div>
+                    </div>
+
+                    <div class="diagram-panel">
+                        <!-- Cosmic Timeline SVG -->
+                        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" width="100%" style="max-width:440px;">
+                            <defs>
+                                <linearGradient id="timelineGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#ff9a4a"/>
+                                    <stop offset="40%" stop-color="#9955ee"/>
+                                    <stop offset="100%" stop-color="#4da6ff"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Timeline spine -->
+                            <line x1="90" y1="30" x2="90" y2="385" stroke="url(#timelineGrad)" stroke-width="3.5"/>
+                            <polygon points="90,392 83,378 97,378" fill="#4da6ff"/>
+
+                            <!-- Big Bang -->
+                            <circle cx="90" cy="40" r="8" fill="#ff9a4a"/>
+                            <text x="108" y="37" fill="#ffa64d" font-size="15" font-weight="bold">Big Bang</text>
+                            <text x="108" y="54" fill="#888" font-size="13">t = 0</text>
+
+                            <!-- Primordial Nucleosynthesis -->
+                            <circle cx="90" cy="98" r="7" fill="#ffcc55"/>
+                            <text x="108" y="95" fill="#ffcc55" font-size="14" font-weight="bold">Primordial Nucleosynthesis</text>
+                            <text x="108" y="112" fill="#888" font-size="13">First 20 minutes — H + He nuclei</text>
+
+                            <!-- First stars (Pop III) -->
+                            <circle cx="90" cy="162" r="7" fill="#eebbff"/>
+                            <text x="108" y="159" fill="#cc99ff" font-size="14" font-weight="bold">Population III stars</text>
+                            <text x="108" y="176" fill="#888" font-size="13">~200 Myr — pure H/He — all extinct</text>
+
+                            <!-- Pop II stars -->
+                            <circle cx="90" cy="232" r="7" fill="#c0c0ff"/>
+                            <text x="108" y="229" fill="#aaaaff" font-size="14" font-weight="bold">Population II stars</text>
+                            <text x="108" y="246" fill="#888" font-size="13">~200 Myr–3.8 Byr — H/He/Li only</text>
+                            <text x="108" y="262" fill="#556688" font-size="12">Only Red Dwarfs survive today</text>
+
+                            <!-- Pop I stars -->
+                            <circle cx="90" cy="316" r="7" fill="#4dffb8"/>
+                            <text x="108" y="313" fill="#4dffb8" font-size="14" font-weight="bold">Population I stars</text>
+                            <text x="108" y="330" fill="#888" font-size="13">~10 Byr ago — gas + cosmic dust</text>
+                            <text x="108" y="346" fill="#4da6ff" font-size="12">Our Sun is a Pop I star</text>
+
+                            <!-- Today -->
+                            <circle cx="90" cy="383" r="6" fill="#4da6ff"/>
+                            <text x="108" y="387" fill="#4da6ff" font-size="14" font-weight="bold">Today — 13.8 Byr</text>
+
+                            <!-- Labels on left -->
+                            <text x="80" y="37"  fill="#ff9a4a" font-size="12" text-anchor="end">0</text>
+                            <text x="80" y="100" fill="#ffcc55" font-size="12" text-anchor="end">20 min</text>
+                            <text x="80" y="164" fill="#cc99ff" font-size="12" text-anchor="end">0.2 Byr</text>
+                            <text x="80" y="234" fill="#aaaaff" font-size="12" text-anchor="end">0.2 Byr</text>
+                            <text x="80" y="318" fill="#4dffb8" font-size="12" text-anchor="end">3.8 Byr</text>
+                            <text x="80" y="385" fill="#4da6ff" font-size="12" text-anchor="end">13.8 Byr</text>
+                        </svg>
+                        <div class="diagram-caption">Fig. 1 — Cosmic timeline: from Big Bang to Population I stars</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Content Block 2 – Pop III, Pop II & Pop I ── -->
+            <div class="content-section-full">
+                <div class="section-heading">🌟 The Three Epochs or Populations of Stars — Populations III, II, and I</div>
+                <p style="font-size:1.05em; line-height:1.8; color:#ccc; margin-bottom:18px;">Astronomers classify stars into three populations based on when they formed and how rich they are in elements heavier than helium (what astronomers call "metals"). Each generation was born from the debris of the one before it.</p>
+                <div class="three-col">
+                    <div class="pop-card">
+                        <h4>Population III Stars — The First Stars</h4>
+                        <p>The <span class="hl-blue">very first stars</span> formed roughly <strong>200 million years after the Big Bang</strong> from pristine hydrogen and helium gas (and a touch of lithium) — as absolutely no heavier elements existed yet. Computer models suggest these stars were extraordinarily <span class="highlight">massive</span> (hundreds of solar masses) and therefore extremely short-lived.</p>
+                        <p>They died spectacularly in supernovae, seeding the Universe with the first sprinkling of carbon, oxygen, and heavier elements. No Population III stars survive today, although the James Webb Space Telescope (JWST) - looking far back in time - may have observed clumps of them.</p>
+                    </div>
+                    <div class="pop-card">
+                        <h4>Population II Stars — The Ancients</h4>
+                        <p>Formed <strong class="hl-blue">starting ~200–400 million years after the Big Bang</strong>, Population II stars condensed from gas clouds that contained only hydrogen, helium, and small amounts of heavier elements ("metals") scattered by exploding Population III stars. Not much in the way of <em>cosmic dust</em>, these stars were considered "metal poor" compared to later Population I stars.</p>
+                        <p>Because blue and yellow Population II stars burned their fuel quickly, <strong>most are gone</strong>. The only Population II stars we still observe locally today are <span class="hl-green">Red Dwarfs</span>, whose extraordinarily long lifespans (80–100 billion years for larger Red Dwarfs) far exceed the current age of the Universe.</p>
+                    </div>
+                    <div class="pop-card">
+                        <h4>Population I Stars — Children of Supernovae</h4>
+                        <p>When massive Population III and Population II stars exploded as supernovae, they scattered carbon, oxygen, silicon, iron, and dozens of other heavy elements ("metals") into space as <em>cosmic dust</em>. About <strong class="hl-blue">10 billion years ago</strong> (roughly 3.8 billion years after the Big Bang), new star-forming clouds could incorporate this dust — creating Population I stars rich in these heavy elements.</p>
+                        <p>Our <span class="hl-green">Sun</span> is a Population I star, roughly 4.6 billion years old. All Solar System objects orbiting the Sun — including Earth — are literally made of recycled stellar ash: the stardust of long-dead stars.</p>
+                    </div>
+                </div>
+                <div style="margin-top:22px; padding:18px; background:rgba(77,166,255,0.05); border-radius:8px; border:1px solid rgba(77,166,255,0.15);">
+                    <p style="font-size:1.05em; line-height:1.8; color:#ccc;"><span class="hl-green">Star furnaces</span> are responsible for producing all elements from helium through iron via nuclear fusion in their cores. Elements heavier than iron — from cobalt to uranium — are created only during the extreme conditions of a <span class="highlight">supernova explosion</span>, or possibly when two neutron stars collide. We are, quite literally, made of star stuff.</p>
+                </div>
+            </div>
+
+            <!-- ── Quiz Questions ── -->
+            <div class="quiz-container">
+                <h2>📝 Quiz Questions</h2>
+
+                <!-- Question 1 -->
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 1:</strong> Which two elements were primarily produced during Primordial Nucleosynthesis — the first ~20 minutes after the Big Bang?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s1Q1', this, 'A')">A) Carbon and oxygen</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s1Q1', this, 'B')">B) Iron and nickel</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s1Q1', this, 'C')">C) Hydrogen and helium</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s1Q1', this, 'D')">D) Gold and uranium</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question-block">
+                    <div class="question-text"><strong>Question 2:</strong> What are the early-Universe stars called that formed only from hydrogen and helium (with a litle cosmic dust), and whose only locally surviving members today are Red Dwarfs?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-letter="A" onclick="handleQuizAnswer('s1Q2', this, 'A')">A) Population I stars</div>
+                        <div class="quiz-option" data-letter="B" onclick="handleQuizAnswer('s1Q2', this, 'B')">B) Population II stars</div>
+                        <div class="quiz-option" data-letter="C" onclick="handleQuizAnswer('s1Q2', this, 'C')">C) Population III stars</div>
+                        <div class="quiz-option" data-letter="D" onclick="handleQuizAnswer('s1Q2', this, 'D')">D) Protostellar clouds</div>
+                    </div>
+                    <div class="quiz-feedback-box"></div>
+                </div>
+            </div>
+        </div><!-- /page-content -->
+
+        <div class="navigation">
+            <button class="nav-button" onclick="window.location.href='intro.html'">← Previous</button>
+            <div class="page-counter">2 / 7</div>
+            <button class="nav-button" onclick="window.location.href='slide2.html'">Next →</button>
+        </div>
+
+        <div class="timeline-indicator">
+            <div class="timeline-dot"         onclick="window.location.href='intro.html'"  title="Introduction"></div>
+            <div class="timeline-dot active"  onclick="window.location.href='slide1.html'" title="Slide 1: Nucleosynthesis"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide2.html'" title="Slide 2: Counting Stars"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide3.html'" title="Slide 3: How Stars Die"></div>
+            <div class="timeline-dot"         onclick="window.location.href='slide4.html'" title="Slide 4: Red Dwarfs & Remnants"></div>
+            <div class="timeline-dot"         onclick="window.location.href='outro.html'"  title="Conclusion"></div>
+        </div>
+    </div><!-- /container -->
+
+    <script src="scripts/slide1_script.js" onerror=""></script>
+    <script src="star-shared.js"></script>
+    <script>
+        const audioEl   = document.getElementById('pageAudio');
+        const scriptBox = document.getElementById('instructionScriptBox');
+        const scriptTextEl = document.getElementById('scriptText');
+
+        (function loadScript() {
+            const raw = (typeof slideScriptText !== 'undefined') ? slideScriptText : '[Voiceover script not yet loaded. Place slide1_script.js in the scripts/ folder.]';
+            scriptTextEl.innerHTML = '';
+            raw.trim().split(/\n\s*\n/).forEach(p => {
+                const el = document.createElement('p');
+                el.textContent = p.replace(/\n/g, ' ').trim();
+                scriptTextEl.appendChild(el);
+            });
+        })();
+
+        function startInstructions() {
+            scriptBox.classList.add('expanded');
+            scriptTextEl.classList.add('show');
+            audioEl.currentTime = 0;
+            setTimeout(() => { audioEl.play().catch(e => console.log('Audio:', e)); }, 500);
+        }
+        function stopInstructions() {
+            audioEl.pause();
+            scriptBox.classList.remove('expanded');
+            scriptTextEl.classList.remove('show');
+        }
+        function resumeInstructions() {
+            scriptBox.classList.add('expanded');
+            scriptTextEl.classList.add('show');
+            setTimeout(() => { audioEl.play().catch(e => console.log('Audio:', e)); }, 300);
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 // Paragraphs should be separated by blank lines.
 const slideScriptText = `
 
-On this page, we learn about the fate of our smallest stellar companions, Red Dwarfs. Ranging in size from 0.08 to 0.6 solar masses, these dim red stars last incredibly long times.  This is because, through convection, they fuse almost all of their Hydrogen into Helium, not just the Hydrogen in their centers or cores.
+On this page, we learn about the fate of our smallest stellar companions, Red Dwarfs. Ranging in size from 0.08 to 0.6 Solar Masses, these dim red stars last incredibly long times.  This is because, through convection, they fuse almost all of their Hydrogen into Helium, not just the Hydrogen in their centers or cores.
 
 The smaller Red Dwarfs, 0.08 to 0.25 Solar Masses, have lifespans in the trillions of years.
 

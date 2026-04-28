@@ -150,6 +150,9 @@ function startTimerDisplay() {
                 warningMsg.style.display = 'inline';
                 clearInterval(timerInterval);
 
+                // Lock the page immediately — don't wait for the redirect
+                if (typeof lockLab === 'function') lockLab();
+
                 // Auto-submit — 'score' field matches teacher.html
                 if (db && studentData.sessionId) {
                     db.collection('students').doc(studentData.sessionId).update({

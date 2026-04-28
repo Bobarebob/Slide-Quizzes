@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Quiz Management</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .page {
+            display: none;
+            background: rgba(30, 30, 50, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+        }
+        
+        .page.active { display: block; animation: fadeIn 0.4s ease; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: #4da6ff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        h2 {
+            color: #ffa64d;
+            margin: 30px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .section {
+            background: rgba(20, 20, 35, 0.6);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(77, 166, 255, 0.2);
+        }
+        
+        .field-group { margin-bottom: 20px; }
+        
+        label {
+            display: block;
+            color: #b0b0b0;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        input[type="text"], input[type="password"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(10, 10, 20, 0.8);
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4da6ff;
+            box-shadow: 0 0 10px rgba(77, 166, 255, 0.3);
+        }
+        
+        .display-field {
+            background: rgba(77, 166, 255, 0.1);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+            color: #4da6ff;
+            font-weight: 600;
+            min-height: 44px;
+        }
+        
+        .display-field.empty { color: #888; font-style: italic; }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(145deg, #4da6ff 0%, #0066cc 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(77, 166, 255, 0.6);
+        }
+        
+        .btn-success { background: linear-gradient(145deg, #4caf50 0%, #388e3c 100%); color: white; }
+        .btn-danger { background: linear-gradient(145deg, #f44336 0%, #c62828 100%); color: white; }
+        .btn-secondary { background: linear-gradient(145deg, #666 0%, #444 100%); }
+        
+        /* KEPLER SILVER BUTTONS for navigation */
+        .navigation .btn {
+            background: linear-gradient(145deg, #b8c6db 0%, #8fa3bd 50%, #6b8299 100%) !important;
+            color: #1a1a2e !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+            padding: 14px 35px;
+            border-radius: 30px;
+            font-size: 1.1em;
+        }
+        .navigation .btn:hover:not(:disabled) {
+            transform: translateY(-5px) !important;
+            background: linear-gradient(145deg, #c8d6eb 0%, #9fb3cd 50%, #7b92a9 100%) !important;
+        }
+        .navigation .btn:disabled { opacity: 0.5; cursor: not-allowed; color: white; }
+        
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(77, 166, 255, 0.2);
+        }
+        
+        .page-indicator { text-align: center; color: #888; margin-top: 10px; }
+        .page-dots { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        .page-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(77, 166, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .page-dot:hover { background: rgba(77, 166, 255, 0.5); transform: scale(1.2); }
+        .page-dot.active { background: #4da6ff; box-shadow: 0 0 10px rgba(77, 166, 255, 0.5); }
+        
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #f44336;
+            display: none;
+        }
+        
+        .success-message {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81c784;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4caf50;
+            display: none;
+        }
+        
+        .datetime-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-group { display: flex; gap: 20px; align-items: center; }
+        .checkbox-group input[type="radio"] { width: auto; margin-right: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th {
+            background: rgba(77, 166, 255, 0.2);
+            padding: 12px;
+            text-align: left;
+            color: #4da6ff;
+            border-bottom: 2px solid rgba(77, 166, 255, 0.4);
+        }
+        td { padding: 12px; border-bottom: 1px solid rgba(77, 166, 255, 0.1); }
+        tr:hover { background: rgba(77, 166, 255, 0.1); }
+        tr.selected { background: rgba(77, 166, 255, 0.2); }
+        
+        .export-btn { float: right; margin-top: 20px; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: rgba(30, 30, 50, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid rgba(77, 166, 255, 0.3);
+        }
+        .modal-header { color: #4da6ff; font-size: 1.4em; margin-bottom: 20px; }
+        .modal-close { float: right; cursor: pointer; font-size: 1.5em; color: #888; }
+        .modal-close:hover { color: #fff; }
+        
+        .confirm-dialog {
+            background: rgba(244, 67, 54, 0.1);
+            border: 2px solid #f44336;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            html, body { background: white !important; }
+            .navigation, .page-indicator, .btn { display: none !important; }
+            .report-header {
+                background: rgba(77, 166, 255, 0.1) !important;
+                border: 1px solid #4da6ff !important;
+                padding: 15px !important;
+                margin-bottom: 20px !important;
+                border-radius: 8px !important;
+            }
+            table { border-collapse: collapse !important; width: 100% !important; }
+            th {
+                background: #4da6ff !important;
+                color: #ffffff !important;
+                padding: 12px !important;
+                border: 1px solid #357abd !important;
+            }
+            td {
+                border: 1px solid rgba(77, 166, 255, 0.3) !important;
+                padding: 10px !important;
+                color: #1a1a2e !important;
+            }
+            tr:nth-child(even) { background: rgba(77, 166, 255, 0.05) !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page active" id="page1">
+            <h1>Teacher Dashboard - Class Management</h1>
+            
+            <div class="section">
+                <h2>Current Selection</h2>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Selected Class</label>
+                        <div class="display-field empty" id="selectedClass">none</div>
+                    </div>
+                    <div class="field-group">
+                        <label>Selected Class Password</label>
+                        <div class="display-field empty" id="selectedClassPassword">none</div>
+                    </div>
+                </div>
+                
+                <div class="row" style="margin-top: 20px;">
+                    <div class="field-group">
+                        <label>Select from Existing Classes</label>
+                        <select id="classDropdown" onchange="selectClassByName()">
+                            <option value="">-- Select Class --</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Or Select by Password</label>
+                        <select id="classPasswordDropdown" onchange="selectClassByPassword()">
+                            <option value="">-- Select Password --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Add New Class</h2>
+                <div id="addClassError" class="error-message"></div>
+                <div id="addClassSuccess" class="success-message"></div>
+                <div class="row">
+                    <div class="field-group">
+                        <label>New Class Name (max 20 characters)</label>
+                        <input type="text" id="newClassName" maxlength="20" placeholder="Enter class name">
+                    </div>
+                    <div class="field-group">
+                        <label>New Class Password (max 10 characters)</label>
+                        <input type="text" id="newClassPassword" maxlength="10" placeholder="Enter password">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="saveNewClass()">Save New Class</button>
+            </div>
+            
+            <div class="section">
+                <h2>Change Password for Selected Class</h2>
+                <div id="changePassError" class="error-message"></div>
+                <div id="changePassSuccess" class="success-message"></div>
+                <div class="field-group">
+                    <label>Current Password</label>
+                    <div class="display-field empty" id="currentPassword">none</div>
+                </div>
+                <div class="field-group">
+                    <label>New Password (max 10 characters)</label>
+                    <input type="text" id="changedPassword" maxlength="10" placeholder="Enter new password">
+                </div>
+                <button class="btn btn-primary" onclick="changeClassPassword()" id="changePassBtn" disabled>Update Password</button>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" disabled>← Previous</button>
+                <button class="btn btn-primary" onclick="goToPage(2)">Next →</button>
+            </div>
+            <div class="page-indicator">Page 1 of 5</div>
+            <div class="page-dots">
+                <div class="page-dot active" onclick="goToPage(1)"></div>
+                <div class="page-dot" onclick="goToPage(2)"></div>
+                <div class="page-dot" onclick="goToPage(3)"></div>
+                <div class="page-dot" onclick="goToPage(4)"></div>
+                <div class="page-dot" onclick="goToPage(5)"></div>
+            </div>
+        </div>
+        
+        <div class="page" id="page2">
+            <h1>Teacher Dashboard - Quiz Management</h1>
+            
+            <div class="section">
+                <h2>Current Selection</h2>
+                <div class="field-group">
+                    <label>Selected Class</label>
+                    <div class="display-field" id="selectedClassPage2"></div>
+                </div>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Selected Quiz</label>
+                        <div class="display-field empty" id="selectedQuiz">none</div>
+                    </div>
+                    <div class="field-group">
+                        <label>Selected Quiz Password</label>
+                        <div class="display-field empty" id="selectedQuizPassword">none</div>
+                    </div>
+                </div>
+                
+                <div class="row" style="margin-top: 20px;">
+                    <div class="field-group">
+                        <label>Select from Existing Quizzes</label>
+                        <select id="quizDropdown" onchange="selectQuizByName()">
+                            <option value="">-- Select Quiz --</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Or Select by Password</label>
+                        <select id="quizPasswordDropdown" onchange="selectQuizByPassword()">
+                            <option value="">-- Select Password --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Create New Quiz</h2>
+                <div id="addQuizError" class="error-message"></div>
+                <div id="addQuizSuccess" class="success-message"></div>
+                <div class="row">
+                    <div class="field-group">
+                        <label>New Quiz Name (max 20 characters)</label>
+                        <input type="text" id="newQuizName" maxlength="20" placeholder="Enter quiz name">
+                    </div>
+                    <div class="field-group">
+                        <label>New Quiz Password (max 10 characters)</label>
+                        <input type="text" id="newQuizPassword" maxlength="10" placeholder="Enter password">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="saveNewQuiz()">Save New Quiz</button>
+            </div>
+            
+            <div class="section">
+                <h2 style="color: #f44336;">Delete Currently Selected Quiz</h2>
+                <p style="margin-bottom: 15px; color: #ff6b6b;">⚠️ Warning: This will permanently delete the selected quiz and all associated data!</p>
+                <button class="btn btn-danger" onclick="deleteCurrentQuiz()" id="deleteQuizBtn" disabled>Delete Currently Selected Quiz</button>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" onclick="goToPage(1)">← Previous</button>
+                <button class="btn btn-primary" onclick="goToPage(3)">Next →</button>
+            </div>
+            <div class="page-indicator">Page 2 of 5</div>
+            <div class="page-dots">
+                <div class="page-dot" onclick="goToPage(1)"></div>
+                <div class="page-dot active" onclick="goToPage(2)"></div>
+                <div class="page-dot" onclick="goToPage(3)"></div>
+                <div class="page-dot" onclick="goToPage(4)"></div>
+                <div class="page-dot" onclick="goToPage(5)"></div>
+            </div>
+        </div>
+        
+        <div class="page" id="page3">
+            <h1>Teacher Dashboard - Quiz Configuration</h1>
+            
+            <div class="section">
+                <h2>Current Selection</h2>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Selected Class</label>
+                        <div class="display-field" id="selectedClassPage3"></div>
+                    </div>
+                    <div class="field-group">
+                        <label>Selected Quiz</label>
+                        <div class="display-field" id="selectedQuizPage3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Database Configuration</h2>
+                <div id="dbError" class="error-message"></div>
+                <div id="dbSuccess" class="success-message"></div>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Current DB</label>
+                        <div class="display-field empty" id="currentDb">none</div>
+                    </div>
+                    <div class="field-group">
+                        <label>Select Existing DB</label>
+                        <select id="dbDropdown" onchange="selectDatabase()">
+                            <option value="">-- Select DB --</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="createNewDatabase()">Create New DB</button>
+                <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
+                    Note: Creating a new DB will archive all previous DBs for this Class-Quiz
+                </p>
+            </div>
+            
+            <div class="section">
+                <h2 style="color: #f44336;">Danger Zone</h2>
+                <p style="margin-bottom: 15px; color: #ff6b6b;">⚠️ Warning: This action cannot be reversed!</p>
+                <button class="btn btn-danger" onclick="showEraseDialog()" id="eraseDbBtn" disabled>Erase All DB Except Current DB</button>
+            </div>
+            
+            <div class="section">
+                <h2>Login Field Descriptors</h2>
+                <p style="margin-bottom: 15px; color: #b0b0b0;">Customize the text students see on the login screen</p>
+                <div class="field-group">
+                    <label>NAME Field Label (max 28 characters)</label>
+                    <input type="text" id="nameDescriptor" maxlength="28" value="Enter your full name here" onchange="saveLoginDescriptors()">
+                </div>
+                <div class="field-group">
+                    <label>ID Field Label (max 28 characters)</label>
+                    <input type="text" id="idDescriptor" maxlength="28" value="Enter your student ID number" onchange="saveLoginDescriptors()">
+                </div>
+                <div class="field-group">
+                    <label>PASSWORD Field Label (max 28 characters)</label>
+                    <input type="text" id="passDescriptor" maxlength="28" value="Enter quiz password" onchange="saveLoginDescriptors()">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Student ID Validation</h2>
+                <p style="margin-bottom: 15px; color: #b0b0b0;">Set a validation rule for Student IDs (leave blank for no validation)</p>
+                <div class="field-group">
+                    <label>Validation Rule Type</label>
+                    <select id="idValidationType" onchange="updateIdValidationFields()">
+                        <option value="none">No Validation</option>
+                        <option value="digits">Must be N digits long</option>
+                        <option value="startsWith">Must start with specific text</option>
+                        <option value="regex">Custom pattern (regex)</option>
+                    </select>
+                </div>
+                <div class="field-group" id="idValidationValueGroup" style="display: none;">
+                    <label id="idValidationValueLabel">Value</label>
+                    <input type="text" id="idValidationValue" placeholder="Enter value" onchange="saveIdValidation()">
+                </div>
+                <div class="field-group" id="idValidationExampleGroup" style="display: none;">
+                    <label>Example Error Message Preview</label>
+                    <div class="display-field" id="idValidationExample" style="color: #ff6b6b;">No validation set</div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" onclick="goToPage(2)">← Previous</button>
+                <button class="btn btn-primary" onclick="goToPage(4)">Next →</button>
+            </div>
+            <div class="page-indicator">Page 3 of 5</div>
+            <div class="page-dots">
+                <div class="page-dot" onclick="goToPage(1)"></div>
+                <div class="page-dot" onclick="goToPage(2)"></div>
+                <div class="page-dot active" onclick="goToPage(3)"></div>
+                <div class="page-dot" onclick="goToPage(4)"></div>
+                <div class="page-dot" onclick="goToPage(5)"></div>
+            </div>
+        </div>
+        
+        <div class="page" id="page4">
+            <h1>Teacher Dashboard - Student Restrictions</h1>
+            
+            <div class="section">
+                <h2>Current Selection</h2>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Selected Class</label>
+                        <div class="display-field" id="selectedClassPage4"></div>
+                    </div>
+                    <div class="field-group">
+                        <label>Selected Quiz</label>
+                        <div class="display-field" id="selectedQuizPage4"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Quiz Settings</h2>
+                <div id="restrictionError" class="error-message"></div>
+                <div id="restrictionSuccess" class="success-message"></div>
+                
+                <div class="row">
+                    <div class="field-group">
+                        <label>Time Limit (5-60 minutes)</label>
+                        <input type="number" id="timeLimit" min="5" max="60" value="20" onchange="saveRestrictions()">
+                    </div>
+                    <div class="field-group">
+                        <label>Low Time Warning (1-5 minutes before)</label>
+                        <select id="lowTimeWarning" onchange="saveRestrictions()">
+                            <option value="1">1 minute</option>
+                            <option value="2">2 minutes</option>
+                            <option value="3" selected>3 minutes</option>
+                            <option value="4">4 minutes</option>
+                            <option value="5">5 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="field-group">
+                    <label>Start Date & Time</label>
+                    <div class="datetime-group">
+                        <input type="date" id="startDate" onchange="saveRestrictions()">
+                        <input type="time" id="startTime" onchange="saveRestrictions()">
+                    </div>
+                </div>
+                
+                <div class="field-group">
+                    <label>Stop Date & Time</label>
+                    <div class="datetime-group">
+                        <input type="date" id="stopDate" onchange="saveRestrictions()">
+                        <input type="time" id="stopTime" onchange="saveRestrictions()">
+                    </div>
+                </div>
+                
+                <div class="field-group">
+                    <label>Number of Quiz Attempts Allowed</label>
+                    <select id="attemptsAllowed" onchange="saveRestrictions()">
+                        <option value="1" selected>1 attempt</option>
+                        <option value="2">2 attempts</option>
+                        <option value="3">3 attempts</option>
+                    </select>
+                </div>
+                
+                <div class="row">
+                    <div class="field-group">
+                        <label>Total Number of Questions</label>
+                        <input type="number" id="totalQuestions" min="1" max="100" value="6" onchange="saveRestrictions()">
+                    </div>
+                    <div class="field-group">
+                        <label>Points Per Question</label>
+                        <div class="checkbox-group" style="padding-top: 10px;">
+                            <label>
+                                <input type="radio" name="pointsPerQuestion" value="0.5" onchange="saveRestrictions()">
+                                0.5 points
+                            </label>
+                            <label>
+                                <input type="radio" name="pointsPerQuestion" value="1.0" checked onchange="saveRestrictions()">
+                                1.0 point
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" onclick="goToPage(3)">← Previous</button>
+                <button class="btn btn-primary" onclick="goToPage(5)">Next →</button>
+            </div>
+            <div class="page-indicator">Page 4 of 5</div>
+            <div class="page-dots">
+                <div class="page-dot" onclick="goToPage(1)"></div>
+                <div class="page-dot" onclick="goToPage(2)"></div>
+                <div class="page-dot" onclick="goToPage(3)"></div>
+                <div class="page-dot active" onclick="goToPage(4)"></div>
+                <div class="page-dot" onclick="goToPage(5)"></div>
+            </div>
+        </div>
+        
+        <div class="page" id="page5">
+            <h1>Teacher Dashboard - Activity Reports</h1>
+            
+            <div class="section">
+                <h2>Current Selection</h2>
+                <div class="row">
+                    <div class="field-group">
+                        <label>Selected Class</label>
+                        <div class="display-field" id="selectedClassPage5"></div>
+                    </div>
+                    <div class="field-group">
+                        <label>Selected Quiz</label>
+                        <div class="display-field" id="selectedQuizPage5"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Master Report</h2>
+                <div id="reportLoading" style="text-align: center; padding: 20px; display: none;">
+                    <p>Loading report data...</p>
+                </div>
+                <div id="reportHeader" style="display: none;">
+                    <div style="background: rgba(77, 166, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div>
+                                <strong>Class:</strong> <span id="reportClass"></span>
+                            </div>
+                            <div>
+                                <strong>Quiz:</strong> <span id="reportQuiz"></span>
+                            </div>
+                            <div>
+                                <strong>Students:</strong> <span id="reportStudentCount"></span>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px;">
+                            <div>
+                                <strong>Start:</strong> <span id="reportStartTime"></span>
+                            </div>
+                            <div>
+                                <strong>Stop:</strong> <span id="reportStopTime"></span>
+                            </div>
+                            <div>
+                                <strong>Avg Score:</strong> <span id="reportAvgScore"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="reportTable"></div>
+                <button class="btn btn-primary export-btn" onclick="exportMasterReport()" id="exportMasterBtn" style="display: none;">
+                    Export as PDF
+                </button>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" onclick="goToPage(4)">← Previous</button>
+                <button class="btn btn-secondary" disabled>Next →</button>
+            </div>
+            <div class="page-indicator">Page 5 of 5</div>
+            <div class="page-dots">
+                <div class="page-dot" onclick="goToPage(1)"></div>
+                <div class="page-dot" onclick="goToPage(2)"></div>
+                <div class="page-dot" onclick="goToPage(3)"></div>
+                <div class="page-dot" onclick="goToPage(4)"></div>
+                <div class="page-dot active" onclick="goToPage(5)"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="eraseModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeEraseDialog()">×</span>
+            <h2 style="color: #f44336; margin-bottom: 20px;">⚠️ Confirm Database Erasure</h2>
+            <div class="confirm-dialog">
+                <p style="margin-bottom: 15px;">You are about to erase ALL databases except the current one for this Class-Quiz combination.</p>
+                <p style="margin-bottom: 20px; font-weight: bold;">This action CANNOT be reversed!</p>
+                <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <input type="checkbox" id="confirmErase">
+                    <span>Yes, I understand this cannot be reversed</span>
+                </label>
+            </div>
+            <button class="btn btn-danger" onclick="executeErase()" id="executeEraseBtn" disabled>Erase Databases</button>
+            <button class="btn btn-secondary" onclick="closeEraseDialog()">Cancel</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="studentModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeStudentReport()">×</span>
+            <h2 id="studentModalTitle">Individual Student Report</h2>
+            <div id="studentReportContent"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="exportStudentReport()">Export as PDF</button>
+                <button class="btn btn-danger" onclick="deleteStudentRecord()" style="background: #dc3545;">Delete This Record</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyApEcj1Gt_AgK9853JGWsyPuWuX1RyRQQA",
+            authDomain: "astronomy-course.firebaseapp.com",
+            projectId: "astronomy-course",
+            storageBucket: "astronomy-course.firebasestorage.app",
+            messagingSenderId: "84123424550",
+            appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Global state
+        let currentPage = 1;
+        let selectedClass = null;
+        let selectedClassPassword = null;
+        let selectedQuiz = null;
+        let selectedQuizPassword = null;
+        let currentDb = null;
+        let classes = [];
+        let quizzes = [];
+        let databases = [];
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            loadClasses();
+            restoreSessionState();
+        });
+        
+        // Restore session state from localStorage
+        async function restoreSessionState() {
+            const savedClass = localStorage.getItem('selectedClass');
+            const savedClassPassword = localStorage.getItem('selectedClassPassword');
+            const savedQuiz = localStorage.getItem('selectedQuiz');
+            const savedQuizPassword = localStorage.getItem('selectedQuizPassword');
+            
+            if (savedClass && savedClassPassword) {
+                selectedClass = savedClass;
+                selectedClassPassword = savedClassPassword;
+                updateClassDisplay();
+            }
+            
+            if (savedQuiz && savedQuizPassword) {
+                selectedQuiz = savedQuiz;
+                selectedQuizPassword = savedQuizPassword;
+                await loadQuizzes();
+                updateQuizDisplay();
+                
+                // Auto-load and select active database
+                await loadDatabases();
+                await autoSelectActiveDatabase();
+            }
+        }
+        
+        // Auto-select the active database
+        async function autoSelectActiveDatabase() {
+            if (!selectedClass || !selectedQuiz) return;
+            
+            const activeDb = databases.find(d => d.active);
+            if (activeDb) {
+                currentDb = formatDbName(activeDb.quizName, activeDb.createdAt);
+                document.getElementById('currentDb').textContent = currentDb;
+                document.getElementById('currentDb').className = 'display-field';
+                document.getElementById('eraseDbBtn').disabled = false;
+                
+                // Also select it in the dropdown
+                const dbDropdown = document.getElementById('dbDropdown');
+                dbDropdown.value = activeDb.id;
+            }
+            
+            // Also load quiz settings
+            await loadQuizSettings();
+        }
+        
+        // Load quiz settings from Firebase
+        async function loadQuizSettings() {
+            if (!selectedClass || !selectedQuiz) return;
+            
+            try {
+                const settingsDoc = await db.collection('quizSettings')
+                    .doc(`${selectedClass}_${selectedQuiz}`)
+                    .get();
+                
+                if (settingsDoc.exists) {
+                    const settings = settingsDoc.data();
+                    
+                    // Load login descriptors
+                    if (settings.loginDescriptors) {
+                        document.getElementById('nameDescriptor').value = settings.loginDescriptors.name || 'Enter your full name here';
+                        document.getElementById('idDescriptor').value = settings.loginDescriptors.id || 'Enter your student ID number';
+                        document.getElementById('passDescriptor').value = settings.loginDescriptors.pass || 'Enter quiz password';
+                    }
+                    
+                    // Load ID validation
+                    if (settings.idValidation) {
+                        document.getElementById('idValidationType').value = settings.idValidation.type || 'none';
+                        document.getElementById('idValidationValue').value = settings.idValidation.value || '';
+                        updateIdValidationFields();
+                    }
+                    
+                    // Load restrictions
+                    if (settings.restrictions) {
+                        document.getElementById('timeLimit').value = settings.restrictions.timeLimit || 20;
+                        document.getElementById('lowTimeWarning').value = settings.restrictions.lowTimeWarning || 3;
+                        
+                        // NEW: Load total questions
+                        document.getElementById('totalQuestions').value = settings.restrictions.totalQuestions || 6;
+                        
+                        // Parse startDateTime into separate date and time
+                        if (settings.restrictions.startDateTime) {
+                            const [startDate, startTime] = settings.restrictions.startDateTime.split('T');
+                            document.getElementById('startDate').value = startDate || '';
+                            document.getElementById('startTime').value = startTime || '';
+                        } else {
+                            document.getElementById('startDate').value = '';
+                            document.getElementById('startTime').value = '';
+                        }
+                        
+                        // Parse stopDateTime into separate date and time
+                        if (settings.restrictions.stopDateTime) {
+                            const [stopDate, stopTime] = settings.restrictions.stopDateTime.split('T');
+                            document.getElementById('stopDate').value = stopDate || '';
+                            document.getElementById('stopTime').value = stopTime || '';
+                        } else {
+                            document.getElementById('stopDate').value = '';
+                            document.getElementById('stopTime').value = '';
+                        }
+                        
+                        document.getElementById('attemptsAllowed').value = settings.restrictions.attemptsAllowed || 1;
+                        
+                        // Set points per question radio button
+                        const pointsValue = settings.restrictions.pointsPerQuestion || '1.0';
+                        document.querySelectorAll('input[name="pointsPerQuestion"]').forEach(radio => {
+                            radio.checked = (radio.value === pointsValue);
+                        });
+                    }
+                    
+                    console.log('Quiz settings loaded successfully');
+                } else {
+                    console.log('No saved settings found for this quiz');
+                }
+            } catch (error) {
+                console.error('Error loading quiz settings:', error);
+            }
+        }
+        
+        // Save session state to localStorage
+        function saveSessionState() {
+            if (selectedClass) localStorage.setItem('selectedClass', selectedClass);
+            if (selectedClassPassword) localStorage.setItem('selectedClassPassword', selectedClassPassword);
+            if (selectedQuiz) localStorage.setItem('selectedQuiz', selectedQuiz);
+            if (selectedQuizPassword) localStorage.setItem('selectedQuizPassword', selectedQuizPassword);
+        }
+        
+        // PAGE NAVIGATION
+        function goToPage(pageNum) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            // Show target page
+            document.getElementById(`page${pageNum}`).classList.add('active');
+            currentPage = pageNum;
+            
+            // Update displays
+            updatePageDisplays();
+            
+            // Load page-specific data
+            if (pageNum === 2) loadQuizzes();
+            if (pageNum === 3) loadDatabases();
+            if (pageNum === 5) loadReport();
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function updatePageDisplays() {
+            // Update class displays on all pages
+            const classDisplay = selectedClass || 'none';
+            ['selectedClassPage2', 'selectedClassPage3', 'selectedClassPage4', 'selectedClassPage5'].forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.textContent = classDisplay;
+                    elem.className = selectedClass ? 'display-field' : 'display-field empty';
+                }
+            });
+            
+            // Update quiz displays
+            const quizDisplay = selectedQuiz || 'none';
+            ['selectedQuizPage3', 'selectedQuizPage4', 'selectedQuizPage5'].forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.textContent = quizDisplay;
+                    elem.className = selectedQuiz ? 'display-field' : 'display-field empty';
+                }
+            });
+        }
+        
+        // CLASS MANAGEMENT (PAGE 1)
+        async function loadClasses() {
+            try {
+                const snapshot = await db.collection('classes').get();
+                classes = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                
+                // Populate dropdowns
+                const classDropdown = document.getElementById('classDropdown');
+                const passDropdown = document.getElementById('classPasswordDropdown');
+                
+                classDropdown.innerHTML = '<option value="">-- Select Class --</option>';
+                passDropdown.innerHTML = '<option value="">-- Select Password --</option>';
+                
+                classes.forEach(cls => {
+                    classDropdown.innerHTML += `<option value="${cls.name}">${cls.name}</option>`;
+                    passDropdown.innerHTML += `<option value="${cls.password}">${cls.password}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading classes:', error);
+            }
+        }
+        
+        function selectClassByName() {
+            const name = document.getElementById('classDropdown').value;
+            if (!name) return;
+            
+            const cls = classes.find(c => c.name === name);
+            if (cls) {
+                selectedClass = cls.name;
+                selectedClassPassword = cls.password;
+                updateClassDisplay();
+                saveSessionState();
+            }
+        }
+        
+        function selectClassByPassword() {
+            const password = document.getElementById('classPasswordDropdown').value;
+            if (!password) return;
+            
+            const cls = classes.find(c => c.password === password);
+            if (cls) {
+                selectedClass = cls.name;
+                selectedClassPassword = cls.password;
+                updateClassDisplay();
+                saveSessionState();
+            }
+        }
+        
+        function updateClassDisplay() {
+            const classElem = document.getElementById('selectedClass');
+            const passElem = document.getElementById('selectedClassPassword');
+            const currentPassElem = document.getElementById('currentPassword');
+            const changeBtn = document.getElementById('changePassBtn');
+            
+            classElem.textContent = selectedClass;
+            classElem.className = 'display-field';
+            passElem.textContent = selectedClassPassword;
+            passElem.className = 'display-field';
+            currentPassElem.textContent = selectedClassPassword;
+            currentPassElem.className = 'display-field';
+            
+            changeBtn.disabled = false;
+            updatePageDisplays();
+        }
+        
+        async function saveNewClass() {
+            const name = document.getElementById('newClassName').value.trim();
+            const password = document.getElementById('newClassPassword').value.trim();
+            const errorElem = document.getElementById('addClassError');
+            const successElem = document.getElementById('addClassSuccess');
+            
+            errorElem.style.display = 'none';
+            successElem.style.display = 'none';
+            
+            if (!name || !password) {
+                errorElem.textContent = 'Please enter both class name and password';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (classes.find(c => c.name === name)) {
+                errorElem.textContent = 'Class name already exists';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (classes.find(c => c.password === password)) {
+                errorElem.textContent = 'Password already in use';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            try {
+                await db.collection('classes').add({ name, password });
+                selectedClass = name;
+                selectedClassPassword = password;
+                
+                await loadClasses();
+                updateClassDisplay();
+                
+                document.getElementById('newClassName').value = '';
+                document.getElementById('newClassPassword').value = '';
+                
+                successElem.textContent = 'Class created successfully!';
+                successElem.style.display = 'block';
+            } catch (error) {
+                errorElem.textContent = 'Error creating class: ' + error.message;
+                errorElem.style.display = 'block';
+            }
+        }
+        
+        async function changeClassPassword() {
+            const newPassword = document.getElementById('changedPassword').value.trim();
+            const errorElem = document.getElementById('changePassError');
+            const successElem = document.getElementById('changePassSuccess');
+            
+            errorElem.style.display = 'none';
+            successElem.style.display = 'none';
+            
+            if (!newPassword) {
+                errorElem.textContent = 'Please enter a new password';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (classes.find(c => c.password === newPassword && c.name !== selectedClass)) {
+                errorElem.textContent = 'Password already in use by another class';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const cls = classes.find(c => c.name === selectedClass);
+                await db.collection('classes').doc(cls.id).update({ password: newPassword });
+                
+                selectedClassPassword = newPassword;
+                await loadClasses();
+                updateClassDisplay();
+                
+                document.getElementById('changedPassword').value = '';
+                successElem.textContent = 'Password updated successfully!';
+                successElem.style.display = 'block';
+            } catch (error) {
+                errorElem.textContent = 'Error updating password: ' + error.message;
+                errorElem.style.display = 'block';
+            }
+        }
+        
+        // QUIZ MANAGEMENT (PAGE 2)
+        async function loadQuizzes() {
+            if (!selectedClass) return;
+            
+            try {
+                // Force fresh data from server, not cache
+                const snapshot = await db.collection('quizzes')
+                    .where('className', '==', selectedClass)
+                    .get({ source: 'server' });
+                quizzes = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                console.log(`Loaded ${quizzes.length} quiz(zes) from server for class ${selectedClass}`);
+                
+                const quizDropdown = document.getElementById('quizDropdown');
+                const passDropdown = document.getElementById('quizPasswordDropdown');
+                
+                quizDropdown.innerHTML = '<option value="">-- Select Quiz --</option>';
+                passDropdown.innerHTML = '<option value="">-- Select Password --</option>';
+                
+                quizzes.forEach(quiz => {
+                    quizDropdown.innerHTML += `<option value="${quiz.name}">${quiz.name}</option>`;
+                    passDropdown.innerHTML += `<option value="${quiz.password}">${quiz.password}</option>`;
+                });
+                
+                document.getElementById('eraseDbBtn').disabled = !selectedQuiz || !currentDb;
+            } catch (error) {
+                console.error('Error loading quizzes:', error);
+            }
+        }
+        
+        async function selectQuizByName() {
+            const name = document.getElementById('quizDropdown').value;
+            if (!name) return;
+            
+            const quiz = quizzes.find(q => q.name === name);
+            if (quiz) {
+                selectedQuiz = quiz.name;
+                selectedQuizPassword = quiz.password;
+                updateQuizDisplay();
+                saveSessionState();
+                await loadDatabases();
+                await autoSelectActiveDatabase();
+            }
+        }
+        
+        async function selectQuizByPassword() {
+            const password = document.getElementById('quizPasswordDropdown').value;
+            if (!password) return;
+            
+            const quiz = quizzes.find(q => q.password === password);
+            if (quiz) {
+                selectedQuiz = quiz.name;
+                selectedQuizPassword = quiz.password;
+                updateQuizDisplay();
+                saveSessionState();
+                await loadDatabases();
+                await autoSelectActiveDatabase();
+            }
+        }
+        
+        function updateQuizDisplay() {
+            const quizElem = document.getElementById('selectedQuiz');
+            const passElem = document.getElementById('selectedQuizPassword');
+            
+            quizElem.textContent = selectedQuiz;
+            quizElem.className = 'display-field';
+            passElem.textContent = selectedQuizPassword;
+            passElem.className = 'display-field';
+            
+            updatePageDisplays();
+            document.getElementById('eraseDbBtn').disabled = !currentDb;
+        }
+        
+        async function saveNewQuiz() {
+            const name = document.getElementById('newQuizName').value.trim();
+            const password = document.getElementById('newQuizPassword').value.trim();
+            const errorElem = document.getElementById('addQuizError');
+            const successElem = document.getElementById('addQuizSuccess');
+            
+            errorElem.style.display = 'none';
+            successElem.style.display = 'none';
+            
+            if (!selectedClass) {
+                errorElem.textContent = 'Please select a class first';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (!name || !password) {
+                errorElem.textContent = 'Please enter both quiz name and password';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (quizzes.find(q => q.name === name)) {
+                errorElem.textContent = 'Quiz name already exists for this class';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            if (quizzes.find(q => q.password === password)) {
+                errorElem.textContent = 'Password already in use';
+                errorElem.style.display = 'block';
+                return;
+            }
+            
+            try {
+                // Use className_quizName as document ID for easy deletion
+                const docId = `${selectedClass}_${name}`;
+                await db.collection('quizzes').doc(docId).set({
+                    name,
+                    password,
+                    className: selectedClass
+                });
+                console.log(`Created quiz with ID: ${docId}`);
+                
+                selectedQuiz = name;
+                selectedQuizPassword = password;
+                
+                await loadQuizzes();
+                updateQuizDisplay();
+                saveSessionState();
+                
+                document.getElementById('newQuizName').value = '';
+                document.getElementById('newQuizPassword').value = '';
+                
+                successElem.textContent = 'Quiz created successfully!';
+                successElem.style.display = 'block';
+            } catch (error) {
+                errorElem.textContent = 'Error creating quiz: ' + error.message;
+                errorElem.style.display = 'block';
+            }
+        }
+        
+        function showEraseDialog() {
+            document.getElementById('eraseModal').classList.add('active');
+            document.getElementById('confirmErase').checked = false;
+            document.getElementById('executeEraseBtn').disabled = true;
+        }
+        
+        function closeEraseDialog() {
+            document.getElementById('eraseModal').classList.remove('active');
+        }
+        
+        document.getElementById('confirmErase')?.addEventListener('change', (e) => {
+            document.getElementById('executeEraseBtn').disabled = !e.target.checked;
+        });
+        
+        async function executeErase() {
+            // Implementation for erasing old DBs
+            alert('Erase function would delete all DBs except current one');
+            closeEraseDialog();
+        }
+        
+        // DATABASE CONFIGURATION (PAGE 3)
+        async function loadDatabases() {
+            if (!selectedClass || !selectedQuiz) return;
+            
+            try {
+                const snapshot = await db.collection('databases')
+                    .where('className', '==', selectedClass)
+                    .where('quizName', '==', selectedQuiz)
+                    .get();
+                
+                // Sort in memory instead of using orderBy (which requires an index)
+                const docs = snapshot.docs.sort((a, b) => {
+                    const aTime = a.data().createdAt;
+                    const bTime = b.data().createdAt;
+                    return bTime - aTime; // descending order
+                });
+                
+                databases = docs.map(doc => ({id: doc.id, ...doc.data()}));
+                
+                const dbDropdown = document.getElementById('dbDropdown');
+                dbDropdown.innerHTML = '<option value="">-- Select DB --</option>';
+                
+                databases.forEach(database => {
+                    const label = formatDbName(database.quizName, database.createdAt);
+                    const option = document.createElement('option');
+                    option.value = database.id;
+                    option.textContent = label;
+                    if (database.active) {
+                        option.textContent += ' (Active)';
+                    }
+                    dbDropdown.appendChild(option);
+                });
+                
+                console.log(`Loaded ${databases.length} databases`);
+            } catch (error) {
+                console.error('Error loading databases:', error);
+            }
+        }
+        
+        function formatDbName(quizName, timestamp) {
+            const prefix = quizName.substring(0, 4);
+            // Handle both Firestore Timestamp and regular timestamp
+            const date = timestamp && timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const formatted = date.toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            return `${prefix}_${formatted}`;
+        }
+        
+        function selectDatabase() {
+            const dbId = document.getElementById('dbDropdown').value;
+            if (!dbId) return;
+            
+            const database = databases.find(d => d.id === dbId);
+            if (database) {
+                currentDb = formatDbName(database.quizName, database.createdAt);
+                document.getElementById('currentDb').textContent = currentDb;
+                document.getElementById('currentDb').className = 'display-field';
+                document.getElementById('eraseDbBtn').disabled = false;
+            }
+        }
+        
+        async function createNewDatabase() {
+            if (!selectedClass || !selectedQuiz) {
+                alert('Please select a class and quiz first');
+                return;
+            }
+            
+            try {
+                const timestamp = Date.now();
+                await db.collection('databases').add({
+                    className: selectedClass,
+                    quizName: selectedQuiz,
+                    password: selectedQuizPassword,
+                    createdAt: timestamp,
+                    active: true
+                });
+                
+                // Archive old databases
+                const oldDbs = databases.filter(d => d.active);
+                for (const oldDb of oldDbs) {
+                    await db.collection('databases').doc(oldDb.id).update({ active: false });
+                }
+                
+                currentDb = formatDbName(selectedQuiz, timestamp);
+                document.getElementById('currentDb').textContent = currentDb;
+                document.getElementById('currentDb').className = 'display-field';
+                
+                await loadDatabases();
+                
+                document.getElementById('dbSuccess').textContent = 'New database created successfully!';
+                document.getElementById('dbSuccess').style.display = 'block';
+            } catch (error) {
+                document.getElementById('dbError').textContent = 'Error creating database: ' + error.message;
+                document.getElementById('dbError').style.display = 'block';
+            }
+        }
+        
+        function saveLoginDescriptors() {
+            // Save to local storage or Firebase
+            const descriptors = {
+                name: document.getElementById('nameDescriptor').value,
+                id: document.getElementById('idDescriptor').value,
+                pass: document.getElementById('passDescriptor').value
+            };
+            
+            if (selectedClass && selectedQuiz) {
+                db.collection('quizSettings').doc(`${selectedClass}_${selectedQuiz}`).set({
+                    loginDescriptors: descriptors
+                }, { merge: true });
+            }
+        }
+        
+        function updateIdValidationFields() {
+            const type = document.getElementById('idValidationType').value;
+            const valueGroup = document.getElementById('idValidationValueGroup');
+            const exampleGroup = document.getElementById('idValidationExampleGroup');
+            const valueLabel = document.getElementById('idValidationValueLabel');
+            const valueInput = document.getElementById('idValidationValue');
+            const exampleDiv = document.getElementById('idValidationExample');
+            
+            if (type === 'none') {
+                valueGroup.style.display = 'none';
+                exampleGroup.style.display = 'none';
+                exampleDiv.textContent = 'No validation set';
+                saveIdValidation();
+            } else {
+                valueGroup.style.display = 'block';
+                exampleGroup.style.display = 'block';
+                
+                if (type === 'digits') {
+                    valueLabel.textContent = 'Number of Digits';
+                    valueInput.placeholder = 'e.g., 7 or 8';
+                    valueInput.type = 'number';
+                    valueInput.min = '1';
+                    valueInput.max = '20';
+                    exampleDiv.textContent = valueInput.value ? `Student ID must be exactly ${valueInput.value} digits` : 'Enter number of digits';
+                } else if (type === 'startsWith') {
+                    valueLabel.textContent = 'Must Start With';
+                    valueInput.placeholder = 'e.g., B or STU';
+                    valueInput.type = 'text';
+                    exampleDiv.textContent = valueInput.value ? `Student ID must start with "${valueInput.value}"` : 'Enter starting text';
+                } else if (type === 'regex') {
+                    valueLabel.textContent = 'Regular Expression Pattern';
+                    valueInput.placeholder = 'e.g., ^[A-Z]\\d{7}$';
+                    valueInput.type = 'text';
+                    exampleDiv.textContent = valueInput.value ? `Pattern: ${valueInput.value}` : 'Enter regex pattern';
+                }
+            }
+        }
+        
+        function saveIdValidation() {
+            const type = document.getElementById('idValidationType').value;
+            const value = document.getElementById('idValidationValue').value;
+            
+            const validation = {
+                type: type,
+                value: value
+            };
+            
+            if (selectedClass && selectedQuiz) {
+                db.collection('quizSettings').doc(`${selectedClass}_${selectedQuiz}`).set({
+                    idValidation: validation
+                }, { merge: true });
+            }
+            
+            // Update example message
+            updateIdValidationFields();
+        }
+        
+        // STUDENT RESTRICTIONS (PAGE 4)
+        function saveRestrictions() {
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const stopDate = document.getElementById('stopDate').value;
+            const stopTime = document.getElementById('stopTime').value;
+            
+            const restrictions = {
+                timeLimit: document.getElementById('timeLimit').value,
+                lowTimeWarning: document.getElementById('lowTimeWarning').value,
+                startDateTime: startDate && startTime ? `${startDate}T${startTime}` : null,
+                stopDateTime: stopDate && stopTime ? `${stopDate}T${stopTime}` : null,
+                attemptsAllowed: document.getElementById('attemptsAllowed').value,
+                pointsPerQuestion: document.querySelector('input[name="pointsPerQuestion"]:checked').value,
+                totalQuestions: parseInt(document.getElementById('totalQuestions').value) || 6 // NEW
+            };
+            
+            if (selectedClass && selectedQuiz) {
+                db.collection('quizSettings').doc(`${selectedClass}_${selectedQuiz}`).set({
+                    restrictions
+                }, { merge: true });
+            }
+        }
+        
+        // ACTIVITY REPORTS (PAGE 5)
+        async function loadReport() {
+            if (!selectedClass || !selectedQuiz) return;
+            
+            const selectedDbId = document.getElementById('dbDropdown').value;
+            
+            if (!selectedDbId) {
+                alert("Please select a database from Page 3 first.");
+                goToPage(3);
+                return;
+            }
+            
+            document.getElementById('reportLoading').style.display = 'block';
+            document.getElementById('reportHeader').style.display = 'none';
+            document.getElementById('exportMasterBtn').style.display = 'none';
+            
+            try {
+                // Load quiz settings to get restrictions
+                const settingsDoc = await db.collection('quizSettings')
+                    .doc(`${selectedClass}_${selectedQuiz}`)
+                    .get();
+                
+                let quizSettings = {
+                    restrictions: {
+                        maxAttempts: 'unlimited',
+                        pointsPerQuestion: 1.0,
+                        totalQuestions: 6,
+                        startDateTime: null,
+                        stopDateTime: null
+                    }
+                };
+                
+                if (settingsDoc.exists) {
+                    quizSettings = settingsDoc.data();
+                }
+                
+                const snapshot = await db.collection('students')
+                    .where('className', '==', selectedClass)
+                    .where('quizName', '==', selectedQuiz)
+                    .where('databaseId', '==', selectedDbId)
+                    .get();
+                
+                const allAttempts = snapshot.docs.map(doc => doc.data());
+                
+                // Group by student ID and find best score for each
+                const studentMap = {};
+                allAttempts.forEach(attempt => {
+                    const id = attempt.studentID;
+                    if (!studentMap[id]) {
+                        studentMap[id] = {
+                            name: attempt.name,
+                            studentID: id,
+                            attempts: [],
+                            bestScore: 0,
+                            bestAttempt: 1
+                        };
+                    }
+                    studentMap[id].attempts.push(attempt);
+                    if (attempt.score > studentMap[id].bestScore) {
+                        studentMap[id].bestScore = attempt.score;
+                        studentMap[id].bestAttempt = studentMap[id].attempts.length;
+                    }
+                });
+                
+                const students = Object.values(studentMap);
+                
+                // Calculate statistics
+                const totalStudents = students.length;
+                const avgScore = students.reduce((sum, s) => sum + (s.bestScore || 0), 0) / totalStudents || 0;
+                
+                // Format start/stop dates (just the date, not time)
+                let startTime = 'N/A';
+                let stopTime = 'N/A';
+                if (quizSettings.restrictions.startDateTime) {
+                    const start = new Date(quizSettings.restrictions.startDateTime);
+                    startTime = start.toLocaleDateString();
+                }
+                if (quizSettings.restrictions.stopDateTime) {
+                    const stop = new Date(quizSettings.restrictions.stopDateTime);
+                    stopTime = stop.toLocaleDateString();
+                }
+                
+                // Update header
+                document.getElementById('reportClass').textContent = selectedClass;
+                document.getElementById('reportQuiz').textContent = selectedQuiz;
+                document.getElementById('reportStudentCount').textContent = totalStudents;
+                document.getElementById('reportAvgScore').textContent = avgScore.toFixed(2) + ' pts';
+                document.getElementById('reportStartTime').textContent = startTime;
+                document.getElementById('reportStopTime').textContent = stopTime;
+                
+                // Generate table
+                generateReportTable(students, quizSettings.restrictions);
+                
+                document.getElementById('reportLoading').style.display = 'none';
+                document.getElementById('reportHeader').style.display = 'block';
+                document.getElementById('exportMasterBtn').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading report:', error);
+                document.getElementById('reportLoading').textContent = 'Error loading report';
+            }
+        }
+        
+        function generateReportTable(students, restrictions) {
+            students.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Store students array for modal access
+            currentStudents = students;
+            
+            // DYNAMIC SCORING LOGIC HERE
+            const pointsPerQuestion = parseFloat(restrictions.pointsPerQuestion) || 1.0;
+            const totalQuestions = parseInt(restrictions.totalQuestions) || 6;
+            const totalPoints = totalQuestions * pointsPerQuestion;
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Student ID</th>
+                            <th>Best Attempt</th>
+                            <th>Best Score (Pts)</th>
+                            <th>Best Score (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            students.forEach((student, idx) => {
+                const bestScore = student.bestScore || 0;
+                // Safely calculate percentage to avoid division by zero
+                const percentage = totalPoints > 0 ? (bestScore / totalPoints * 100).toFixed(1) : 0;
+                const attemptCount = student.attempts.length;
+                html += `
+                    <tr onclick="showStudentReport(${idx})" style="cursor: pointer;">
+                        <td>${student.name}</td>
+                        <td>${student.studentID}</td>
+                        <td>${student.bestAttempt} of ${attemptCount}</td>
+                        <td>${bestScore} / ${totalPoints}</td>
+                        <td>${percentage}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            const reportTable = document.getElementById('reportTable');
+            reportTable.innerHTML = html;
+            
+            // Save total points in the dataset so the modal can access it
+            reportTable.dataset.totalPoints = totalPoints;
+        }
+        
+        function selectStudentRow(row, idx) {
+            document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+        }
+        
+        let currentStudents = []; // Store students array for modal access
+        let currentStudentIndex = null; // Track which student is being viewed
+        
+        function showStudentReport(idx) {
+            currentStudentIndex = idx;
+            const student = currentStudents[idx];
+            if (!student) return;
+            
+            // Get total points dynamically calculated in generateReportTable
+            const totalPoints = parseFloat(document.getElementById('reportTable').dataset.totalPoints) || 6;
+            
+            // Build individual report
+            let html = `
+                <div class="report-header">
+                    <p><strong>Student Name:</strong> ${student.name}</p>
+                    <p><strong>Student ID:</strong> ${student.studentID}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attempt</th>
+                            <th>Score (Pts)</th>
+                            <th>Score (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            student.attempts.forEach((attempt, i) => {
+                const score = attempt.score || 0;
+                const percentage = totalPoints > 0 ? (score / totalPoints * 100).toFixed(1) : 0;
+                html += `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${score} / ${totalPoints}</td>
+                        <td>${percentage}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            document.getElementById('studentModalTitle').textContent = `Individual Report: ${student.name}`;
+            document.getElementById('studentReportContent').innerHTML = html;
+            document.getElementById('studentModal').classList.add('active');
+        }
+        
+        function closeStudentReport() {
+            document.getElementById('studentModal').classList.remove('active');
+        }
+        
+        function exportMasterReport() {
+            // Create a printable version of the master report
+            const reportContent = document.getElementById('reportTable').innerHTML;
+            const reportHeader = `
+                <h1>Master Report</h1>
+                <p><strong>Class:</strong> ${document.getElementById('reportClass').textContent}</p>
+                <p><strong>Quiz:</strong> ${document.getElementById('reportQuiz').textContent}</p>
+                <p><strong>Students:</strong> ${document.getElementById('reportStudentCount').textContent}</p>
+                <p><strong>Start:</strong> ${document.getElementById('reportStartTime').textContent}</p>
+                <p><strong>Stop:</strong> ${document.getElementById('reportStopTime').textContent}</p>
+                <p><strong>Avg Score:</strong> ${document.getElementById('reportAvgScore').textContent}</p>
+            `;
+            
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Master Report - ${selectedQuiz}</title>
+                    <style>
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            color-adjust: exact !important;
+                        }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            padding: 20px;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        h1 { color: #333; }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 20px;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        th, td { 
+                            border: 1px solid #ddd; 
+                            padding: 8px; 
+                            text-align: left;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        th { 
+                            background-color: #4da6ff !important;
+                            background: #4da6ff !important;
+                            color: white !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        tr:nth-child(even) { 
+                            background-color: #f2f2f2 !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        @media print {
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                            }
+                            th {
+                                background-color: #4da6ff !important;
+                                background: #4da6ff !important;
+                                color: white !important;
+                            }
+                            tr:nth-child(even) {
+                                background-color: #f2f2f2 !important;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reportHeader}
+                    ${reportContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            
+            // Removed auto-close so the window actually stays open for the user
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        
+        function exportStudentReport() {
+            const reportContent = document.getElementById('studentReportContent').innerHTML;
+            const reportTitle = document.getElementById('studentModalTitle').textContent;
+            
+            const printWindow = window.open('', '', 'width=800,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>${reportTitle}</title>
+                    <style>
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            color-adjust: exact !important;
+                        }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            padding: 20px;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        h1 { color: #333; }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 20px;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        th, td { 
+                            border: 1px solid #ddd; 
+                            padding: 8px; 
+                            text-align: left;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        th { 
+                            background-color: #4da6ff !important;
+                            background: #4da6ff !important;
+                            color: white !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        tr:nth-child(even) { 
+                            background-color: #f2f2f2 !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        @media print {
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                            }
+                            th {
+                                background-color: #4da6ff !important;
+                                background: #4da6ff !important;
+                                color: white !important;
+                            }
+                            tr:nth-child(even) {
+                                background-color: #f2f2f2 !important;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${reportTitle}</h1>
+                    ${reportContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            
+            // Removed auto-close so the window actually stays open for the user
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        
+        // Delete student record
+        async function deleteStudentRecord() {
+            if (currentStudentIndex === null || !currentStudents[currentStudentIndex]) {
+                alert('No student record selected');
+                return;
+            }
+            
+            const student = currentStudents[currentStudentIndex];
+            const selectedDbId = document.getElementById('dbDropdown').value; 
+            
+            const confirmMsg = `Are you sure you want to delete ALL records for:\n\nStudent: ${student.name}\nStudent ID: ${student.studentID}\n\nThis will delete ${student.attempts.length} attempt(s) from this specific database version.`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('students')
+                    .where('className', '==', selectedClass)
+                    .where('quizName', '==', selectedQuiz)
+                    .where('databaseId', '==', selectedDbId)
+                    .where('studentID', '==', student.studentID)
+                    .get();
+                
+                console.log(`Deleting ${snapshot.docs.length} records for student ${student.studentID}`);
+                
+                const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
+                await Promise.all(deletePromises);
+                
+                alert(`Successfully deleted all records for ${student.name} from the current database.`);
+                
+                closeStudentReport();
+                loadReport();
+                
+            } catch (error) {
+                console.error('Error deleting student record:', error);
+                alert('Error deleting record: ' + error.message);
+            }
+        }
+    
+        
+        // Delete currently selected quiz
+        async function deleteCurrentQuiz() {
+            if (!selectedClass || !selectedQuiz) {
+                alert('Please select a quiz first');
+                return;
+            }
+            
+            const classToDelete = selectedClass;
+            const quizToDelete = selectedQuiz;
+            
+            const confirmed = confirm(
+                `Are you sure you want to permanently delete quiz "${quizToDelete}"?\n\n` +
+                `Class: ${classToDelete}\n` +
+                `Quiz: ${quizToDelete}\n\n` +
+                `This will delete:\n` +
+                `- Quiz settings\n` +
+                `- All databases for this quiz\n` +
+                `- All student data\n\n` +
+                `THIS CANNOT BE UNDONE!`
+            );
+            
+            if (!confirmed) { return; }
+            
+            try {
+                const quizDocId = `${classToDelete}_${quizToDelete}`;
+                await db.collection('quizzes').doc(quizDocId).delete();
+                await db.collection('quizSettings').doc(quizDocId).delete();
+                
+                const dbSnapshot = await db.collection('databases')
+                    .where('className', '==', classToDelete)
+                    .where('quizName', '==', quizToDelete)
+                    .get();
+                
+                for (const doc of dbSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+                
+                const studentSnapshot = await db.collection('students')
+                    .where('className', '==', classToDelete)
+                    .where('quizName', '==', quizToDelete)
+                    .get();
+                
+                for (const doc of studentSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+                
+                alert(`Quiz "${quizToDelete}" has been permanently deleted.`);
+                
+                selectedQuiz = null;
+                selectedQuizPassword = null;
+                currentDb = null;
+                
+                await loadQuizzes();
+                updateQuizDisplay();
+                document.getElementById('deleteQuizBtn').disabled = true;
+                
+            } catch (error) {
+                console.error('Error deleting quiz:', error);
+                alert('Error deleting quiz: ' + error.message);
+            }
+        }
+        
+        const originalUpdateQuizDisplay = updateQuizDisplay;
+        updateQuizDisplay = function() {
+            originalUpdateQuizDisplay();
+            const deleteBtn = document.getElementById('deleteQuizBtn');
+            if (deleteBtn) {
+                deleteBtn.disabled = !selectedQuiz;
+            }
+        };
+
+    </script>
+</body>
+</html>

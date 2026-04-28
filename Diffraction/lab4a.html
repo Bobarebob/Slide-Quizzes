@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 4A – Diffraction Simulation</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Nunito:wght@300;400;600;700&display=swap');
+
+/* ── OUTER SHELL ── */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%);
+    color: #e0e0e0; line-height: 1.6; min-height: 100vh;
+}
+.container {
+    max-width: 1400px; margin: 0 auto;
+    background: rgba(6, 6, 18, 0.97);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    border: 1px solid rgba(79,195,247,0.2);
+    overflow: hidden; min-height: 100vh;
+}
+.student-info {
+    background: rgba(4, 4, 12, 0.98); padding: 14px 40px;
+    border-bottom: 2px solid rgba(79,195,247,0.3);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: nowrap; gap: 20px;
+}
+.student-name    { color: #4fc3f7; font-size: 1.05em; font-weight: 700; white-space: nowrap; font-family: 'Orbitron', monospace; letter-spacing: 1px; }
+.student-score   { color: #ffa64d; font-size: 1.05em; font-weight: bold; white-space: nowrap; }
+.student-attempt { color: #b19cd9; font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+.student-timer   { color: #4dffb8; font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+#timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+.page-content { padding: 20px; }
+
+/* Navigation */
+.navigation {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 40px; background: rgba(4,4,12,0.98);
+    border-top: 2px solid rgba(79,195,247,0.3);
+}
+.nav-button {
+    padding: 13px 32px;
+    background: linear-gradient(135deg, #2a2a4a 0%, #1a1a36 100%);
+    color: #4fc3f7; border: 1px solid rgba(79,195,247,0.4); border-radius: 30px;
+    cursor: pointer; font-size: 1.0em; font-weight: 700;
+    font-family: 'Orbitron', monospace; letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+.nav-button:disabled { opacity: 0.4; cursor: not-allowed; }
+.nav-button:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a5e 0%, #2a2a4a 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,195,247,0.2); }
+.nav-button.forward { background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%); color: #030814; border-color: transparent; }
+.nav-button.forward:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(79,195,247,0.4); }
+.page-counter { font-family: 'Orbitron', monospace; font-size: 1.1em; color: #4fc3f7; font-weight: 600; letter-spacing: 2px; }
+.timeline-indicator {
+    display: flex; justify-content: center; gap: 14px; padding: 18px;
+    background: rgba(4,4,12,0.7);
+}
+.timeline-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(79,195,247,0.25); cursor: pointer;
+    transition: all 0.3s ease; border: 2px solid transparent;
+}
+.timeline-dot:hover { background: rgba(79,195,247,0.55); transform: scale(1.2); }
+.timeline-dot.active { background: #4fc3f7; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 14px rgba(79,195,247,0.8); }
+.timeline-dot.lab-dot { background: rgba(232,121,249,0.25); }
+.timeline-dot.lab-dot:hover { background: rgba(232,121,249,0.55); }
+.timeline-dot.lab-dot.active { background: #e879f9; border: 2px solid #fff; box-shadow: 0 0 14px rgba(232,121,249,0.8); }
+
+/* ── LAB CONTENT VARIABLES & STYLES ── */
+:root{
+  --bg:#060612;--panel:rgba(8,8,22,.97);--border:#181836;
+  --accent:#4fc3f7;--accent2:#e879f9;
+  --green-laser:#39ff7a;--red-laser:#ff4444;--blue-laser:#a78bfa;
+  --text:#c4c4dc;--dim:#525278;--good:#66bb6a;--warn:#ffa726;
+}
+#app{max-width:1060px;margin:0 auto;padding:8px 10px;display:flex;flex-direction:column;gap:6px;}
+header{font-family:'Orbitron',monospace;font-size:1.05rem;font-weight:700;text-align:center;
+  padding:7px 0 3px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;}
+header small{display:block;font-size:.5rem;letter-spacing:4px;
+  -webkit-text-fill-color:var(--dim);margin-top:2px;font-family:'Nunito',sans-serif;}
+
+/* ANIMATION */
+#anim-wrap{position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#04040e;}
+#lab-canvas{display:block;width:100%;cursor:default;}
+#laser-select{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(4,4,14,.95);border:1px solid #20205a;border-radius:14px;
+  padding:22px 34px;display:flex;flex-direction:column;align-items:center;gap:16px;backdrop-filter:blur(6px);}
+#laser-select h3{font-family:'Orbitron',monospace;font-size:.68rem;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;}
+.laser-btns{display:flex;gap:12px;}
+.laser-btn{padding:12px 22px;border-radius:9px;cursor:pointer;border:none;
+  font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:1px;transition:all .2s;}
+.laser-btn.red  {background:rgba(255,68,68,.12);border:1.5px solid #ff4444;color:#ff7070;}
+.laser-btn.green{background:rgba(57,255,122,.1);border:1.5px solid #39ff7a;color:#5fffaa;}
+.laser-btn.blue {background:rgba(167,139,250,.1);border:1.5px solid #a78bfa;color:#c4b5fd;}
+.laser-btn:hover:not(:disabled){filter:brightness(1.25);}
+.laser-btn:disabled{opacity:.22;cursor:not-allowed;}
+#move-controls{position:absolute;bottom:8px;right:5%;display:none;align-items:center;gap:10px;
+  background:rgba(4,4,14,.92);border:1px solid var(--border);border-radius:9px;padding:7px 14px;}
+.mg{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mg label{font-size:.48rem;text-transform:uppercase;letter-spacing:1.2px;color:#fff;font-weight:700;}
+.mb-row{display:flex;gap:4px;}
+.mb{background:rgba(20,20,50,.8);border:1px solid var(--border);color:var(--text);
+  border-radius:5px;padding:3px 9px;cursor:pointer;font-size:.72rem;transition:border-color .15s,color .15s;}
+.mb:hover{border-color:var(--accent);color:var(--accent);}
+.mb:disabled{opacity:.28;cursor:not-allowed;}
+#dot-status-lbl{font-size:.48rem;text-transform:uppercase;letter-spacing:1.2px;color:#fff;font-weight:700;text-align:center;}
+#dot-status{font-family:'Orbitron',monospace;font-size:.6rem;color:var(--dim);text-align:center;}
+.sep{width:1px;height:28px;background:var(--border);margin:0 4px;}
+#meas-confirm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(4,4,14,.96);border:1px solid #20205a;border-radius:12px;
+  padding:20px 28px;display:none;flex-direction:column;align-items:center;gap:14px;z-index:50;}
+#mc-title{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:2px;color:var(--accent);}
+#mc-val{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;color:var(--text);}
+#mc-unit{font-size:.65rem;color:var(--dim);margin-top:-10px;}
+#mc-err{font-size:.72rem;color:var(--warn);text-align:center;max-width:240px;line-height:1.4;}
+.mc-btns{display:flex;gap:10px;}
+.mc-btn{padding:7px 18px;border-radius:7px;cursor:pointer;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:1px;transition:all .15s;}
+.mc-btn.confirm{border:1px solid var(--accent);background:rgba(79,195,247,.12);color:var(--accent);}
+.mc-btn.confirm:hover{background:rgba(79,195,247,.25);}
+.mc-btn.redo{border:1px solid var(--dim);background:transparent;color:var(--dim);}
+.mc-btn.redo:hover{border-color:var(--text);color:var(--text);}
+
+/* CONTROL STRIP */
+#ctrl-strip{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:12px;}
+#step-num{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:1px;color:var(--dim);white-space:nowrap;min-width:52px;}
+#step-text{flex:1;font-size:.77rem;line-height:1.55;color:var(--text);}
+#step-text .hi{color:var(--accent);font-weight:700;}
+#step-text .warn{color:var(--warn);}
+#step-text .good{color:var(--good);}
+.ctrl-btns{display:flex;gap:7px;}
+.cbtn{padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;
+  font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:1px;transition:all .15s;}
+.cbtn.primary{border:1px solid var(--accent);background:rgba(79,195,247,.1);color:var(--accent);}
+.cbtn.primary:hover:not(:disabled){background:rgba(79,195,247,.22);}
+.cbtn.primary:disabled{opacity:.28;cursor:not-allowed;}
+.cbtn.secondary{border:1px solid var(--dim);background:transparent;color:var(--dim);}
+.cbtn.secondary:hover:not(:disabled){border-color:var(--text);color:var(--text);}
+
+/* DATA TABLE */
+#data-section{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:12px 16px;}
+.section-title{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+table.dtable{width:100%;border-collapse:collapse;font-size:.75rem;}
+table.dtable th{font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:1px;padding:5px 12px;text-align:center;border-bottom:1px solid var(--border);color:var(--dim);}
+table.dtable th:first-child{text-align:left;}
+table.dtable th.gc{color:var(--green-laser);}
+table.dtable th.rc{color:var(--red-laser);}
+table.dtable th.bc{color:var(--blue-laser);}
+table.dtable td{padding:7px 12px;text-align:center;border-bottom:1px solid rgba(24,24,54,.6);}
+table.dtable td.lbl{text-align:left;font-size:.72rem;color:var(--dim);}
+table.dtable td.lbl .sub{font-size:.58rem;opacity:.6;}
+.dval{font-family:'Orbitron',monospace;font-size:.82rem;color:var(--accent);}
+.dval.empty{color:var(--dim);font-size:.65rem;}
+.dval.gc{color:var(--green-laser);}
+.dval.rc{color:var(--red-laser);}
+.dval.bc{color:var(--blue-laser);}
+.dval.hidden-wl{font-size:.58rem;color:var(--dim);font-style:italic;}
+
+/* CALCULATIONS */
+#calc-section{display:none;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:12px 16px;}
+#calc-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;}
+#calc-score{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--accent);}
+#calc-escape-note{font-size:.62rem;color:var(--dim);flex:1;text-align:right;}
+table.ctable{width:100%;border-collapse:collapse;margin-bottom:10px;}
+table.ctable th{font-family:'Orbitron',monospace;font-size:.48rem;letter-spacing:1px;padding:6px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--dim);}
+table.ctable th:first-child{text-align:left;min-width:200px;}
+table.ctable td{padding:7px 10px;text-align:center;border-bottom:1px solid rgba(24,24,54,.5);vertical-align:middle;}
+table.ctable td.clbl{text-align:left;font-size:.7rem;color:var(--dim);line-height:1.5;}
+table.ctable td.clbl small{display:block;font-size:.56rem;color:rgba(196,196,220,.38);}
+.ccell{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.ccell-val{font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;}
+.ccell-val.gc{color:var(--green-laser);}
+.ccell-val.rc{color:var(--red-laser);}
+.ccell-val.bc{color:var(--blue-laser);}
+.ccell-val.uni{color:var(--accent);}
+.ccell-pts{font-size:.48rem;color:var(--good);}
+.calc-btn{padding:5px 14px;border-radius:5px;cursor:pointer;
+  font-family:'Orbitron',monospace;font-size:.52rem;letter-spacing:.5px;
+  border:1px solid var(--accent);background:rgba(79,195,247,.08);color:var(--accent);transition:all .15s;}
+.calc-btn:hover{background:rgba(79,195,247,.2);}
+.calc-btn.locked{border-color:var(--dim);background:transparent;color:var(--dim);cursor:not-allowed;opacity:.4;}
+.calc-btn.active{background:rgba(79,195,247,.28);box-shadow:0 0 10px rgba(79,195,247,.3);}
+.redo-x{margin-left:5px;background:none;border:none;color:var(--dim);cursor:pointer;
+  font-size:.65rem;line-height:1;padding:1px 3px;border-radius:3px;transition:color .15s;}
+.redo-x:hover{color:#ff5555;}
+#step5-area{display:none;padding-top:10px;border-top:1px solid var(--border);}
+
+/* GUIDED CALCULATOR PANEL */
+#guided-panel{display:none;border:1px solid #1e1e48;border-radius:10px;
+  background:rgba(4,4,18,.97);margin-top:8px;overflow:hidden;}
+#gp-header{background:rgba(0,0,0,.3);padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+#gp-title{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:1.5px;color:var(--accent);flex:1;}
+#gp-close{padding:3px 10px;border-radius:4px;cursor:pointer;font-family:'Orbitron',monospace;font-size:.5rem;
+  border:1px solid var(--dim);background:transparent;color:var(--dim);}
+#gp-close:hover{border-color:var(--warn);color:var(--warn);}
+#gp-body{display:flex;gap:0;min-height:300px;}
+#hp-calc{width:270px;min-width:270px;background:#111118;border-right:1px solid #1a1a3a;padding:16px 14px;display:flex;flex-direction:column;gap:10px;}
+#hp-display{background:#000;border:1px solid #0a0a24;border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;}
+#hp-y{font-family:'Orbitron',monospace;font-size:.62rem;color:rgba(79,195,247,.35);text-align:right;height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#hp-x{font-family:'Orbitron',monospace;font-size:1.35rem;color:#4fc3f7;text-align:right;height:36px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.5px;}
+#hp-x.ok {color:var(--good);transition:color .1s;}
+#hp-x.err{color:#ff3333;transition:color .1s;}
+#hp-label{font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);text-align:right;margin-top:-4px;}
+.hp-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.hk{padding:9px 4px;border-radius:6px;cursor:pointer;text-align:center;
+  font-family:'Orbitron',monospace;font-size:.58rem;font-weight:700;letter-spacing:.3px;
+  border:1px solid #2a2a50;background:#16162e;color:#8888cc;
+  transition:all .1s;user-select:none;}
+.hk:hover{filter:brightness(1.3);}
+.hk.fn{background:#141430;border-color:#22225a;color:#7799ee;}
+.hk.op{background:#131328;border-color:#202048;color:#9988cc;}
+.hk.dig{background:#181830;border-color:#222246;color:#bbbbdd;}
+.hk.enter-key{background:rgba(57,255,122,.08);border-color:#1a5a2a;color:#39ff7a;}
+.hk.clr-key{background:rgba(255,100,50,.08);border-color:#5a2a10;color:#ff7744;}
+.hk.target{animation:tgt-pulse 0.7s ease-in-out infinite alternate;z-index:2;position:relative;}
+@keyframes tgt-pulse{
+  from{box-shadow:0 0 6px 2px rgba(79,195,247,.4);border-color:var(--accent);}
+  to  {box-shadow:0 0 18px 6px rgba(79,195,247,.9);border-color:var(--accent);color:var(--accent);}
+}
+.hk.target.fn{animation:tgt-pulse-fn 0.7s ease-in-out infinite alternate;}
+@keyframes tgt-pulse-fn{
+  from{box-shadow:0 0 6px 2px rgba(130,160,255,.5);border-color:#4455cc;}
+  to  {box-shadow:0 0 18px 6px rgba(130,160,255,1);border-color:#8899ff;color:#aabbff;}
+}
+.hk.target.enter-key{animation:tgt-pulse-ok 0.7s ease-in-out infinite alternate;}
+@keyframes tgt-pulse-ok{
+  from{box-shadow:0 0 6px 2px rgba(57,255,122,.4);border-color:#2a8a44;}
+  to  {box-shadow:0 0 18px 6px rgba(57,255,122,.9);border-color:#39ff7a;color:#39ff7a;}
+}
+#gp-instructions{flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+#gp-step-counter{font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:2px;color:var(--dim);}
+#gp-inst-text{font-size:.82rem;line-height:1.7;color:var(--text);}
+#gp-inst-text b{color:var(--accent);}
+#gp-inst-text .key-label{display:inline-block;font-family:'Orbitron',monospace;font-size:.65rem;
+  padding:1px 7px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.4);
+  border-radius:4px;color:var(--accent);margin:0 2px;}
+#gp-feedback{font-size:.75rem;min-height:22px;}
+#gp-feedback.ok{color:var(--good);}
+#gp-feedback.err{color:#ff5555;}
+#gp-feedback.warn{color:var(--warn);}
+#gp-attempts{font-size:.6rem;color:var(--dim);}
+#gp-continue{display:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-family:'Orbitron',monospace;
+  font-size:.58rem;letter-spacing:1px;border:1px solid var(--accent);background:rgba(79,195,247,.1);color:var(--accent);}
+#gp-continue:hover{background:rgba(79,195,247,.22);}
+.gp-progress{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.gp-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s;}
+.gp-dot.done{background:var(--good);}
+.gp-dot.active{background:var(--accent);}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Student Banner -->
+<div class="student-info" id="studentBanner" style="display:none;">
+    <div class="student-name"><span id="displayName"></span> &nbsp;·&nbsp; <span id="displayID"></span></div>
+    <div class="student-score">Score: <span id="displayScore">0.0 / 6.0 pts</span></div>
+    <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+    <div class="student-timer" id="timerDisplay" style="display:none;">
+        <span id="timeWarningMessage" style="display:none;"></span>
+        Time: <span id="timeRemaining"></span>
+    </div>
+</div>
+
+<!-- Lab Content -->
+<div class="page-content">
+<div id="app">
+<header>Lab 4A — Diffraction<small>Physics Laboratory · Interactive Simulation</small></header>
+
+<!-- ANIMATION -->
+<div id="anim-wrap">
+  <canvas id="lab-canvas" width="960" height="370"></canvas>
+  <div id="laser-select">
+    <h3>Select Your Laser</h3>
+    <div class="laser-btns">
+      <button class="laser-btn red"   id="btn-r" onclick="selectLaser('red')">◉ Red</button>
+      <button class="laser-btn green" id="btn-g" onclick="selectLaser('green')">◉ Green</button>
+      <button class="laser-btn blue"  id="btn-b" onclick="selectLaser('blue')">◉ Blue</button>
+    </div>
+  </div>
+  <div id="move-controls">
+    <div class="mg"><label>Table</label><div class="mb-row">
+      <button class="mb" id="mb-tl" onclick="move('t',-1)">◀</button>
+      <button class="mb" id="mb-tr" onclick="move('t',1)">▶</button>
+    </div></div>
+    <div class="mg"><label>Rack</label><div class="mb-row">
+      <button class="mb" id="mb-rl" onclick="move('r',-1)">◀</button>
+      <button class="mb" id="mb-rr" onclick="move('r',1)">▶</button>
+    </div></div>
+    <div class="mg"><label>Holder</label><div class="mb-row">
+      <button class="mb" id="mb-hl" onclick="move('h',-1)">◀</button>
+      <button class="mb" id="mb-hr" onclick="move('h',1)">▶</button>
+    </div></div>
+    <div class="sep"></div>
+    <div class="mg"><div id="dot-status-lbl">Dot Status</div><div id="dot-status">–</div></div>
+  </div>
+  <div id="meas-confirm">
+    <div id="mc-title">Measurement</div>
+    <div id="mc-val">—</div>
+    <div id="mc-unit">millimeters</div>
+    <div id="mc-err" style="display:none"></div>
+    <div class="mc-btns">
+      <button class="mc-btn confirm" id="mc-btn-confirm" onclick="confirmMeas()">✓ Enter in Data Table</button>
+      <button class="mc-btn redo" onclick="redoMeas()">↺ Try Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROL STRIP -->
+<div id="ctrl-strip">
+  <div id="step-num">STEP 1</div>
+  <div id="step-text">Select a laser color above to begin your experiment.</div>
+  <div class="ctrl-btns">
+    <button class="cbtn secondary" onclick="resetLab()">↺ Reset</button>
+    <button class="cbtn primary"   id="btn-next" onclick="nextStep()" disabled>Next ▶</button>
+  </div>
+</div>
+
+<!-- DATA TABLE -->
+<div id="data-section">
+  <div class="section-title">Data Table</div>
+  <table class="dtable">
+    <thead><tr>
+      <th>Measurement</th><th class="rc">Red Laser</th><th class="gc">Green Laser</th><th class="bc">Blue Laser</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="lbl">True Wavelength λ <span class="sub">(nm)</span></td>
+        <td><span class="dval hidden-wl" id="wl-r">hidden</span></td>
+        <td><span class="dval hidden-wl" id="wl-g">hidden</span></td>
+        <td><span class="dval hidden-wl" id="wl-b">hidden</span></td>
+      </tr>
+      <tr>
+        <td class="lbl">Grating–Wall Distance L <span class="sub">(mm)</span></td>
+        <td><span class="dval empty" id="L-r">—</span></td>
+        <td><span class="dval empty" id="L-g">—</span></td>
+        <td><span class="dval empty" id="L-b">—</span></td>
+      </tr>
+      <tr>
+        <td class="lbl">Dot Separation D <span class="sub">(mm)</span></td>
+        <td><span class="dval empty" id="D-r">—</span></td>
+        <td><span class="dval empty" id="D-g">—</span></td>
+        <td><span class="dval empty" id="D-b">—</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CALCULATIONS -->
+<div id="calc-section">
+  <div id="calc-header">
+    <button class="cbtn secondary" onclick="resetCalcs()">↺ Restart All Calculations</button>
+    <div id="calc-score">Score: 0.0 / 6.0 pts</div>
+    <div id="calc-escape-note">Press <strong>Escape</strong> to restart the entire lab</div>
+  </div>
+  <table class="ctable" id="ctable">
+    <thead><tr>
+      <th style="text-align:left">Step</th>
+      <th class="rc">Red</th><th class="gc">Green</th><th class="bc">Blue</th>
+    </tr></thead>
+    <tbody id="ctable-body"></tbody>
+  </table>
+  <div id="guided-panel">
+    <div id="gp-header">
+      <div id="gp-title">Calculator</div>
+      <button id="gp-close" onclick="closeGuided()">✕ Close</button>
+    </div>
+    <div id="gp-body">
+      <div id="hp-calc">
+        <div id="hp-display">
+          <div id="hp-y">0</div>
+          <div id="hp-x">0</div>
+          <div id="hp-label">X</div>
+        </div>
+        <div class="hp-pad">
+          <button class="hk fn"      data-key="sin"   onclick="hpKey('sin')">SIN</button>
+          <button class="hk fn"      data-key="atan"  onclick="hpKey('atan')">TAN⁻¹</button>
+          <button class="hk fn"      data-key="inv"   onclick="hpKey('inv')">1/x</button>
+          <button class="hk clr-key" data-key="clr"   onclick="hpKey('clr')">CLR</button>
+          <button class="hk dig"     data-key="7"     onclick="hpKey('7')">7</button>
+          <button class="hk dig"     data-key="8"     onclick="hpKey('8')">8</button>
+          <button class="hk dig"     data-key="9"     onclick="hpKey('9')">9</button>
+          <button class="hk op"      data-key="div"   onclick="hpKey('div')">÷</button>
+          <button class="hk dig"     data-key="4"     onclick="hpKey('4')">4</button>
+          <button class="hk dig"     data-key="5"     onclick="hpKey('5')">5</button>
+          <button class="hk dig"     data-key="6"     onclick="hpKey('6')">6</button>
+          <button class="hk op"      data-key="mul"   onclick="hpKey('mul')">×</button>
+          <button class="hk dig"     data-key="1"     onclick="hpKey('1')">1</button>
+          <button class="hk dig"     data-key="2"     onclick="hpKey('2')">2</button>
+          <button class="hk dig"     data-key="3"     onclick="hpKey('3')">3</button>
+          <button class="hk op"      data-key="sub"   onclick="hpKey('sub')">−</button>
+          <button class="hk dig"     data-key="0"     onclick="hpKey('0')">0</button>
+          <button class="hk dig"     data-key="."     onclick="hpKey('.')">.</button>
+          <button class="hk op"      data-key="add"   onclick="hpKey('add')">+</button>
+          <button class="hk enter-key" data-key="enter" onclick="hpKey('enter')">ENTER</button>
+        </div>
+      </div>
+      <div id="gp-instructions">
+        <div id="gp-step-counter">STEP 1 OF 1</div>
+        <div id="gp-inst-text">Loading…</div>
+        <div id="gp-feedback"></div>
+        <div id="gp-attempts"></div>
+        <button id="gp-continue" onclick="gpContinue()">Continue ▶</button>
+        <div class="gp-progress" id="gp-progress"></div>
+      </div>
+    </div>
+  </div>
+  <div id="step5-area"></div>
+</div>
+
+</div><!-- #app -->
+</div><!-- .page-content -->
+
+<!-- Navigation -->
+<div class="navigation">
+    <button class="nav-button" onclick="window.location.href='intro.html'">← Intro</button>
+    <div class="page-counter">2 / 3</div>
+    <button class="nav-button forward" onclick="window.location.href='outro.html'">Results →</button>
+</div>
+
+<!-- Timeline -->
+<div class="timeline-indicator">
+    <div class="timeline-dot"         onclick="window.location.href='intro.html'"  title="Introduction"></div>
+    <div class="timeline-dot lab-dot active" onclick="window.location.href='lab4a.html'" title="Lab 4A · Diffraction"></div>
+    <div class="timeline-dot"         onclick="window.location.href='outro.html'"  title="Conclusion"></div>
+</div>
+
+</div><!-- .container -->
+
+<script src="lab4a-shared.js"></script>
+<script>
+'use strict';
+
+// ── VOICEOVER SCRIPTS ───────────────────────────────────────
+const VS = {
+  intro:       'Welcome to Lab 4A, Diffraction. Select a laser color to begin.',
+  laser_red:   'The red laser has been selected. Click the laser body to turn it on.',
+  laser_green: 'The green laser has been selected. Click the laser body to turn it on.',
+  laser_blue:  'The blue laser has been selected. Click the laser body to turn it on.',
+  on_ceiling:  'The upper dot is on the ceiling, which is not valid. Use the Table, Rack, and Holder controls to move the apparatus closer to the wall.',
+  on_wall:     'Both dots are on the wall. Click Next when you are satisfied with their positions.',
+  meas_L:      'Measure L, the horizontal distance from the grating to the wall. Click the grating holder and drag to the right until you reach the central dot on the wall.',
+  l_recorded:  val => `L is ${val} millimeters. [pause] Now measure D. [pause] Click the central dot on the wall and drag upward to the upper diffraction dot.`,
+  switch_laser:names => `Click Next to switch to the ${names} laser.`,
+  all_done:    'All measurements are complete. Click Next to proceed to calculations.',
+  calc_intro:  'Calculations are now open. Click a Calculate button to begin each calculation.',
+  reset:       'Lab reset. Select a laser color to begin.',
+  laser_complete:(color,D) => `D is ${D} millimeters. ${color} laser data is complete.`,
+};
+
+// ── PHYSICS & GEOMETRY ──────────────────────────────────────
+const CW=960,CH=370,CEILING_Y=26,FLOOR_Y=330,WALL_X=916,TABLE_TOP=268,LASER_Y=238;
+const RACK_TOP=TABLE_TOP-22, D_NM=2000;
+const D_DISP={red:2000,green:2000,blue:2000};
+const λ_RANGES={red:[640,660],green:[522,542],blue:[395,415]};
+const TBL_W=288,TBL_BASE=28,RACK_BASE=16,HLDR_BASE=78;
+const T_MAX=140,R_MAX=64,H_MAX=64,STEP=14,GRATING_HALF=22;
+let tOff=0,rOff=0,hOff=0;
+const tblL=()=>TBL_BASE+tOff, tblR=()=>tblL()+TBL_W;
+const rackL=()=>tblL()+RACK_BASE+rOff, rackR=()=>rackL()+210;
+const laserL=()=>rackL(), laserR=()=>rackL()+62;
+const holderX=()=>rackL()+HLDR_BASE+hOff;
+
+function computeDots(color){
+  const λ=trueWL[color]; if(!λ)return null;
+  const gx=holderX(),Lpx=WALL_X-gx; if(Lpx<10)return null;
+  const Lmm=Lpx*4, dD=D_DISP[color];
+  const sinD=λ/dD; if(sinD>=1)return null;
+  const tanD=sinD/Math.sqrt(1-sinD*sinD), Dpx_disp=Lpx*tanD;
+  const sinP=λ/D_NM, tanP=sinP/Math.sqrt(1-sinP*sinP);
+  const dot0={x:WALL_X,y:LASER_Y}, d1y=LASER_Y-Dpx_disp;
+  const onCeiling=d1y<CEILING_Y;
+  let dot1;
+  if(onCeiling){const frac=(LASER_Y-CEILING_Y)/Dpx_disp;dot1={x:gx+Lpx*frac,y:CEILING_Y};}
+  else dot1={x:WALL_X,y:d1y};
+  return{dot0,dot1,Lmm:Math.round(Lmm),Dmm:Math.round(Lmm*tanP),onCeiling};
+}
+
+// ── APP STATE ───────────────────────────────────────────────
+let appState='INTRO',selColor=null,laserOn=false;
+const trueWL={red:null,green:null,blue:null};
+const measData={L_red:null,D_red:null,L_green:null,D_green:null,L_blue:null,D_blue:null};
+let flashOn=false,flashTick=0,flashIv=null;
+let mType=null,mStart=null,mCurrent=null,mDragging=false,mPending=null;
+let animT=0,dotTimer=null,currentStep=1;
+
+// ── CANVAS ──────────────────────────────────────────────────
+const canvas=document.getElementById('lab-canvas');
+const ctx=canvas.getContext('2d');
+function rrect(x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+function draw(ts){
+  animT=ts||0;ctx.clearRect(0,0,CW,CH);ctx.fillStyle='#05050f';ctx.fillRect(0,0,CW,CH);
+  drawRoom();
+  if(appState!=='INTRO'){drawApparatus();if(laserOn||(flashOn&&flashTick%2===0))drawBeams();}
+  if(mDragging)drawMeasLine();
+  if((appState==='MEAS_L_READY'||appState==='MEAS_D_READY')&&!mDragging)drawMeasHints();
+  requestAnimationFrame(draw);
+}
+function drawRoom(){
+  const cg=ctx.createLinearGradient(0,0,0,CEILING_Y);cg.addColorStop(0,'#0c0c24');cg.addColorStop(1,'#090918');
+  ctx.fillStyle=cg;ctx.fillRect(0,0,CW,CEILING_Y);
+  const fg=ctx.createLinearGradient(0,FLOOR_Y,0,CH);fg.addColorStop(0,'#0a0a1e');fg.addColorStop(1,'#060612');
+  ctx.fillStyle=fg;ctx.fillRect(0,FLOOR_Y,CW,CH-FLOOR_Y);
+  ctx.strokeStyle='rgba(18,18,48,.85)';ctx.lineWidth=1;
+  for(let x=0;x<=WALL_X;x+=50){ctx.beginPath();ctx.moveTo(x,CEILING_Y);ctx.lineTo(x,FLOOR_Y);ctx.stroke();}
+  for(let y=CEILING_Y;y<=FLOOR_Y;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WALL_X,y);ctx.stroke();}
+  ctx.strokeStyle='#1c1c44';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,CEILING_Y);ctx.lineTo(CW,CEILING_Y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,FLOOR_Y);ctx.lineTo(CW,FLOOR_Y);ctx.stroke();
+  const wg=ctx.createLinearGradient(WALL_X,0,CW,0);wg.addColorStop(0,'#0d0d28');wg.addColorStop(1,'#0a0a20');
+  ctx.fillStyle=wg;ctx.fillRect(WALL_X,0,CW-WALL_X,CH);
+  ctx.strokeStyle='rgba(22,22,56,.7)';ctx.lineWidth=1;
+  for(let x=WALL_X+9;x<CW;x+=9){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+  ctx.strokeStyle='#222266';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(WALL_X,0);ctx.lineTo(WALL_X,CH);ctx.stroke();
+  ctx.font='9px Orbitron';ctx.fillStyle='rgba(255,255,255,.8)';
+  ctx.fillText('CEILING',50,CEILING_Y-8);ctx.fillText('FLOOR',50,FLOOR_Y+16);
+  ctx.save();ctx.translate(WALL_X+14,CH/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';ctx.fillText('WALL',0,0);ctx.textAlign='left';ctx.restore();
+}
+function drawApparatus(){
+  const tl=tblL(),tr=tblR(),rl=rackL(),rr=rackR(),hx=holderX(),ll=laserL(),lr=laserR();
+  const tg=ctx.createLinearGradient(tl,TABLE_TOP,tl,FLOOR_Y);tg.addColorStop(0,'#181836');tg.addColorStop(1,'#0e0e26');
+  ctx.fillStyle=tg;ctx.fillRect(tl,TABLE_TOP,tr-tl,FLOOR_Y-TABLE_TOP);
+  ctx.strokeStyle='#22224a';ctx.lineWidth=1.5;ctx.strokeRect(tl,TABLE_TOP,tr-tl,FLOOR_Y-TABLE_TOP);
+  ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(tl,TABLE_TOP,tr-tl,3);
+  ctx.font='bold 10px Orbitron';ctx.fillStyle='rgba(255,255,255,.8)';
+  ctx.textAlign='center';ctx.fillText('TABLE',(tl+tr)/2,TABLE_TOP+28);ctx.textAlign='left';
+  for(const px of[rl+10,rr-10]){
+    const pg=ctx.createLinearGradient(px-5,0,px+5,0);
+    pg.addColorStop(0,'#1a1a42');pg.addColorStop(.5,'#242462');pg.addColorStop(1,'#1a1a42');
+    ctx.fillStyle=pg;ctx.fillRect(px-5,RACK_TOP,10,TABLE_TOP-RACK_TOP);
+    ctx.strokeStyle='#2c2c66';ctx.lineWidth=1;ctx.strokeRect(px-5,RACK_TOP,10,TABLE_TOP-RACK_TOP);
+  }
+  ctx.fillStyle='#18183e';ctx.fillRect(rl+10,RACK_TOP,rr-rl-20,10);
+  ctx.strokeStyle='#28286a';ctx.lineWidth=1;ctx.strokeRect(rl+10,RACK_TOP,rr-rl-20,10);
+  ctx.fillStyle='rgba(50,50,120,.35)';ctx.fillRect(rl+10,RACK_TOP,rr-rl-20,3);
+  const lc={red:'#3a0808',green:'#083a08',blue:'#14083a'}[selColor]||'#0a0a1e';
+  const lb={red:'#6a1818',green:'#186a18',blue:'#28186a'}[selColor]||'#20203a';
+  rrect(ll,LASER_Y-16,lr-ll,32,7);ctx.fillStyle=lc;ctx.fill();ctx.strokeStyle=lb;ctx.lineWidth=1.5;ctx.stroke();
+  rrect(ll+2,LASER_Y-14,lr-ll-4,8,4);ctx.fillStyle='rgba(255,255,255,.04)';ctx.fill();
+  const cx_laser=ll+(lr-ll)/2;
+  ctx.font='bold 9px Orbitron';ctx.fillStyle=laserOn?'#ffffff':'rgba(255,255,255,.45)';
+  ctx.textAlign='center';ctx.fillText(laserOn?'ON':'OFF',cx_laser,LASER_Y+5);ctx.textAlign='left';
+  ctx.font='bold 8px Orbitron';ctx.fillStyle='rgba(255,255,255,.85)';
+  ctx.textAlign='center';ctx.fillText('LASER',cx_laser,LASER_Y-20);ctx.textAlign='left';
+  const ledC=laserOn?({red:'#ff2020',green:'#00ff60',blue:'#7c3aed'}[selColor]||'#fff'):'#18183a';
+  ctx.beginPath();ctx.arc(lr+1,LASER_Y,6,0,Math.PI*2);
+  if(laserOn){ctx.shadowColor=ledC;ctx.shadowBlur=14;}
+  ctx.fillStyle=ledC;ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;ctx.stroke();
+  const mpW=9,mpTop=LASER_Y+14,mpBot=TABLE_TOP;
+  ctx.fillStyle='#141432';
+  ctx.fillRect(ll+7,mpTop,mpW,mpBot-mpTop);ctx.fillRect(lr-7-mpW,mpTop,mpW,mpBot-mpTop);
+  ctx.strokeStyle='#202050';ctx.lineWidth=1;
+  ctx.strokeRect(ll+7,mpTop,mpW,mpBot-mpTop);ctx.strokeRect(lr-7-mpW,mpTop,mpW,mpBot-mpTop);
+  const holderPostTop=LASER_Y-GRATING_HALF-14;
+  const hldrActive=appState==='MEAS_L_READY';
+  const hldrGlow=hldrActive?0.6+0.4*Math.sin(animT/300):0;
+  ctx.fillStyle='#14142e';ctx.fillRect(hx-6,holderPostTop,12,TABLE_TOP-holderPostTop);
+  ctx.strokeStyle=hldrActive?`rgba(79,195,247,${hldrGlow})`:'#222258';
+  ctx.lineWidth=hldrActive?2:1.5;ctx.strokeRect(hx-6,holderPostTop,12,TABLE_TOP-holderPostTop);
+  rrect(hx-3,LASER_Y-GRATING_HALF,6,GRATING_HALF*2,2);
+  ctx.fillStyle='rgba(50,50,110,.55)';ctx.fill();ctx.strokeStyle='#303080';ctx.lineWidth=1;ctx.stroke();
+  ctx.strokeStyle='rgba(130,130,200,.3)';ctx.lineWidth=.5;
+  for(let gy=LASER_Y-GRATING_HALF+2;gy<LASER_Y+GRATING_HALF;gy+=2.5){ctx.beginPath();ctx.moveTo(hx-3,gy);ctx.lineTo(hx+3,gy);ctx.stroke();}
+  ctx.font='bold 8px Orbitron';ctx.fillStyle='rgba(255,255,255,.85)';
+  ctx.textAlign='center';ctx.fillText('GRATING',hx,holderPostTop-6);ctx.textAlign='left';
+  if(appState==='MEAS_D_READY'&&selColor&&laserOn){
+    const dots=computeDots(selColor);
+    if(dots&&!dots.onCeiling){const pulse=0.5+0.5*Math.sin(animT/280);ctx.beginPath();ctx.arc(dots.dot0.x,dots.dot0.y,10,0,Math.PI*2);ctx.strokeStyle=`rgba(79,195,247,${pulse})`;ctx.lineWidth=1.5;ctx.stroke();}
+  }
+}
+function drawBeams(){
+  if(!selColor||!trueWL[selColor])return;
+  const hx=holderX(),lr=laserR(),dots=computeDots(selColor);if(!dots)return;
+  const bC={red:'#ff2020',green:'#00ff60',blue:'#7c3aed'}[selColor]||'#fff';
+  const bG={red:'rgba(255,32,32,',green:'rgba(0,255,96,',blue:'rgba(124,58,237,'}[selColor]||'rgba(255,255,255,';
+  ctx.beginPath();ctx.moveTo(lr+1,LASER_Y);ctx.lineTo(hx,LASER_Y);
+  ctx.strokeStyle=bC+'cc';ctx.lineWidth=2;ctx.shadowColor=bC;ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  ctx.strokeStyle=bG+'0.12)';ctx.lineWidth=8;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(hx,LASER_Y);ctx.lineTo(dots.dot0.x,dots.dot0.y);
+  ctx.strokeStyle=bG+'0.4)';ctx.lineWidth=1.5;ctx.shadowColor=bC;ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
+  ctx.beginPath();ctx.moveTo(hx,LASER_Y);ctx.lineTo(dots.dot1.x,dots.dot1.y);
+  ctx.strokeStyle=bG+'0.35)';ctx.lineWidth=1.5;ctx.shadowColor=bC;ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
+  ctx.strokeStyle=bG+'0.08)';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(dots.dot0.x,dots.dot0.y,5,0,Math.PI*2);
+  ctx.fillStyle=bC;ctx.shadowColor=bC;ctx.shadowBlur=16;ctx.fill();ctx.shadowBlur=0;
+  const d1c=dots.onCeiling?'#ffa726':bC;
+  ctx.beginPath();ctx.arc(dots.dot1.x,dots.dot1.y,dots.onCeiling?4:5,0,Math.PI*2);
+  ctx.fillStyle=d1c;ctx.shadowColor=d1c;ctx.shadowBlur=18;ctx.fill();ctx.shadowBlur=0;
+  if(dots.onCeiling){ctx.font='bold 10px Orbitron';ctx.fillStyle='#ffa726';ctx.textAlign='center';ctx.fillText('⚠ UPPER DOT ON CEILING',CW/2,CEILING_Y+18);ctx.textAlign='left';}
+  if(!dots.onCeiling&&!appState.startsWith('MEAS')&&appState!=='POSITIONING'){
+    ctx.save();ctx.strokeStyle='rgba(79,195,247,.08)';ctx.lineWidth=1;ctx.setLineDash([5,5]);
+    ctx.beginPath();ctx.moveTo(hx,LASER_Y+26);ctx.lineTo(WALL_X,LASER_Y+26);ctx.stroke();
+    ctx.strokeStyle='rgba(232,121,249,.08)';
+    ctx.beginPath();ctx.moveTo(WALL_X-12,LASER_Y);ctx.lineTo(WALL_X-12,dots.dot1.y);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
+  }
+}
+function drawMeasHints(){
+  if(appState==='MEAS_L_READY'){
+    const hx=holderX(),pulse=0.5+0.5*Math.sin(animT/280);
+    ctx.beginPath();ctx.arc(hx,LASER_Y,14,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(79,195,247,${pulse})`;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.font='8px Nunito';ctx.fillStyle=`rgba(79,195,247,${pulse})`;
+    ctx.textAlign='center';ctx.fillText('click here',hx,LASER_Y-19);ctx.fillText('↓',hx,LASER_Y-7);ctx.textAlign='left';
+  } else if(appState==='MEAS_D_READY'){
+    const dots=computeDots(selColor);
+    if(dots&&!dots.onCeiling){
+      const pulse=0.5+0.5*Math.sin(animT/280);
+      ctx.beginPath();ctx.arc(dots.dot0.x,dots.dot0.y,11,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(232,121,249,${pulse})`;ctx.lineWidth=1.5;ctx.stroke();
+      ctx.font='8px Nunito';ctx.fillStyle=`rgba(232,121,249,${pulse})`;
+      ctx.textAlign='center';ctx.fillText('click dot',dots.dot0.x,dots.dot0.y+21);ctx.fillText('↑',dots.dot0.x,dots.dot0.y+9);ctx.textAlign='left';
+    }
+  }
+}
+function drawMeasLine(){
+  if(!mStart||!mCurrent||!mType)return;
+  const dots=computeDots(selColor);
+  if(mType==='L'){
+    const tx=Math.min(mCurrent.x,WALL_X),dist=Math.abs(tx-mStart.x)*4;
+    ctx.save();ctx.strokeStyle='rgba(79,195,247,.9)';ctx.lineWidth=1.5;ctx.setLineDash([7,4]);
+    ctx.beginPath();ctx.moveTo(mStart.x,LASER_Y);ctx.lineTo(tx,LASER_Y);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle='#4fc3f7';
+    ctx.beginPath();ctx.arc(mStart.x,LASER_Y,5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(tx,LASER_Y,5,0,Math.PI*2);ctx.fill();
+    const mx=(mStart.x+tx)/2;rrect(mx-44,LASER_Y-32,88,22,5);
+    ctx.fillStyle='rgba(4,4,14,.95)';ctx.fill();ctx.strokeStyle='#4fc3f7';ctx.lineWidth=1;ctx.stroke();
+    ctx.font='bold 11px Orbitron';ctx.fillStyle='#4fc3f7';ctx.textAlign='center';ctx.fillText(Math.round(dist)+' mm',mx,LASER_Y-15);ctx.textAlign='left';ctx.restore();
+  } else {
+    const ty=Math.max(mCurrent.y,CEILING_Y),dist=Math.round(Math.abs(ty-mStart.y)*4);
+    ctx.save();ctx.strokeStyle='rgba(232,121,249,.9)';ctx.lineWidth=1.5;ctx.setLineDash([7,4]);
+    ctx.beginPath();ctx.moveTo(WALL_X,mStart.y);ctx.lineTo(WALL_X,ty);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle='#e879f9';
+    ctx.beginPath();ctx.arc(WALL_X,mStart.y,5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(WALL_X,ty,5,0,Math.PI*2);ctx.fill();
+    const my=(mStart.y+ty)/2;rrect(WALL_X-94,my-11,88,22,5);
+    ctx.fillStyle='rgba(4,4,14,.95)';ctx.fill();ctx.strokeStyle='#e879f9';ctx.lineWidth=1;ctx.stroke();
+    ctx.font='bold 11px Orbitron';ctx.fillStyle='#e879f9';ctx.textAlign='center';ctx.fillText(Math.round(dist)+' mm',WALL_X-50,my+4);ctx.textAlign='left';ctx.restore();
+  }
+}
+
+// ── CANVAS EVENTS ────────────────────────────────────────────
+function cvPos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*CW/r.width,y:(e.clientY-r.top)*CH/r.height};}
+canvas.addEventListener('click',e=>{
+  if(mDragging)return;const p=cvPos(e);
+  if(appState==='SELECTED'||appState==='POSITIONING'){
+    const ll=laserL(),lr=laserR();if(p.x>=ll-6&&p.x<=lr+10&&p.y>=LASER_Y-22&&p.y<=LASER_Y+22)toggleLaser();
+  }
+});
+canvas.addEventListener('mousedown',e=>{
+  const p=cvPos(e),dots=computeDots(selColor);
+  if(appState==='MEAS_L_READY'){const hx=holderX();if(Math.abs(p.x-hx)<26&&Math.abs(p.y-LASER_Y)<32){mType='L';mStart={x:hx,y:LASER_Y};mCurrent=p;mDragging=true;appState='MEAS_L';}}
+  else if(appState==='MEAS_D_READY'&&dots&&!dots.onCeiling){if(Math.abs(p.x-dots.dot0.x)<26&&Math.abs(p.y-dots.dot0.y)<26){mType='D';mStart={x:dots.dot0.x,y:dots.dot0.y};mCurrent=p;mDragging=true;appState='MEAS_D';}}
+});
+canvas.addEventListener('mousemove',e=>{
+  mCurrent=cvPos(e);const p=mCurrent;
+  if(mDragging){canvas.style.cursor='crosshair';return;}
+  const ll=laserL(),lr=laserR();
+  if((appState==='SELECTED'||appState==='POSITIONING')&&p.x>=ll-6&&p.x<=lr+10&&p.y>=LASER_Y-22&&p.y<=LASER_Y+22)canvas.style.cursor='pointer';
+  else if(appState==='MEAS_L_READY'||appState==='MEAS_D_READY')canvas.style.cursor='crosshair';
+  else canvas.style.cursor='default';
+});
+canvas.addEventListener('mouseup',e=>{
+  if(!mDragging)return;mDragging=false;canvas.style.cursor='default';
+  const dots=computeDots(selColor);if(!dots)return;
+  if(mType==='L'){
+    const val=Math.round(Math.abs(Math.min(cvPos(e).x,WALL_X)-mStart.x)*4);mPending=val;showMeasConfirm('Distance to Wall (L)',val);
+  } else {
+    if(Math.abs(cvPos(e).y-dots.dot1.y)>30){showMeasError('End point must be on the wall. Try again.');return;}
+    const val=Math.round(Math.abs(Math.max(cvPos(e).y,CEILING_Y)-mStart.y)*4);mPending=val;showMeasConfirm('Dot Separation (D)',val);
+  }
+});
+function showMeasConfirm(title,val){
+  document.getElementById('mc-title').textContent=title;document.getElementById('mc-val').textContent=val;
+  document.getElementById('mc-unit').style.display='block';document.getElementById('mc-err').style.display='none';
+  document.getElementById('mc-btn-confirm').style.display='';document.getElementById('meas-confirm').style.display='flex';
+}
+function showMeasError(msg){
+  document.getElementById('mc-title').textContent='⚠ Invalid Measurement';document.getElementById('mc-val').textContent='';
+  document.getElementById('mc-unit').style.display='none';document.getElementById('mc-err').textContent=msg;
+  document.getElementById('mc-err').style.display='block';document.getElementById('mc-btn-confirm').style.display='none';
+  document.getElementById('meas-confirm').style.display='flex';
+}
+
+// ── MEASUREMENT CONFIRM / REDO ───────────────────────────────
+function confirmMeas(){
+  document.getElementById('meas-confirm').style.display='none';
+  const cs=colSuf(selColor),cc=colClass(selColor);
+  if(mType==='L'){
+    measData['L_'+selColor]=mPending;setCell('L-'+cs,mPending,cc);appState='MEAS_D_READY';
+    setStep(currentStep+1,`<span class="good">✓ L = ${mPending} mm recorded.</span> Now measure D — click the <span class="hi">central dot</span> on the wall and drag upward.`);
+    speak(VS.l_recorded(mPending));
+  } else {
+    measData['D_'+selColor]=mPending;setCell('D-'+cs,mPending,cc);afterD();
+  }
+  mType=null;mStart=null;mCurrent=null;mPending=null;
+  saveLabState();
+}
+function redoMeas(){
+  document.getElementById('meas-confirm').style.display='none';mPending=null;mStart=null;mCurrent=null;
+  appState=mType==='L'?'MEAS_L_READY':'MEAS_D_READY';mType=null;
+}
+function afterD(){
+  const remaining=['red','green','blue'].filter(c=>measData['L_'+c]===null);
+  const cName=selColor.charAt(0).toUpperCase()+selColor.slice(1);
+  const Dval=mPending||measData['D_'+selColor];
+  if(remaining.length>0){
+    appState='SWITCH_LASER';
+    const remNames=remaining.map(c=>c.charAt(0).toUpperCase()+c.slice(1)).join(' or ');
+    setStep(currentStep+1,`<span class="good">✓ D = ${Dval} mm. ${cName} laser complete!</span><br>Press <span class="hi">NEXT</span> to switch to the <span class="hi">${remNames}</span> laser.`);
+    enableNext(true);speak(VS.laser_complete(cName,Dval)+' '+VS.switch_laser(remNames));
+    saveLabState();
+  } else {
+    appState='DATA_DONE';
+    setStep(currentStep+1,`<span class="good">All measurements complete!</span> Click <span class="hi">NEXT</span> to proceed to calculations.`);
+    enableNext(true);speak(VS.laser_complete(cName,Dval)+' '+VS.all_done);
+    saveLabState();
+  }
+}
+
+// ── LASER SELECT / FLASH / TOGGLE ────────────────────────────
+function selectLaser(color){
+  selColor=color;const[lo,hi]=λ_RANGES[color];trueWL[color]=lo+Math.floor(Math.random()*(hi-lo+1));
+  document.getElementById('wl-'+colSuf(color)).textContent='[hidden]';
+  document.getElementById('laser-select').style.display='none';document.getElementById('move-controls').style.display='flex';
+  appState='SELECTED';tOff=0;rOff=0;hOff=0;laserOn=false;flashLaser();
+  const cName=color.charAt(0).toUpperCase()+color.slice(1);
+  setStep(currentStep+1,`<span class="hi">${cName} laser</span> selected. Click the <span class="hi">laser body</span> to turn it on.`);
+  speak(VS['laser_'+color]||VS.laser_red);
+  saveLabState();
+}
+function flashLaser(){
+  flashOn=true;flashTick=0;let n=0;
+  flashIv=setInterval(()=>{flashTick++;n++;if(n>=8){clearInterval(flashIv);flashOn=false;flashTick=0;}},180);
+}
+function toggleLaser(){
+  laserOn=!laserOn;
+  if(laserOn){
+    appState='POSITIONING';updateDotStatusEl(null);
+    setStep(currentStep,'Laser ON. Use <span class="hi">Table ▶, Rack ▶, Holder ▶</span> to put both dots on the far wall.');
+    scheduleDotCheck();
+    saveLabState();
+  } else {
+    appState='SELECTED';if(dotTimer){clearTimeout(dotTimer);dotTimer=null;}
+    updateDotStatusEl(null);enableNext(false);
+    const cName=selColor.charAt(0).toUpperCase()+selColor.slice(1);
+    setStep(currentStep,`<span class="hi">${cName} laser</span> selected. Click the laser body to turn it on.`);
+    saveLabState();
+  }
+}
+function scheduleDotCheck(){
+  if(dotTimer){clearTimeout(dotTimer);dotTimer=null;}
+  updateDotStatusEl(null);
+  dotTimer=setTimeout(()=>{
+    dotTimer=null;const dots=computeDots(selColor);const good=dots&&!dots.onCeiling;
+    updateDotStatusEl(good);
+    if(good){setStep(currentStep,`<span class="good">✓ Both dots are on the wall.</span> Click <span class="hi">NEXT</span> when satisfied with their positions.`);enableNext(true);speak(VS.on_wall);}
+    else{setStep(currentStep,`<span class="warn">⚠ Upper dot on ceiling.</span> Move apparatus closer to wall.`);enableNext(false);speak(VS.on_ceiling);}
+  },2000);
+}
+function updateDotStatusEl(good){
+  const el=document.getElementById('dot-status');
+  if(good===null){el.textContent='–';el.style.color='var(--dim)';}
+  else if(good){el.textContent='✓ GOOD';el.style.color='var(--good)';}
+  else{el.textContent='✗ CEIL';el.style.color='var(--warn)';}
+}
+function move(comp,dir){
+  if(appState.startsWith('MEAS'))return;
+  if(comp==='t')tOff=Math.max(0,Math.min(T_MAX,tOff+dir*STEP));
+  else if(comp==='r')rOff=Math.max(0,Math.min(R_MAX,rOff+dir*STEP));
+  else if(comp==='h')hOff=Math.max(0,Math.min(H_MAX,hOff+dir*STEP));
+  if(laserOn)scheduleDotCheck();
+  saveLabState();
+}
+
+// ── STEP NAV ─────────────────────────────────────────────────
+function nextStep(){
+  enableNext(false);
+  if(appState==='POSITIONING'){
+    appState='MEAS_L_READY';mType=null;lockMoveControls(true);
+    setStep(currentStep+1,`Measure <span class="hi">L</span> — click the <span class="hi">grating holder</span> and drag right to the wall dot.`);
+    speak(VS.meas_L);saveLabState();
+  } else if(appState==='SWITCH_LASER'){
+    const remaining=['red','green','blue'].filter(c=>measData['L_'+c]===null);
+    selColor=null;laserOn=false;tOff=0;rOff=0;hOff=0;lockMoveControls(false);
+    if(dotTimer){clearTimeout(dotTimer);dotTimer=null;}appState='INTRO';
+    document.getElementById('laser-select').style.display='flex';
+    document.getElementById('laser-select').querySelector('h3').textContent='Select Next Laser';
+    document.getElementById('move-controls').style.display='none';
+    ['red','green','blue'].forEach(c=>{const b=document.getElementById('btn-'+c[0]);const ok=remaining.includes(c);b.disabled=!ok;b.style.opacity=ok?'1':'.22';});
+    const remNames=remaining.map(c=>c.charAt(0).toUpperCase()+c.slice(1)).join(' or ');
+    setStep(currentStep+1,`Select the <span class="hi">${remNames}</span> laser to continue.`);speak(`Now select the ${remNames} laser.`);saveLabState();
+  } else if(appState==='DATA_DONE'){buildCalcs();}
+}
+function lockMoveControls(lock){['mb-tl','mb-tr','mb-rl','mb-rr','mb-hl','mb-hr'].forEach(id=>{document.getElementById(id).disabled=lock;});}
+const colSuf=c=>c==='green'?'g':c==='red'?'r':'b';
+const colClass=c=>c==='green'?'gc':c==='red'?'rc':'bc';
+function setCell(id,val,cls){const el=document.getElementById(id);el.textContent=val;el.className='dval '+(cls||'');}
+
+// ═══════════════════════════════════════════════════════════════
+//  CALCULATIONS + GUIDED RPN CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+const SR = {};
+const CC = {};
+
+// ── RPN STATE ─────────────────────────────────────────────────
+let hpX=0,hpY=0,hpStr='',hpInputMode=false,hpJustOp=false;
+let hpPendingOp=null,hpPendingX=null,hpLastEntered=0;
+
+function hpReset(preloadX){
+  hpX=preloadX||0;hpY=0;hpStr='';hpInputMode=false;hpJustOp=false;
+  hpPendingOp=null;hpPendingX=null;hpLastEntered=0;hpUpdateDisplay();
+}
+function hpUpdateDisplay(){
+  const fmt=v=>{
+    if(v===undefined||isNaN(v))return'ERR';const abs=Math.abs(v);if(abs===0)return'0';
+    if(abs>=1e8||(abs<0.0001&&abs>0))return v.toExponential(6);
+    return parseFloat(v.toPrecision(8)).toString();
+  };
+  document.getElementById('hp-x').textContent=hpInputMode?hpStr||'0':fmt(hpX);
+  document.getElementById('hp-y').textContent=fmt(hpY);
+}
+function hpKey(k){
+  if(GS&&GS.step){
+    const s=GS.step;
+    if(s.type==='press'){if(k===s.key){hpKeyRaw(k);gpPressCorrect();}else{gpWrongKey(k,s.key);}return;}
+    if(s.type==='type_enter'){
+      if('0123456789.'.includes(k)||k==='enter'||k==='clr'){hpKeyRaw(k);if(k==='enter')gpTypeEnterPressed();}
+      else{gpFeedback('Type the number shown, then press ENTER.','warn');}return;
+    }
+    if(s.type==='info')return;
+  }
+  hpKeyRaw(k);
+}
+function hpKeyRaw(k){
+  if('0123456789.'.includes(k)){
+    if(!hpInputMode||hpJustOp){hpStr=k==='.'?'0.':k;hpInputMode=true;hpJustOp=false;}
+    else{if(k==='.'&&hpStr.includes('.'))return;hpStr+=k;}
+    hpX=parseFloat(hpStr)||0;
+  } else if(k==='enter'){
+    if(hpInputMode)hpX=parseFloat(hpStr)||0;hpLastEntered=hpX;
+    if(hpPendingOp){
+      const op=hpPendingOp;
+      hpX=op==='mul'?hpPendingX*hpX:op==='div'?hpPendingX/hpX:op==='add'?hpPendingX+hpX:hpPendingX-hpX;
+      hpPendingOp=null;hpPendingX=null;hpJustOp=true;hpInputMode=false;
+    } else {hpY=hpX;hpInputMode=false;hpJustOp=false;}
+  } else if(k==='clr'){hpStr='';hpInputMode=false;hpX=0;hpPendingOp=null;hpPendingX=null;}
+  else if(k==='inv'){if(hpInputMode)hpX=parseFloat(hpStr)||0;hpX=hpX!==0?1/hpX:0;hpJustOp=true;hpInputMode=false;}
+  else if(k==='sin'){if(hpInputMode)hpX=parseFloat(hpStr)||0;hpX=Math.sin(hpX*Math.PI/180);hpJustOp=true;hpInputMode=false;}
+  else if(k==='atan'){if(hpInputMode)hpX=parseFloat(hpStr)||0;hpX=Math.atan(hpX)*180/Math.PI;hpJustOp=true;hpInputMode=false;}
+  else if(['div','mul','add','sub'].includes(k)){
+    if(hpInputMode)hpX=parseFloat(hpStr)||0;
+    if(!hpInputMode&&!hpPendingOp){hpPendingOp=k;hpPendingX=hpX;hpJustOp=false;hpInputMode=false;}
+    else{hpX=k==='div'?hpY/hpX:k==='mul'?hpY*hpX:k==='add'?hpY+hpX:hpY-hpX;hpJustOp=true;hpInputMode=false;}
+  }
+  hpUpdateDisplay();
+}
+
+// ── GUIDED SESSION ────────────────────────────────────────────
+let GS=null;
+
+function buildSeq(seqId,color){
+  const cName=color?color.charAt(0).toUpperCase()+color.slice(1):'';
+  if(seqId==='d')return[
+    {type:'info',text:'The diffraction grating has <b>500 lines per millimeter</b>. We will find the spacing between lines, called d, in nanometers.'},
+    {type:'type_enter',expect:500,tol:0,text:'Type <span class="key-label">500</span> (lines per mm), then press <span class="key-label">ENTER</span>.'},
+    {type:'press',key:'inv',text:'Press <span class="key-label">1/x</span> — this calculates 1÷500, the line spacing in millimeters (0.002 mm).'},
+    {type:'press',key:'mul',text:'Press <span class="key-label">×</span> to set up the multiplication.'},
+    {type:'type_enter',expect:1000000,tol:0,text:'Type <span class="key-label">1000000</span> (the mm→nm conversion factor), then press <span class="key-label">ENTER</span> to complete the calculation.'},
+    {type:'result',storeKey:'d',unit:'nm',label:'d'},
+  ];
+  if(seqId==='theta')return[
+    {type:'info',text:`Calculate the diffraction angle <b>θ = tan⁻¹(D ÷ L)</b> for the <b>${cName}</b> laser using your measured values from the data table above.`},
+    {type:'type_enter',expect:measData[`D_${color}`],tol:2,text:`Enter your measured value of D: <span class="key-label">${measData[`D_${color}`]}</span> mm, then press <span class="key-label">ENTER</span>.`},
+    {type:'press',key:'div',text:'Press <span class="key-label">÷</span> to set up the division.'},
+    {type:'type_enter',expect:measData[`L_${color}`],tol:2,text:`Enter your measured value of L: <span class="key-label">${measData[`L_${color}`]}</span> mm, then press <span class="key-label">ENTER</span> — this calculates D ÷ L.`},
+    {type:'press',key:'atan',text:'Press <span class="key-label">TAN⁻¹</span> — this applies the inverse tangent and gives you θ in degrees.'},
+    {type:'result',storeKey:`theta_${color}`,unit:'°',label:'θ'},
+  ];
+  if(seqId==='sintheta'){const θ=(SR[`theta_${color}`]||0).toFixed(3);return[
+    {type:'info',text:`θ = <b>${θ}°</b> is already in the calculator display from the previous step. We just need to take the sine.`},
+    {type:'press',key:'sin',text:'Press <span class="key-label">SIN</span> — this calculates sin(θ) directly.'},
+    {type:'result',storeKey:`sintheta_${color}`,unit:'',label:'sin(θ)'},
+  ];}
+  if(seqId==='lambda'){const sinVal=(SR[`sintheta_${color}`]||0).toFixed(5);const dVal=Math.round(SR.d||D_NM);return[
+    {type:'info',text:`Calculate λ = d × sin(θ) for the <b>${cName}</b> laser. sin(θ) = <b>${sinVal}</b> is in the display.`},
+    {type:'press',key:'mul',text:'Press <span class="key-label">×</span> to set up the multiplication.'},
+    {type:'type_enter',expect:dVal,tol:2,text:`Type the grating spacing: <span class="key-label">${dVal}</span> nm, then press <span class="key-label">ENTER</span> — this calculates sin(θ) × d = λ.`},
+    {type:'result',storeKey:`lambda_${color}`,unit:' nm',label:'λ'},
+  ];}
+  if(seqId==='pcterror'){const lE=parseFloat((SR[`lambda_${color}`]||0).toFixed(1));const lT=trueWL[color]||0;return[
+    {type:'info',text:`Calculate the percent error for the <b>${cName}</b> laser.<br><br>Formula: <b>% Error = |λ<sub>exp</sub> − λ<sub>true</sub>| ÷ λ<sub>true</sub> × 100</b><br><br>λ<sub>exp</sub> = ${lE} nm &nbsp;&nbsp; λ<sub>true</sub> = ${lT} nm`},
+    {type:'type_enter',expect:lE,tol:2,text:`Enter your experimental wavelength: <span class="key-label">${lE}</span>, then press <span class="key-label">ENTER</span>.`},
+    {type:'press',key:'sub',text:'Press <span class="key-label">−</span> to set up the subtraction.'},
+    {type:'type_enter',expect:lT,tol:2,text:`Enter the true wavelength: <span class="key-label">${lT}</span>, then press <span class="key-label">ENTER</span>.`},
+    {type:'press',key:'div',text:'Press <span class="key-label">÷</span> to set up division by λ<sub>true</sub>.'},
+    {type:'type_enter',expect:lT,tol:2,text:`Enter the true wavelength again: <span class="key-label">${lT}</span>, then press <span class="key-label">ENTER</span>.`},
+    {type:'press',key:'mul',text:'Press <span class="key-label">×</span> to multiply by 100.'},
+    {type:'type_enter',expect:100,tol:0,text:'Type <span class="key-label">100</span>, then press <span class="key-label">ENTER</span> to get the percent error.'},
+    {type:'result',storeKey:`pcterror_${color}`,unit:'%',label:'% Error',absVal:true},
+  ];}
+  return[];
+}
+
+function startGuided(seqId,color){
+  closeGuided();const steps=buildSeq(seqId,color);if(!steps.length)return;
+  GS={seqId,color,steps,stepIdx:0,attempts:0};
+  let preload=0;
+  if(seqId==='sintheta')preload=SR[`theta_${color}`]||0;
+  if(seqId==='lambda')preload=SR[`sintheta_${color}`]||0;
+  hpReset(preload);
+  if(seqId==='pcterror'&&color&&trueWL[color]!==null){
+    const el=document.getElementById('wl-'+colSuf(color));
+    el.textContent=trueWL[color];el.className='dval '+colClass(color);
+  }
+  const cName=color?color.charAt(0).toUpperCase()+color.slice(1):'';
+  const titles={d:'Step 1 — Grating Spacing (d)',theta:`Step 2 — Angle θ · ${cName}`,sintheta:`Step 3 — sin(θ) · ${cName}`,lambda:`Step 4 — Wavelength λ · ${cName}`,pcterror:`Step 5 — % Error · ${cName}`};
+  document.getElementById('gp-title').textContent=titles[seqId]||seqId;
+  document.getElementById('guided-panel').style.display='block';
+  document.getElementById('guided-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  markActiveCell(seqId,color,true);buildProgress();runStep();
+}
+
+function runStep(){
+  if(!GS)return;const s=GS.steps[GS.stepIdx];GS.step=s;GS.attempts=0;
+  const total=GS.steps.length,idx=GS.stepIdx;
+  document.getElementById('gp-step-counter').textContent=`STEP ${idx+1} OF ${total}`;
+  document.getElementById('gp-inst-text').innerHTML=s.text||'';
+  document.getElementById('gp-feedback').textContent='';document.getElementById('gp-feedback').className='';
+  document.getElementById('gp-attempts').textContent='';document.getElementById('gp-continue').style.display='none';
+  updateProgressDots(idx);clearKeyHighlights();
+  if(s.type==='info'){document.getElementById('gp-continue').style.display='block';}
+  else if(s.type==='press'){highlightKey(s.key);}
+  else if(s.type==='type_enter'){highlightKey('enter');}
+  else if(s.type==='result'){showResult(s);}
+}
+function gpContinue(){if(!GS)return;const s=GS.step;if(s.type==='result'){finishSession();return;}advanceStep();}
+function advanceStep(){if(!GS)return;GS.stepIdx++;if(GS.stepIdx>=GS.steps.length){finishSession();return;}runStep();}
+function gpPressCorrect(){clearKeyHighlights();gpFeedback('✓ Correct!','ok');hpFlash('ok');setTimeout(()=>{gpFeedback('','');advanceStep();},800);}
+function gpWrongKey(pressed,expected){
+  const keyNames={sin:'SIN',atan:'TAN⁻¹',inv:'1/x',div:'÷',mul:'×',sub:'−',add:'+',enter:'ENTER',clr:'CLR'};
+  gpFeedback(`Not that key — press ${keyNames[expected]||expected}.`,'err');hpFlash('err');highlightKey(expected);
+}
+function gpTypeEnterPressed(){
+  if(!GS)return;const s=GS.step;const val=hpLastEntered;
+  const wrong=(s.tol===0&&val!==s.expect)||(s.tol>0&&Math.abs(val-s.expect)>s.tol);
+  if(s.expect!==undefined&&wrong){
+    hpFlash('err');gpFeedback('✗ That value looks incorrect — the calculation result will be wrong.','err');
+    document.getElementById('gp-attempts').innerHTML='<button id="gp-restart-btn" style="margin-top:6px;padding:5px 14px;border-radius:5px;cursor:pointer;font-family:Orbitron,monospace;font-size:.52rem;letter-spacing:.5px;border:1px solid var(--warn);background:rgba(255,167,38,.08);color:var(--warn);" onclick="restartCalcStep()">↺ Restart Calculation</button>';
+    return;
+  }
+  clearKeyHighlights();gpFeedback('✓ Entered.','ok');hpFlash('ok');setTimeout(()=>{gpFeedback('','');advanceStep();},600);
+}
+function restartCalcStep(){if(!GS)return;const{seqId,color}=GS;closeGuided();setTimeout(()=>startGuided(seqId,color),80);}
+function showResult(s){
+  const val=hpX;
+  const fmtResult=v=>{if(s.unit==='°')return v.toFixed(4)+s.unit;if(s.unit==='')return v.toFixed(6);return v.toFixed(2)+s.unit;};
+  const storedVal=s.absVal?Math.abs(val):val;
+  SR[s.storeKey]=storedVal;
+  const correct=checkResultCorrectness(s.storeKey,storedVal);
+  const scoreVal=(s.storeKey==='d')?0:(correct?0.5:0);
+  CC[s.storeKey]={done:true,score:scoreVal};
+  const displayVal=s.absVal?Math.abs(val):val;
+  const resultStr=fmtResult(displayVal);
+  const wasNegative=s.absVal&&val<0;
+  document.getElementById('gp-inst-text').innerHTML=
+    `<span style="color:var(--good);font-size:1.05em;">✓ ${s.label} = ${resultStr}</span><br><br>`+
+    (wasNegative?`<span style="color:var(--warn)">Your result was negative — percent error is always positive, so we take the absolute value: <b>${resultStr}</b>.</span><br><br>`:'')+
+    (correct?`<span style="color:var(--good)">Your result is correct. Record <b>${resultStr}</b> in your data sheet.</span>`:`<span style="color:var(--warn)">Result recorded (check your entries if this looks unexpected).</span>`)+
+    `<br><br><span style="font-size:.78rem;color:var(--dim)">Click Continue when you have recorded this value.</span>`;
+  hpFlash('ok');document.getElementById('gp-continue').style.display='block';document.getElementById('gp-continue').textContent='Continue ▶';
+  updateScore();rerenderCell(GS.seqId,GS.color);
+}
+function checkResultCorrectness(key,val){
+  const c=key.includes('_')?key.split('_').slice(1).join('_'):null;
+  let correct=0,tol=10;
+  if(key==='d'){correct=D_NM;tol=5;}
+  else if(key.startsWith('theta_')){const θr=Math.atan(measData[`D_${c}`]/measData[`L_${c}`]);correct=θr*180/Math.PI;tol=0.2;}
+  else if(key.startsWith('sintheta_')){const color=key.replace('sintheta_','');const θr=Math.atan(measData[`D_${color}`]/measData[`L_${color}`]);correct=Math.sin(θr);tol=0.003;}
+  else if(key.startsWith('lambda_')){const color=key.replace('lambda_','');const θr=Math.atan(measData[`D_${color}`]/measData[`L_${color}`]);correct=D_NM*Math.sin(θr);tol=8;}
+  else if(key.startsWith('pcterror_')){const col=key.replace('pcterror_','');const thr=Math.atan(measData[`D_${col}`]/measData[`L_${col}`]);const le=D_NM*Math.sin(thr),lt=trueWL[col];correct=Math.abs(le-lt)/lt*100;tol=0.5;}
+  return Math.abs(val-correct)<=tol;
+}
+function finishSession(){closeGuided();rerenderCalcTable();saveLabState();const allDone=['theta','sintheta','lambda','pcterror'].every(s=>['green','red','blue'].every(c=>CC[`${s}_${c}`]?.done));if(allDone)showStep5();}
+function closeGuided(){
+  GS=null;document.getElementById('guided-panel').style.display='none';clearKeyHighlights();
+  ['red','green','blue'].forEach(c=>{['d','theta','sintheta','lambda'].forEach(s=>{markActiveCell(s,c,false);});});
+  markActiveCell('d',null,false);
+}
+
+// ── CALC TABLE ────────────────────────────────────────────────
+function buildCalcs(){
+  const allKeys=['d',...['theta','sintheta','lambda','pcterror'].flatMap(s=>['green','red','blue'].map(c=>`${s}_${c}`))];
+  allKeys.forEach(k=>{if(!CC[k])CC[k]={done:false,score:0};});
+  document.getElementById('anim-wrap').style.display='none';
+  document.getElementById('ctrl-strip').style.display='none';
+  document.getElementById('calc-section').style.display='block';
+  rerenderCalcTable();speak(VS.calc_intro);saveLabState();
+}
+function rerenderCalcTable(){
+  updateScore();const colors=['red','green','blue'];let h='';
+  h+=`<tr><td class="clbl">Step 1 — Grating spacing d<small>d = 1 ÷ (lines per mm) × 10⁶ nm</small></td>
+    <td id="cell-d" colspan="3" style="text-align:center">`;
+  if(CC.d?.done){h+=`<div class="ccell"><div class="ccell-val uni">${(SR.d||0).toFixed(1)} nm</div></div>`;}
+  else{h+=`<button class="calc-btn" onclick="startGuided('d',null)">Calculate</button>`;}
+  h+=`</td></tr>`;
+  const stepRows=[
+    {key:'theta',lbl:'Step 2 — Angle θ',sub:'θ = tan⁻¹( D ÷ L )'},
+    {key:'sintheta',lbl:'Step 3 — sin(θ)',sub:'sin( θ )'},
+    {key:'lambda',lbl:'Step 4 — Wavelength λ',sub:'λ = d × sin(θ)  →  nm'},
+  ];
+  stepRows.forEach(row=>{
+    h+=`<tr><td class="clbl">${row.lbl}<small>${row.sub}</small></td>`;
+    colors.forEach(c=>{
+      const key=`${row.key}_${c}`;
+      const prereq=row.key==='theta'?CC.d?.done:row.key==='sintheta'?CC[`theta_${c}`]?.done:CC[`sintheta_${c}`]?.done;
+      h+=`<td id="cell-${key}">${renderCell(key,c,prereq)}</td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`<tr><td class="clbl">Step 5 — Percent Error<small>|λ<sub>exp</sub> − λ<sub>true</sub>| ÷ λ<sub>true</sub> × 100</small></td>`;
+  colors.forEach(c=>{const key=`pcterror_${c}`;const prereq=CC[`lambda_${c}`]?.done&&trueWL[c]!==null;h+=`<td id="cell-${key}">${renderCell(key,c,prereq)}</td>`;});
+  h+=`</tr>`;
+  document.getElementById('ctable-body').innerHTML=h;
+}
+function renderCell(key,color,unlocked){
+  const cc=colClass(color),d=CC[key];
+  if(d?.done){
+    const v=SR[key];let disp;
+    if(key.startsWith('theta_'))disp=(v||0).toFixed(3)+'°';
+    else if(key.startsWith('sintheta_'))disp=(v||0).toFixed(5);
+    else if(key.startsWith('pcterror_'))disp=Math.abs(v||0).toFixed(2)+'%';
+    else disp=(v||0).toFixed(1)+' nm';
+    const ptsStr=(key==='d')?'':(d.score===0.5?'0.5 pts':'');
+    const xBtn=`<button class="redo-x" title="Redo" onclick="redoCell('${key}')">✕</button>`;
+    return`<div class="ccell"><div style="display:flex;align-items:center;gap:2px;"><div class="ccell-val ${cc}">${disp}</div>${xBtn}</div><div class="ccell-pts">${ptsStr}</div></div>`;
+  }
+  if(!unlocked)return`<div class="ccell"><button class="calc-btn locked" disabled>locked</button></div>`;
+  const seqId=key.startsWith('theta_')?'theta':key.startsWith('sintheta_')?'sintheta':key.startsWith('pcterror_')?'pcterror':'lambda';
+  return`<div class="ccell"><button class="calc-btn" onclick="startGuided('${seqId}','${color}')">Calculate</button></div>`;
+}
+function rerenderCell(seqId,color){
+  if(seqId==='d'){const el=document.getElementById('cell-d');if(!el)return;el.innerHTML=`<div class="ccell"><div class="ccell-val uni">${(SR.d||0).toFixed(1)} nm</div></div>`;return;}
+  const colors=color?[color]:['green','red','blue'];const allRows=['theta','sintheta','lambda','pcterror'];
+  allRows.forEach(row=>{colors.forEach(c=>{const key=`${row}_${c}`;const el=document.getElementById(`cell-${key}`);if(!el)return;const prereq=row==='theta'?CC.d?.done:row==='sintheta'?CC[`theta_${c}`]?.done:row==='pcterror'?(CC[`lambda_${c}`]?.done&&trueWL[c]!==null):CC[`sintheta_${c}`]?.done;el.innerHTML=renderCell(key,c,prereq);});});
+}
+function redoCell(key){
+  if(!confirm('Redo this calculation?'))return;
+  const deps=getDeps(key);[key,...deps].forEach(k=>{delete CC[k];delete SR[k];if(k.startsWith('pcterror_')){const c=k.replace('pcterror_','');const el=document.getElementById('wl-'+colSuf(c));if(el){el.textContent='hidden';el.className='dval hidden-wl';}}});
+  rerenderCalcTable();
+  const allDone=['theta','sintheta','lambda','pcterror'].every(s=>['red','green','blue'].every(c=>CC[`${s}_${c}`]?.done));
+  if(!allDone){document.getElementById('step5-area').style.display='none';document.getElementById('step5-area').innerHTML='';}
+  updateScore();
+  const parts=key.split('_');const seqId=parts[0]==='pcterror'?'pcterror':parts[0]==='sintheta'?'sintheta':parts[0]==='theta'?'theta':parts[0]==='lambda'?'lambda':parts[0];
+  const color=parts.length>1?parts.slice(1).join('_'):null;
+  setTimeout(()=>startGuided(seqId,color),80);
+}
+function getDeps(key){
+  const chain=['theta','sintheta','lambda','pcterror'],colors=['red','green','blue'];
+  if(key==='d')return chain.slice(1).flatMap(s=>colors.map(c=>`${s}_${c}`)).filter(k=>CC[k]?.done);
+  const result=[];
+  for(const c of colors){const step=chain.indexOf(key.split('_')[0]);if(step>=0){for(let i=step+1;i<chain.length;i++){const dep=`${chain[i]}_${c}`;if(CC[dep]?.done)result.push(dep);}}}
+  return result;
+}
+function markActiveCell(seqId,color,active){
+  const id=seqId==='d'?'cell-d':`cell-${seqId}_${color}`;const el=document.getElementById(id);if(!el)return;
+  const btn=el.querySelector('.calc-btn');if(btn){if(active)btn.classList.add('active');else btn.classList.remove('active');}
+}
+function showStep5(){
+  ['red','green','blue'].forEach(c=>{if(trueWL[c]!==null){const el=document.getElementById('wl-'+colSuf(c));el.textContent=trueWL[c];el.className='dval '+colClass(c);}});
+  const colors=['red','green','blue'];
+  let h=`<div style="font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:2px;color:var(--dim);margin-bottom:10px;text-transform:uppercase;">Results Summary</div>`;
+  h+=`<table class="ctable"><thead><tr><th style="text-align:left">Quantity</th>${colors.map(c=>`<th class="${colClass(c)}">${c.toUpperCase()}</th>`).join('')}</tr></thead><tbody>`;
+  h+=`<tr><td class="clbl">True λ (nm)</td>${colors.map(c=>`<td><div class="ccell-val ${colClass(c)}">${trueWL[c]??'—'} nm</div></td>`).join('')}</tr>`;
+  h+=`<tr><td class="clbl">Experimental λ (nm)</td>${colors.map(c=>{const v=SR[`lambda_${c}`];return`<td><div class="ccell-val ${colClass(c)}">${v!=null?v.toFixed(1):'—'} nm</div></td>`;}).join('')}</tr>`;
+  h+=`<tr><td class="clbl">% Error</td>${colors.map(c=>{const pct=SR[`pcterror_${c}`];return`<td><div class="ccell-val ${colClass(c)}">${pct!=null?Math.abs(pct).toFixed(2)+'%':'—'}</div></td>`;}).join('')}</tr>`;
+  h+=`</tbody></table>`;
+  const area=document.getElementById('step5-area');area.innerHTML=h;area.style.display='block';
+}
+
+// ── SCORE (also updates shared banner) ────────────────────────
+function updateScore(){
+  let pts=Object.values(CC).reduce((a,v)=>a+(v.score||0),0);
+  document.getElementById('calc-score').textContent=`Score: ${pts.toFixed(1)} / 6.0 pts`;
+  // Sync to session + banner
+  if(typeof updateBannerScore==='function') updateBannerScore(pts);
+}
+function resetCalcs(){
+  Object.keys(CC).forEach(k=>{delete CC[k];});Object.keys(SR).forEach(k=>{delete SR[k];});
+  closeGuided();
+  ['red','green','blue'].forEach(c=>{const el=document.getElementById('wl-'+colSuf(c));el.textContent='hidden';el.className='dval hidden-wl';});
+  buildCalcs();document.getElementById('step5-area').style.display='none';document.getElementById('step5-area').innerHTML='';
+  saveLabState();
+}
+
+// ── HP HELPERS ────────────────────────────────────────────────
+function highlightKey(key){document.querySelectorAll('.hk').forEach(b=>{b.classList.toggle('target',b.dataset.key===key);});}
+function clearKeyHighlights(){document.querySelectorAll('.hk').forEach(b=>b.classList.remove('target'));}
+function hpFlash(type){const el=document.getElementById('hp-x');el.classList.add(type);setTimeout(()=>el.classList.remove(type),350);}
+function gpFeedback(msg,cls){const el=document.getElementById('gp-feedback');el.textContent=msg;el.className=cls||'';}
+function buildProgress(){if(!GS)return;const el=document.getElementById('gp-progress');el.innerHTML=GS.steps.map((_,i)=>`<div class="gp-dot" id="gpd-${i}"></div>`).join('');}
+function updateProgressDots(idx){if(!GS)return;GS.steps.forEach((_,i)=>{const d=document.getElementById(`gpd-${i}`);if(!d)return;d.className='gp-dot'+(i<idx?' done':i===idx?' active':'');});}
+
+// ── KEYBOARD ──────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('guided-panel').style.display==='block'){
+    if(e.key==='Backspace'){return;}
+    const map={'0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','.':'.','Enter':'enter'};
+    const k=map[e.key];if(k)hpKey(k);
+    if(e.key==='Escape'){closeGuided();e.preventDefault();}
+    return;
+  }
+  if(e.key==='Escape')resetLab();
+});
+
+// ── VOICE ─────────────────────────────────────────────────────
+function speak(txt){if(!txt||typeof speechSynthesis==='undefined')return;speechSynthesis.cancel();const parts=txt.split('[pause]').map(s=>s.trim()).filter(Boolean);let d=0;parts.forEach((p,i)=>{if(i===0)ttsSpeak(p);else setTimeout(()=>ttsSpeak(p),d);d+=p.split(/\s+/).length/148*60000+1200;});}
+function ttsSpeak(txt){const u=new SpeechSynthesisUtterance(txt);u.rate=.88;u.pitch=1;u.volume=1;speechSynthesis.speak(u);}
+
+// ── RESET ─────────────────────────────────────────────────────
+function resetLab(){
+  sessionStorage.removeItem('labState');
+  speechSynthesis.cancel();closeGuided();
+  appState='INTRO';selColor=null;laserOn=false;
+  ['red','green','blue'].forEach(c=>{trueWL[c]=null;measData['L_'+c]=null;measData['D_'+c]=null;});
+  tOff=0;rOff=0;hOff=0;mType=null;mStart=null;mCurrent=null;mDragging=false;mPending=null;currentStep=1;
+  Object.keys(CC).forEach(k=>delete CC[k]);Object.keys(SR).forEach(k=>delete SR[k]);
+  if(flashIv)clearInterval(flashIv);flashOn=false;if(dotTimer){clearTimeout(dotTimer);dotTimer=null;}
+  document.getElementById('anim-wrap').style.display='block';document.getElementById('ctrl-strip').style.display='flex';
+  document.getElementById('calc-section').style.display='none';document.getElementById('laser-select').style.display='flex';
+  document.getElementById('laser-select').querySelector('h3').textContent='Select Your Laser';
+  document.getElementById('move-controls').style.display='none';document.getElementById('meas-confirm').style.display='none';
+  ['btn-r','btn-g','btn-b'].forEach(id=>{const b=document.getElementById(id);b.disabled=false;b.style.opacity='1';});
+  lockMoveControls(false);enableNext(false);updateDotStatusEl(null);
+  ['red','green','blue'].forEach(c=>{const cs=colSuf(c);['L-','D-'].forEach(p=>{const e=document.getElementById(p+cs);e.textContent='—';e.className='dval empty';});const we=document.getElementById('wl-'+cs);we.textContent='hidden';we.className='dval hidden-wl';});
+  setStep(1,'Select a laser color above to begin your experiment.');
+  // Reset banner score
+  if(typeof updateBannerScore==='function') updateBannerScore(0);
+  speak(VS.reset);
+}
+
+
+// ── STATE PERSISTENCE ────────────────────────────────────────────
+// Saves the complete lab state to sessionStorage so the student
+// can navigate to Outro and return without losing their work.
+
+function saveLabState() {
+  try {
+    const state = {
+      appState,
+      selColor,
+      laserOn: false, // never save "laser is mid-firing" — will re-check on restore
+      trueWL:   JSON.parse(JSON.stringify(trueWL)),
+      measData: JSON.parse(JSON.stringify(measData)),
+      tOff, rOff, hOff,
+      currentStep,
+      stepHTML:    document.getElementById('step-text').innerHTML,
+      nextEnabled: !document.getElementById('btn-next').disabled,
+      showCalcs: document.getElementById('calc-section').style.display !== 'none',
+      SR: JSON.parse(JSON.stringify(SR)),
+      CC: JSON.parse(JSON.stringify(CC))
+    };
+    sessionStorage.setItem('labState', JSON.stringify(state));
+  } catch(e) { console.warn('saveLabState error:', e); }
+}
+
+function restoreLabState() {
+  const raw = sessionStorage.getItem('labState');
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+
+    // — Core variables —
+    appState    = s.appState    || 'INTRO';
+    selColor    = s.selColor    || null;
+    laserOn     = false; // always start with laser off; user turns back on if needed
+    currentStep = s.currentStep || 1;
+    tOff = s.tOff || 0; rOff = s.rOff || 0; hOff = s.hOff || 0;
+
+    // Restore physics state
+    ['red','green','blue'].forEach(c => {
+      trueWL[c]         = s.trueWL  ? s.trueWL[c]              : null;
+      measData['L_'+c]  = s.measData ? s.measData['L_'+c]       : null;
+      measData['D_'+c]  = s.measData ? s.measData['D_'+c]       : null;
+    });
+
+    // Restore calc results
+    Object.keys(s.SR || {}).forEach(k => SR[k] = s.SR[k]);
+    Object.keys(s.CC || {}).forEach(k => CC[k] = s.CC[k]);
+
+    // — Mid-measurement states can't be exactly resumed; back up one step —
+    if (appState === 'MEAS_L') appState = 'MEAS_L_READY';
+    if (appState === 'MEAS_D') appState = 'MEAS_D_READY';
+
+    // — Rebuild UI —
+    if (s.showCalcs) {
+      // ── Calc section mode ──
+      document.getElementById('anim-wrap').style.display  = 'none';
+      document.getElementById('ctrl-strip').style.display = 'none';
+      document.getElementById('calc-section').style.display = 'block';
+      rerenderCalcTable();
+      updateScore();
+      const allDone = ['theta','sintheta','lambda','pcterror']
+        .every(st => ['green','red','blue'].every(c => CC[`${st}_${c}`]?.done));
+      if (allDone) showStep5();
+    } else {
+      // ── Animation section mode ──
+      document.getElementById('anim-wrap').style.display   = 'block';
+      document.getElementById('ctrl-strip').style.display  = 'flex';
+      document.getElementById('calc-section').style.display = 'none';
+      document.getElementById('meas-confirm').style.display = 'none';
+
+      if (!selColor || appState === 'INTRO') {
+        // Show laser selector
+        document.getElementById('laser-select').style.display = 'flex';
+        document.getElementById('move-controls').style.display = 'none';
+        // Grey out already-used lasers
+        ['red','green','blue'].forEach(c => {
+          const b = document.getElementById('btn-'+c[0]);
+          const avail = measData['L_'+c] === null;
+          b.disabled = !avail; b.style.opacity = avail ? '1' : '.22';
+        });
+        const anyUsed = ['red','green','blue'].some(c => measData['L_'+c] !== null);
+        document.getElementById('laser-select').querySelector('h3').textContent =
+          anyUsed ? 'Select Next Laser' : 'Select Your Laser';
+      } else {
+        // Show move controls
+        document.getElementById('laser-select').style.display  = 'none';
+        document.getElementById('move-controls').style.display = 'flex';
+        // Lock move controls if in MEAS state
+        lockMoveControls(appState === 'MEAS_L_READY' || appState === 'MEAS_D_READY');
+      }
+
+      // Restore step display
+      document.getElementById('step-num').textContent = 'STEP ' + currentStep;
+      if (s.stepHTML) document.getElementById('step-text').innerHTML = s.stepHTML;
+      enableNext(s.nextEnabled || false);
+
+      // Instant dot check if positioning (no 2-sec delay)
+      if (appState === 'POSITIONING' && selColor) {
+        const dots = computeDots(selColor);
+        const good = dots && !dots.onCeiling;
+        updateDotStatusEl(good);
+        if (good) enableNext(true);
+      }
+    }
+
+    // — Restore data table —
+    ['red','green','blue'].forEach(c => {
+      const cs = colSuf(c), cc = colClass(c);
+      const L = measData['L_'+c], D = measData['D_'+c];
+      if (L !== null) setCell('L-'+cs, L, cc);
+      if (D !== null) setCell('D-'+cs, D, cc);
+      const wlEl = document.getElementById('wl-'+cs);
+      if (trueWL[c] !== null) {
+        if (CC['pcterror_'+c]?.done) {
+          wlEl.textContent = trueWL[c]; wlEl.className = 'dval '+cc;
+        } else {
+          wlEl.textContent = '[hidden]'; wlEl.className = 'dval hidden-wl';
+        }
+      }
+    });
+
+    return true;
+  } catch(e) {
+    console.warn('restoreLabState error:', e);
+    sessionStorage.removeItem('labState');
+    return false;
+  }
+}
+
+// Locks all interactive elements when the lab is completed or timed out.
+// The student can still read/scroll their work — just can't change anything.
+function lockLab() {
+  // Disable laser, move, step, and calc buttons
+  document.querySelectorAll(
+    '.laser-btn, .mb, .cbtn, .calc-btn, .hk, .mc-btn, #gp-close, #gp-continue, #gp-restart-btn'
+  ).forEach(el => {
+    el.disabled = true;
+    el.style.cursor = 'not-allowed';
+    el.style.opacity = '0.35';
+  });
+  closeGuided();
+  // Disable canvas interactions
+  canvas.style.pointerEvents = 'none';
+  // Show a banner message
+  const strip = document.getElementById('ctrl-strip');
+  if (strip && document.getElementById('calc-section').style.display === 'none') {
+    // Only show lock notice in the animation view; calc view has submit btn context
+    document.getElementById('step-text').innerHTML =
+      '<span style="color:var(--warn)">⏹ Lab time has expired — your score has been recorded. '
+      + 'Navigate to the Results page to submit.</span>';
+    document.getElementById('step-num').textContent = '';
+    document.getElementById('btn-next').style.display = 'none';
+  }
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────
+function setStep(n,html){currentStep=n;document.getElementById('step-num').textContent='STEP '+n;document.getElementById('step-text').innerHTML=html;}
+function enableNext(on){document.getElementById('btn-next').disabled=!on;}
+
+// ── INIT ──────────────────────────────────────────────────────
+requestAnimationFrame(draw);
+
+// Restore saved session state if returning from outro or refreshing
+const _restored = restoreLabState();
+if (!_restored) {
+  // Fresh start
+  setStep(1,'Select a laser color above to begin your experiment.');
+  setTimeout(()=>speak(VS.intro), 2000);
+}
+
+// Lock all interactions if the lab session is closed (timed out or submitted)
+const _timerEnd = parseInt(sessionStorage.getItem('timerEndTime') || '0');
+const _timedOut = _timerEnd > 0 && Date.now() > _timerEnd;
+if (sessionStorage.getItem('labCompleted') === 'true' || _timedOut) {
+  lockLab();
+}
+</script>
+</body>
+</html>

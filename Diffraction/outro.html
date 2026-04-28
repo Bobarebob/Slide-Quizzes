@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4A – Results</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Nunito:wght@300;400;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
+            background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%);
+            color: #e0e0e0; line-height: 1.6; min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px; margin: 0 auto;
+            background: rgba(6, 6, 18, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(79,195,247,0.2);
+            overflow: hidden; min-height: 100vh;
+        }
+
+        /* ── Student banner ── */
+        .student-info {
+            background: rgba(4, 4, 12, 0.98); padding: 14px 40px;
+            border-bottom: 2px solid rgba(79,195,247,0.3);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: nowrap; gap: 20px;
+        }
+        .student-name    { color: #4fc3f7; font-size: 1.05em; font-weight: 700; white-space: nowrap; font-family: 'Orbitron', monospace; letter-spacing: 1px; }
+        .student-score   { color: #ffa64d; font-size: 1.05em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+        .student-timer   { color: #4dffb8; font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid rgba(79,195,247,0.5); }
+        .page-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.4em; font-weight: 700; letter-spacing: 3px;
+            display: flex; align-items: center; justify-content: center; gap: 18px;
+            background: linear-gradient(90deg, #4fc3f7, #e879f9);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        /* Spinning prism decoration */
+        .title-prism {
+            display: inline-block; width: 1em; height: 1em;
+            -webkit-text-fill-color: initial; background: none;
+            animation: prismSpin 8s linear infinite, prismPulse 2.8s ease-in-out infinite;
+            transform-origin: center; filter: drop-shadow(0 0 8px rgba(79,195,247,0.7));
+        }
+        .title-prism.right { animation-direction: reverse, normal; animation-delay: 0s, 1.4s; }
+        @keyframes prismSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes prismPulse {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(79,195,247,0.6)); }
+            50%      { filter: drop-shadow(0 0 16px rgba(232,121,249,1)) drop-shadow(0 0 28px rgba(79,195,247,0.6)); }
+        }
+        .page-subtitle { font-size: 1.2em; color: #8a9abf; font-style: italic; }
+
+        .outro-content { padding: 0 20px 40px; max-width: 960px; margin: 0 auto; }
+
+        /* ── Video ── */
+        .video-container {
+            width: 100%; max-width: 720px; margin: 0 auto 36px;
+            background: #000; border: 2px solid rgba(79,195,247,0.4);
+            border-radius: 14px; overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(79,195,247,0.08);
+            aspect-ratio: 1043 / 895; position: relative;
+        }
+        video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+
+        /* ── Score display ── */
+        .score-display {
+            background: linear-gradient(135deg, rgba(79,195,247,0.08) 0%, rgba(232,121,249,0.08) 100%);
+            border: 2px solid rgba(79,195,247,0.35); border-radius: 18px;
+            padding: 32px; margin: 32px 0; text-align: center;
+        }
+        .score-display h2 { font-family: 'Orbitron', monospace; color: #4fc3f7; font-size: 1.5em; margin-bottom: 16px; letter-spacing: 2px; }
+        .score-value { font-family: 'Orbitron', monospace; font-size: 3.5em; color: #4dffb8; font-weight: 700; }
+        .score-label  { color: #888; font-size: 0.95em; margin-top: 8px; }
+        .score-grade-bar { height: 12px; background: rgba(255,255,255,0.07); border-radius: 6px; margin: 22px auto; max-width: 400px; overflow: hidden; }
+        .score-grade-fill { height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #e879f9 50%, #4dffb8 100%); border-radius: 6px; transition: width 1.4s cubic-bezier(0.22,1,0.36,1); }
+        .score-note { font-size: 0.88em; color: #557; margin-top: 10px; font-style: italic; }
+
+        /* ── Submit button ── */
+        .submit-btn-wrap { text-align: center; margin: 30px 0 14px; }
+        .submit-quiz-btn {
+            padding: 16px 60px;
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+            color: #fff; border: none; border-radius: 30px; cursor: pointer;
+            font-size: 1.2em; font-weight: 700; letter-spacing: 0.04em;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s ease; box-shadow: 0 4px 18px rgba(76,175,80,0.35);
+        }
+        .submit-quiz-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%);
+            transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.5);
+        }
+        .submit-quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        #submitConfirmMsg { color: #4dffb8; font-size: 1.05em; font-weight: bold; margin-top: 16px; display: none; text-align: center; }
+
+        /* ── Outcomes box ── */
+        .outcomes-box {
+            background: linear-gradient(135deg, rgba(79,195,247,0.06) 0%, rgba(232,121,249,0.06) 100%);
+            border-left: 4px solid #4fc3f7; padding: 24px 28px; margin: 28px 0; border-radius: 8px;
+        }
+        .outcomes-title { font-family: 'Orbitron', monospace; font-size: 1.0em; color: #4dffb8; font-weight: 700; margin-bottom: 16px; letter-spacing: 1px; }
+        .outcomes-box ul { list-style: none; font-size: 1.02em; }
+        .outcomes-box li { padding-left: 28px; position: relative; margin-top: 11px; color: #ccc; }
+        .outcomes-box li::before { content: "✓"; position: absolute; left: 0; color: #4dffb8; font-weight: bold; }
+
+        /* ── Navigation ── */
+        .navigation {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 22px 40px; background: rgba(4,4,12,0.98);
+            border-top: 2px solid rgba(79,195,247,0.3);
+        }
+        .nav-button {
+            padding: 13px 32px;
+            background: linear-gradient(135deg, #2a2a4a 0%, #1a1a36 100%);
+            color: #4fc3f7; border: 1px solid rgba(79,195,247,0.4); border-radius: 30px;
+            cursor: pointer; font-size: 1.0em; font-weight: 700;
+            font-family: 'Orbitron', monospace; letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .nav-button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-button:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a5e 0%, #2a2a4a 100%); transform: translateY(-2px); }
+        .page-counter { font-family: 'Orbitron', monospace; font-size: 1.1em; color: #4fc3f7; font-weight: 600; letter-spacing: 2px; }
+
+        /* ── Timeline ── */
+        .timeline-indicator {
+            display: flex; justify-content: center; gap: 14px; padding: 18px;
+            background: rgba(4,4,12,0.7);
+        }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(79,195,247,0.25); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+        .timeline-dot:hover { background: rgba(79,195,247,0.55); transform: scale(1.2); }
+        .timeline-dot.active { background: #4fc3f7; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 14px rgba(79,195,247,0.8); }
+        .timeline-dot.lab-dot { background: rgba(232,121,249,0.25); }
+        .timeline-dot.lab-dot:hover { background: rgba(232,121,249,0.55); }
+
+        @media (max-width: 768px) { .page-content { padding: 20px; } .page-title { font-size: 1.6em; } .outro-content { padding: 10px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Student Banner -->
+    <div class="student-info" id="studentBanner" style="display:none;">
+        <div class="student-name"><span id="displayName"></span> &nbsp;·&nbsp; <span id="displayID"></span></div>
+        <div class="student-score">Score: <span id="displayScore">0.0 / 6.0 pts</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display:none;">
+            <span id="timeWarningMessage" style="display:none;"></span>
+            Time: <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="page-content">
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="title-prism">🔷</span>
+                Lab Complete!
+                <span class="title-prism right">🔷</span>
+            </h1>
+            <p class="page-subtitle">Lab 4A — Diffraction &amp; Wavelength of Light</p>
+        </div>
+
+        <div class="outro-content">
+
+            <!-- Avatar outro video -->
+            <div class="video-container">
+                <video controls preload="metadata" playsinline>
+                    <source src="videos/Outro.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <!-- Score display -->
+            <div class="score-display">
+                <h2>🏆 Your Lab Score</h2>
+                <div class="score-value" id="finalScore">— / 6.0</div>
+                <div class="score-label" id="scoreLabel">calculation steps completed</div>
+                <div class="score-grade-bar">
+                    <div class="score-grade-fill" id="scoreFill" style="width:0%"></div>
+                </div>
+                <div class="score-note">Score is based on the guided calculation steps (0.5 pts each × 12 steps).</div>
+            </div>
+
+            <!-- Submit button -->
+            <div class="submit-btn-wrap">
+                <button class="submit-quiz-btn" id="submitBtn" onclick="submitLab()">
+                    ✓ Submit Lab
+                </button>
+                <p id="submitConfirmMsg"></p>
+            </div>
+
+            <!-- Learning outcomes -->
+            <div class="outcomes-box">
+                <div class="outcomes-title">📌 What You Practiced in This Lab</div>
+                <ul>
+                    <li>Used a virtual diffraction grating to split laser light into an interference pattern</li>
+                    <li>Measured grating-to-wall distance L and dot separation D for three laser colors</li>
+                    <li>Applied the grating equation λ = d × sin(θ) to calculate each wavelength</li>
+                    <li>Compared your experimental result to the accepted wavelength via percent error</li>
+                    <li>Practiced step-by-step calculation using an RPN-style scientific calculator</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation">
+        <button class="nav-button" onclick="window.location.href='lab4a.html'">← Lab</button>
+        <div class="page-counter">3 / 3</div>
+        <button class="nav-button" disabled>Finished</button>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-indicator">
+        <div class="timeline-dot"         onclick="window.location.href='intro.html'"  title="Introduction"></div>
+        <div class="timeline-dot lab-dot" onclick="window.location.href='lab4a.html'" title="Lab 4A · Diffraction"></div>
+        <div class="timeline-dot active"  onclick="window.location.href='outro.html'"  title="Results"></div>
+    </div>
+
+</div>
+
+<script src="lab4a-shared.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rawScore  = parseFloat(sessionStorage.getItem('labScore') || '0');
+        const maxScore  = 6.0;
+        const pctFill   = Math.min(100, Math.round((rawScore / maxScore) * 100));
+
+        const finalEl = document.getElementById('finalScore');
+        const labelEl = document.getElementById('scoreLabel');
+        const fillEl  = document.getElementById('scoreFill');
+
+        if (finalEl) finalEl.textContent = rawScore.toFixed(1) + ' / ' + maxScore.toFixed(1);
+        if (labelEl) {
+            const steps = Math.round(rawScore / 0.5);
+            labelEl.textContent = `${steps} calculation step${steps !== 1 ? 's' : ''} completed correctly`;
+        }
+        if (fillEl) {
+            setTimeout(() => { fillEl.style.width = pctFill + '%'; }, 400);
+        }
+
+        // Sync banner score
+        const bse = document.getElementById('displayScore');
+        if (bse) bse.textContent = rawScore.toFixed(1) + ' / ' + maxScore.toFixed(1) + ' pts';
+
+        // If auto-submitted by timer
+        if (sessionStorage.getItem('labCompleted') === 'true') {
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('submitConfirmMsg');
+            if (btn) btn.disabled = true;
+            if (msg) { msg.style.display = 'block'; msg.textContent = '✓ Lab auto-submitted (time expired).'; }
+        }
+    });
+</script>
+</body>
+</html>

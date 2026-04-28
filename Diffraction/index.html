@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4A – Diffraction · Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Nunito:wght@300;400;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
+            background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%);
+            color: #e0e0e0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                radial-gradient(1px 1px at 25% 40%, rgba(200,220,255,0.6) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 45% 10%, rgba(255,240,200,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 65% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 25%, rgba(200,200,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 15% 80%, rgba(79,195,247,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 85%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 35% 65%, rgba(180,200,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 72% 90%, rgba(232,121,249,0.3) 0%, transparent 100%);
+        }
+        .login-box {
+            position: relative; z-index: 1;
+            background: rgba(6, 6, 18, 0.97);
+            padding: 50px 40px; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(79,195,247,0.08);
+            border: 1px solid rgba(79,195,247,0.25);
+            text-align: center; max-width: 480px; width: 100%;
+        }
+        .lab-icon { font-size: 2.8em; margin-bottom: 12px; display: block; }
+        .login-box h2 {
+            font-family: 'Orbitron', monospace;
+            color: #4fc3f7; font-size: 1.5em; margin-bottom: 4px;
+            text-shadow: 0 0 20px rgba(79,195,247,0.5);
+            letter-spacing: 2px;
+        }
+        .login-box .subtitle {
+            color: #8a9abf; margin-bottom: 30px; font-size: 0.95em; font-style: italic; letter-spacing: 1px;
+        }
+        .module-tag {
+            display: inline-block; margin-bottom: 20px; padding: 4px 14px;
+            background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3);
+            border-radius: 20px; color: #4dffb8; font-size: 0.82em;
+            letter-spacing: 0.08em; text-transform: uppercase; font-family: 'Orbitron', monospace;
+        }
+        .login-box input {
+            width: 100%; padding: 14px 18px; margin-bottom: 14px;
+            background: rgba(4, 4, 14, 0.9); border: 2px solid rgba(79,195,247,0.2);
+            border-radius: 10px; color: #e0e0e0; font-size: 1em; font-family: 'Nunito', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .login-box input:focus {
+            outline: none; border-color: #4fc3f7;
+            box-shadow: 0 0 15px rgba(79,195,247,0.2);
+        }
+        .login-box input::placeholder { color: #405060; }
+        .login-box button {
+            width: 100%; padding: 15px;
+            background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
+            color: #030814; border: none; border-radius: 10px;
+            font-size: 1.05em; font-weight: 700; cursor: pointer;
+            font-family: 'Orbitron', monospace; letter-spacing: 1.5px;
+            box-shadow: 0 4px 20px rgba(79,195,247,0.3);
+            transition: all 0.3s ease;
+        }
+        .login-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(79,195,247,0.5);
+        }
+        #loginError {
+            color: #ff7070; margin-top: 14px; display: none;
+            padding: 12px 16px; background: rgba(255,80,80,0.1);
+            border: 1px solid rgba(255,80,80,0.3); border-radius: 8px;
+            text-align: left; font-size: 0.9em;
+        }
+        .accent-bar {
+            width: 60px; height: 3px; margin: 14px auto 22px;
+            background: linear-gradient(90deg, #4fc3f7, #e879f9);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <span class="lab-icon">🔬</span>
+        <h2>Lab 4A</h2>
+        <p class="subtitle">Diffraction &amp; Wavelength of Light</p>
+        <div class="accent-bar"></div>
+        <span class="module-tag">Physics Laboratory</span>
+
+        <input type="text"     id="studentName"     placeholder="Student Name"  autocomplete="off">
+        <input type="text"     id="studentID"       placeholder="Student ID"    autocomplete="off">
+        <input type="password" id="studentPassword" placeholder="Lab Password">
+        <div id="loginError"></div>
+        <button onclick="startLab()">Begin Lab →</button>
+    </div>
+
+    <script src="lab4a-shared.js"></script>
+    <script>
+        async function startLab() {
+            const name      = document.getElementById('studentName').value.trim();
+            const studentID = document.getElementById('studentID').value.trim();
+            const password  = document.getElementById('studentPassword').value.trim();
+            const errorDiv  = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+
+            if (!name || !studentID || !password) {
+                errorDiv.textContent = 'Please fill in all fields.';
+                errorDiv.style.display = 'block'; return;
+            }
+
+            try {
+                if (db) {
+                    const dbSnapshot = await db.collection('databases')
+                        .where('password', '==', password)
+                        .where('active', '==', true)
+                        .limit(1).get();
+
+                    if (dbSnapshot.empty) {
+                        // Fall back to local password check
+                        if (password !== QUIZ_PASSWORD) {
+                            errorDiv.textContent = 'Invalid lab password.';
+                            errorDiv.style.display = 'block'; return;
+                        }
+                    } else {
+                        const activeDb = dbSnapshot.docs[0].data();
+                        quizConfig.className  = activeDb.className;
+                        quizConfig.quizName   = activeDb.quizName;
+                        quizConfig.databaseId = dbSnapshot.docs[0].id;
+
+                        const settingsDoc = await db.collection('quizSettings')
+                            .doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+                        if (settingsDoc.exists) {
+                            const s = settingsDoc.data();
+                            if (s.loginDescriptors) quizConfig.loginDescriptors = s.loginDescriptors;
+                            if (s.restrictions)     quizConfig.restrictions     = s.restrictions;
+                            if (s.idValidation)     quizConfig.idValidation     = s.idValidation;
+                        }
+
+                        // Date/time restrictions
+                        const now = new Date();
+                        if (quizConfig.restrictions.startDateTime) {
+                            const st = new Date(quizConfig.restrictions.startDateTime);
+                            if (now < st) {
+                                errorDiv.textContent = `Lab not yet open. Opens ${st.toLocaleDateString()} at ${st.toLocaleTimeString()}.`;
+                                errorDiv.style.display = 'block'; return;
+                            }
+                        }
+                        if (quizConfig.restrictions.stopDateTime) {
+                            const sp = new Date(quizConfig.restrictions.stopDateTime);
+                            if (now > sp) {
+                                errorDiv.textContent = `Lab has closed. Deadline was ${sp.toLocaleDateString()} at ${sp.toLocaleTimeString()}.`;
+                                errorDiv.style.display = 'block'; return;
+                            }
+                        }
+
+                        // Attempt limits
+                        if (quizConfig.restrictions.attemptsAllowed > 0) {
+                            const snap = await db.collection('students')
+                                .where('studentID', '==', studentID)
+                                .where('databaseId', '==', quizConfig.databaseId).get();
+                            if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
+                                errorDiv.textContent = `Access denied: all ${quizConfig.restrictions.attemptsAllowed} attempt(s) used.`;
+                                errorDiv.style.display = 'block'; return;
+                            }
+                            sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
+                            sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+                        } else {
+                            sessionStorage.setItem('attemptNumber', '1');
+                            sessionStorage.setItem('maxAttempts', '0');
+                        }
+
+                        // ID format validation (all types from teacher.html)
+                        if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                            const vt = quizConfig.idValidation.type;
+                            const vv = quizConfig.idValidation.value || '';
+                            if (vt === 'digits') {
+                                const n = parseInt(vv, 10);
+                                const re = new RegExp(`^\\d{${n}}$`);
+                                if (!re.test(studentID)) {
+                                    errorDiv.textContent = `Invalid ID: must be exactly ${n} digit${n !== 1 ? 's' : ''}.`;
+                                    errorDiv.style.display = 'block'; return;
+                                }
+                            } else if (vt === 'startsWith') {
+                                if (!studentID.startsWith(vv)) {
+                                    errorDiv.textContent = `Invalid ID: must start with "${vv}".`;
+                                    errorDiv.style.display = 'block'; return;
+                                }
+                            } else if (vt === 'regex') {
+                                try {
+                                    const re = new RegExp(vv);
+                                    if (!re.test(studentID)) {
+                                        errorDiv.textContent = `Invalid ID format.`;
+                                        errorDiv.style.display = 'block'; return;
+                                    }
+                                } catch (regexErr) {
+                                    console.warn('Bad regex pattern in idValidation:', vv);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (password !== QUIZ_PASSWORD) {
+                        errorDiv.textContent = 'Invalid lab password.';
+                        errorDiv.style.display = 'block'; return;
+                    }
+                    sessionStorage.setItem('attemptNumber', '1');
+                    sessionStorage.setItem('maxAttempts', '0');
+                }
+
+                const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('studentName', name);
+                sessionStorage.setItem('studentID',   studentID);
+                sessionStorage.setItem('sessionId',   sessionId);
+                sessionStorage.setItem('quizConfig',  JSON.stringify(quizConfig));
+                sessionStorage.setItem('labScore',    '0');
+                sessionStorage.removeItem('labCompleted');
+
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    const nowMs = Date.now();
+                    sessionStorage.setItem('quizStartTime', nowMs.toString());
+                    sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
+                }
+
+                if (db) {
+                    await db.collection('students').doc(sessionId).set({
+                        name, studentID,
+                        className:  quizConfig.className  || 'lab4a',
+                        quizName:   quizConfig.quizName   || 'diffraction',
+                        databaseId: quizConfig.databaseId || 'standalone',
+                        startTime:  firebase.firestore.Timestamp.now(),
+                        score: 0, completed: false
+                    });
+                }
+
+                window.location.href = 'intro.html';
+
+            } catch (e) {
+                errorDiv.textContent = 'Connection error. Please notify your instructor.';
+                console.error(e);
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') startLab();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvolLand – Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-box {
+            background: rgba(30,30,50,0.95);
+            padding: 50px 45px;
+            border-radius: 20px;
+            border: 1px solid rgba(77,166,255,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 520px;
+            width: 100%;
+        }
+        .login-box h2 {
+            color: #4da6ff;
+            font-size: 1.9em;
+            margin-bottom: 8px;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(77,166,255,0.4);
+        }
+        .login-box p {
+            color: #b0b0b0;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.05em;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 16px;
+            background: rgba(20,20,35,0.8);
+            border: 1px solid rgba(77,166,255,0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1.05em;
+        }
+        .login-box input:focus {
+            outline: none;
+            border-color: #4da6ff;
+            box-shadow: 0 0 10px rgba(77,166,255,0.3);
+        }
+        .login-box input::placeholder { color: #556; }
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #b8c6db 0%, #8fa3bd 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+        #loginError { color:#ff6b6b; margin-top:12px; text-align:center; display:none; font-size:1em; }
+        .login-icon { text-align:center; font-size:3.5em; margin-bottom:20px; }
+    </style>
+<body>
+    <div class="login-box">
+        <div class="login-icon" style="margin-bottom:6px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110" width="110" height="110" style="display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(77,166,255,0.5));">
+  <defs>
+    <radialGradient id="SEocnL" cx="38%" cy="32%" r="65%">
+      <stop offset="0%"   stop-color="#6ec6f0"/>
+      <stop offset="40%"  stop-color="#1565c0"/>
+      <stop offset="100%" stop-color="#0a2060"/>
+    </radialGradient>
+    <radialGradient id="SEatmL" cx="50%" cy="50%" r="50%">
+      <stop offset="78%" stop-color="rgba(77,166,255,0)"/>
+      <stop offset="100%" stop-color="rgba(77,166,255,0.38)"/>
+    </radialGradient>
+    <clipPath id="SEclpL"><circle cx="55" cy="55" r="37"/></clipPath>
+  </defs>
+
+  <!-- Atmospheric glow -->
+  <circle cx="55" cy="55" r="50" fill="url(#SEatmL)"/>
+
+  <!-- Orbital ring -->
+  <ellipse cx="55" cy="55" rx="52" ry="10"
+           fill="none" stroke="rgba(77,166,255,0.28)" stroke-width="1.4">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 55 55" to="360 55 55" dur="18.0s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- Ocean base -->
+  <circle cx="55" cy="55" r="37" fill="url(#SEocnL)"/>
+
+  <!-- Spinning continent layer -->
+  <g clip-path="url(#SEclpL)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 55 55" to="360 55 55" dur="12s" repeatCount="indefinite"/>
+      <!-- Latitude swirl lines -->
+      <ellipse cx="55" cy="40.9" rx="36.1" ry="7.1"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <ellipse cx="55" cy="55.0" rx="37.7" ry="8.6" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <ellipse cx="55" cy="69.1" rx="34.6" ry="7.1"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <!-- North America -->
+      <path d="M20.4,31.4 Q26.7,23.6 36.1,25.1 Q42.4,26.7 39.3,37.7 Q36.1,45.6 28.3,48.7 Q18.9,45.6 17.3,37.7 Z"
+            fill="#2e7d32" opacity="0.9"/>
+      <!-- South America -->
+      <path d="M29.9,51.9 Q36.1,48.7 40.9,55.0 Q42.4,64.4 36.1,72.3 Q28.3,69.1 26.7,59.7 Z"
+            fill="#388e3c" opacity="0.86"/>
+      <!-- Europe -->
+      <path d="M55.0,23.6 Q62.9,22.0 64.4,29.9 Q61.3,36.1 55.0,34.6 Z"
+            fill="#33691e" opacity="0.9"/>
+      <!-- Africa -->
+      <path d="M53.4,37.7 Q62.9,36.1 64.4,47.1 Q66.0,59.7 58.1,67.6 Q48.7,64.4 48.7,55.0 Q50.3,44.0 53.4,37.7 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Asia (east) -->
+      <path d="M64.4,18.9 Q81.7,15.7 88.0,26.7 Q86.4,36.1 75.4,36.1 Q62.9,34.6 64.4,25.1 Z"
+            fill="#33691e" opacity="0.86"/>
+      <path d="M73.9,39.3 Q86.4,37.7 91.1,47.1 Q86.4,55.0 75.4,53.4 Q66.0,51.9 67.6,44.0 Z"
+            fill="#388e3c" opacity="0.8"/>
+      <!-- Australia -->
+      <path d="M78.6,56.6 Q91.1,55.0 92.7,62.9 Q91.1,70.7 81.7,69.1 Q75.4,66.0 77.0,59.7 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Greenland/ice cap -->
+      <path d="M29.9,15.7 Q39.3,11.0 44.0,17.3 Q39.3,23.6 29.9,22.0 Z"
+            fill="#dde8f2" opacity="0.9"/>
+      <!-- Antarctica -->
+      <path d="M14.1,81.7 Q55.0,75.4 95.9,81.7 Q92.7,95.9 55.0,95.9 Q17.3,95.9 14.1,81.7 Z"
+            fill="#dde8f2" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- Atmosphere rim -->
+  <circle cx="55" cy="55" r="37" fill="none" stroke="rgba(135,206,235,0.4)" stroke-width="2"/>
+  <!-- Specular highlight -->
+  <ellipse cx="41" cy="41" rx="9" ry="6"
+           fill="rgba(255,255,255,0.18)" transform="rotate(-35 41 41)"/>
+</svg></div>
+        <h2>Evolution of Terrestrial Life</h2>
+        <p>Enter your information to begin the interactive journey</p>
+        <input type="text"     id="studentName"     placeholder="Enter your full name">
+        <input type="text"     id="studentID"       placeholder="Enter your Student ID">
+        <input type="password" id="studentPassword" placeholder="Enter class password">
+        <div id="loginError"></div>
+        <button class="login-btn" onclick="startQuiz()">Start Journey →</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyApEcj1Gt_AgK9853JGWsyPuWuX1RyRQQA",
+            authDomain: "astronomy-course.firebaseapp.com",
+            projectId: "astronomy-course",
+            storageBucket: "astronomy-course.firebasestorage.app",
+            messagingSenderId: "84123424550",
+            appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const QUIZ_PASSWORD = "olive";
+
+        let quizConfig = {
+            className: null, quizName: null, databaseId: null,
+            loginDescriptors: { name: 'Student Name', id: 'Student ID', pass: 'Quiz Password' },
+            restrictions: {
+                timeLimit: 0, lowTimeWarning: 3,
+                startDateTime: '', stopDateTime: '',
+                attemptsAllowed: 0, pointsPerQuestion: 1.0
+            }
+        };
+
+        async function startQuiz() {
+            const name      = document.getElementById('studentName').value.trim();
+            const studentID = document.getElementById('studentID').value.trim();
+            const password  = document.getElementById('studentPassword').value.trim();
+            const errorDiv  = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+
+            if (!name || !studentID || !password) {
+                errorDiv.textContent = 'Please fill in all fields.';
+                errorDiv.style.display = 'block'; return;
+            }
+
+            try {
+                // ── 1. Verify password and retrieve class/quiz names ──────────
+                const dbSnapshot = await db.collection('databases')
+                    .where('password', '==', password)
+                    .where('active', '==', true)
+                    .limit(1).get();
+
+                if (dbSnapshot.empty) {
+                    errorDiv.textContent = 'Invalid or inactive quiz password.';
+                    errorDiv.style.display = 'block'; return;
+                }
+
+                const activeDb = dbSnapshot.docs[0].data();
+                quizConfig.className  = activeDb.className;
+                quizConfig.quizName   = activeDb.quizName;
+                quizConfig.databaseId = dbSnapshot.docs[0].id;
+
+                // ── 2. Load quiz settings (restrictions, descriptors, validation) ──
+                const settingsDoc = await db.collection('quizSettings')
+                    .doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+
+                if (settingsDoc.exists) {
+                    const s = settingsDoc.data();
+                    if (s.loginDescriptors) {
+                        quizConfig.loginDescriptors = s.loginDescriptors;
+                        document.getElementById('studentName').placeholder     = s.loginDescriptors.name || 'Student Name';
+                        document.getElementById('studentID').placeholder       = s.loginDescriptors.id   || 'Student ID';
+                        document.getElementById('studentPassword').placeholder = s.loginDescriptors.pass || 'Quiz Password';
+                    }
+                    if (s.restrictions) quizConfig.restrictions = s.restrictions;
+                    if (s.idValidation)  quizConfig.idValidation  = s.idValidation;
+                }
+
+                // ── 3. Student ID format validation ───────────────────────────
+                if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                    const vt = quizConfig.idValidation.type;
+                    const vv = quizConfig.idValidation.value;
+                    if (vt === 'digits') {
+                        if (!new RegExp(`^\\d{${parseInt(vv,10)}}$`).test(studentID)) {
+                            errorDiv.textContent = `Invalid ID: must be exactly ${vv} digits.`;
+                            errorDiv.style.display = 'block'; return;
+                        }
+                    } else if (vt === 'startsWith') {
+                        if (!studentID.startsWith(vv)) {
+                            errorDiv.textContent = `Invalid ID: must start with "${vv}".`;
+                            errorDiv.style.display = 'block'; return;
+                        }
+                    }
+                }
+
+                // ── 4. Date/time window check ─────────────────────────────────
+                const now = new Date();
+                if (quizConfig.restrictions.startDateTime) {
+                    const st = new Date(quizConfig.restrictions.startDateTime);
+                    if (now < st) {
+                        errorDiv.textContent = `Quiz not yet open. Opens ${st.toLocaleDateString()} at ${st.toLocaleTimeString()}.`;
+                        errorDiv.style.display = 'block'; return;
+                    }
+                }
+                if (quizConfig.restrictions.stopDateTime) {
+                    const sp = new Date(quizConfig.restrictions.stopDateTime);
+                    if (now > sp) {
+                        errorDiv.textContent = `Quiz has closed. Deadline was ${sp.toLocaleDateString()} at ${sp.toLocaleTimeString()}.`;
+                        errorDiv.style.display = 'block'; return;
+                    }
+                }
+
+                // ── 5. Attempt limit check ────────────────────────────────────
+                if (quizConfig.restrictions.attemptsAllowed > 0) {
+                    const snap = await db.collection('students')
+                        .where('studentID', '==', studentID)
+                        .where('databaseId', '==', quizConfig.databaseId).get();
+                    if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
+                        errorDiv.textContent = `Access denied: all ${quizConfig.restrictions.attemptsAllowed} attempt(s) used.`;
+                        errorDiv.style.display = 'block'; return;
+                    }
+                    sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
+                    sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+                } else {
+                    sessionStorage.setItem('attemptNumber', '1');
+                    sessionStorage.setItem('maxAttempts', '0');
+                }
+
+                // ── 6. Create session and store everything ────────────────────
+                const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('studentName', name);
+                sessionStorage.setItem('studentID',   studentID);
+                sessionStorage.setItem('sessionId',   sessionId);
+                sessionStorage.setItem('quizConfig',  JSON.stringify(quizConfig));
+                sessionStorage.setItem('answers',     '{}');
+                sessionStorage.setItem('score',       '0');
+                sessionStorage.removeItem('quizCompleted');
+
+                // ── 7. Start timer NOW (stored as absolute end timestamp) ──────
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    const nowMs = Date.now();
+                    sessionStorage.setItem('quizStartTime', nowMs.toString());
+                    sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
+                } else {
+                    sessionStorage.removeItem('timerEndTime');
+                }
+
+                // ── 8. Write student record to Firebase ───────────────────────
+                await db.collection('students').doc(sessionId).set({
+                    name, studentID,
+                    className:    quizConfig.className  || 'evolland',
+                    quizName:     quizConfig.quizName   || 'evolland',
+                    quizPassword: password,
+                    databaseId:   quizConfig.databaseId || 'standalone',
+                    startTime:    firebase.firestore.Timestamp.now(),
+                    answers: {}, score: 0, completed: false
+                });
+
+                window.location.href = 'intro.html';
+
+            } catch (e) {
+                errorDiv.textContent = 'Database connection error. Please notify your instructor.';
+                console.error(e);
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

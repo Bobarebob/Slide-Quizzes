@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvolLand – Congratulations!</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:linear-gradient(135deg,#0a0a1a 0%,#1a1a2e 100%); color:#e0e0e0; line-height:1.6; min-height:100vh; }
+        .container { max-width:1400px; margin:0 auto; background:rgba(30,30,50,0.95); border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.5); border:1px solid rgba(77,166,255,0.2); overflow:hidden; min-height:100vh; }
+
+        /* Banner */
+        .student-info { background:rgba(20,20,35,0.95); padding:15px 40px; border-bottom:2px solid rgba(77,166,255,0.3); display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:20px; }
+        .student-name  { color:#4da6ff; font-size:1.1em; font-weight:600; white-space:nowrap; }
+        .student-score { color:#ffa64d; font-size:1.1em; font-weight:bold; white-space:nowrap; }
+        .student-attempt { color:#b19cd9; font-size:1.1em; font-weight:600; white-space:nowrap; }
+        .student-timer   { color:#4dffb8; font-size:1.1em; font-weight:600; white-space:nowrap; }
+        #timeWarningMessage { color:#ff4444; margin-right:10px; font-weight:bold; }
+
+        /* Page */
+        .page-content { padding:40px; }
+        .page-header { text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:3px solid #4da6ff; }
+        .page-title { font-size:2.8em; color:#4da6ff; margin-bottom:8px; text-shadow:0 0 15px rgba(77,166,255,0.4); }
+        .page-subtitle { font-size:1.4em; color:#b0b0b0; font-style:italic; }
+
+        /* Avatar video box */
+        .video-container {
+            width:100%; max-width:560px; margin:0 auto 25px;
+            background:#000; border:2px solid rgba(77,166,255,0.4);
+            border-radius:12px; overflow:hidden;
+            box-shadow:0 10px 30px rgba(0,0,0,0.5);
+            aspect-ratio:4/3; position:relative;
+        }
+        .video-container video { display:block; width:100%; height:100%; object-fit:cover; object-position:top center; background:#000; }
+        .video-placeholder {
+            position:absolute; inset:0; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; gap:12px;
+            background:rgba(20,20,40,0.95); color:#557799; border-radius:10px;
+        }
+        .video-placeholder .vp-icon { font-size:3.5em; opacity:0.5; }
+        .video-placeholder p { font-size:1.0em; font-style:italic; }
+        .video-placeholder .vp-note { font-size:0.85em; color:#445566; }
+
+        /* Outro content wrapper */
+        .outro-content { max-width:960px; margin:0 auto; }
+
+        /* Score display */
+        .score-display {
+            background:linear-gradient(135deg,rgba(77,166,255,0.08) 0%,rgba(40,100,180,0.08) 100%);
+            border:2px solid rgba(77,166,255,0.4); border-radius:16px;
+            padding:30px; margin:28px 0; text-align:center;
+        }
+        .score-display h2 { color:#4da6ff; font-size:1.8em; margin-bottom:16px; }
+        .score-value { font-size:3.2em; color:#4dffb8; font-weight:bold; }
+        .score-label { color:#888; font-size:1.0em; margin-top:8px; }
+        .score-bar { height:14px; background:rgba(255,255,255,0.08); border-radius:7px; margin:20px auto; max-width:400px; overflow:hidden; }
+        .score-fill { height:100%; background:linear-gradient(90deg,#4da6ff 0%,#4dffb8 100%); border-radius:7px; transition:width 1.2s ease; width:0%; }
+
+        /* Submit button */
+        .submit-wrap { text-align:center; margin:30px 0 10px; }
+        .submit-btn {
+            padding:16px 55px; background:linear-gradient(135deg,#4caf50 0%,#2e7d32 100%);
+            color:#fff; border:none; border-radius:30px; cursor:pointer;
+            font-size:1.25em; font-weight:700; letter-spacing:0.03em;
+            transition:all 0.3s ease; box-shadow:0 4px 18px rgba(76,175,80,0.35);
+        }
+        .submit-btn:hover:not(:disabled) { background:linear-gradient(135deg,#66bb6a 0%,#388e3c 100%); transform:translateY(-2px); box-shadow:0 8px 24px rgba(76,175,80,0.5); }
+        .submit-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+        #submitConfirmMsg { color:#4dffb8; font-size:1.1em; font-weight:bold; margin-top:14px; display:none; text-align:center; }
+
+        /* Learning outcomes */
+        .outcomes-box { background:rgba(76,175,80,0.07); border-left:4px solid #4caf50; padding:24px 28px; margin:28px 0; border-radius:8px; }
+        .outcomes-title { font-size:1.2em; color:#4caf50; font-weight:bold; margin-bottom:16px; }
+        .outcomes-box ul { list-style:none; }
+        .outcomes-box li { padding-left:28px; position:relative; margin-top:11px; color:#ccc; font-size:1.05em; }
+        .outcomes-box li::before { content:"✓"; position:absolute; left:0; color:#4caf50; font-weight:bold; }
+
+        /* Closing image */
+        .closing-img { text-align:center; margin-top:35px; }
+        .closing-img img { max-width:80%; border-radius:12px; border:2px solid rgba(77,166,255,0.3); box-shadow:0 10px 30px rgba(77,166,255,0.3); }
+        .closing-img p { margin-top:12px; font-style:italic; color:#b0b0b0; }
+
+        /* Nav */
+        .navigation { display:flex; justify-content:space-between; align-items:center; padding:25px 40px; background:rgba(20,20,35,0.9); border-top:2px solid rgba(77,166,255,0.3); }
+        .nav-button { padding:14px 35px; background:linear-gradient(145deg,#b8c6db 0%,#8fa3bd 50%,#6b8299 100%); color:#1a1a2e; border:1px solid rgba(255,255,255,0.3); border-radius:30px; cursor:pointer; font-size:1.1em; font-weight:600; transition:all 0.3s ease; box-shadow:0 8px 20px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.6); text-shadow:0 1px 2px rgba(255,255,255,0.5); }
+        .nav-button:disabled { opacity:0.5; cursor:not-allowed; }
+        .nav-button:hover:not(:disabled) { transform:translateY(-3px); }
+        .page-counter { font-size:1.2em; color:#4da6ff; font-weight:600; }
+        .timeline-indicator { display:flex; justify-content:center; gap:10px; padding:20px; background:rgba(20,20,35,0.6); flex-wrap:wrap; }
+        .timeline-dot { width:14px; height:14px; border-radius:50%; background:rgba(77,166,255,0.3); cursor:pointer; transition:all 0.3s ease; border:2px solid transparent; }
+        .timeline-dot:hover { background:rgba(77,166,255,0.6); transform:scale(1.2); }
+        .timeline-dot.active { background:#4da6ff; border:2px solid #fff; transform:scale(1.4); box-shadow:0 0 15px rgba(77,166,255,0.8); }
+        @media (max-width:768px) { .page-content{padding:20px;} .page-title{font-size:2em;} .navigation{padding:15px 20px;} }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Student Banner -->
+    <div class="student-info" id="studentBanner" style="display:none;">
+        <div class="student-name"><span id="displayName"></span> &nbsp;(<span id="displayID"></span>)</div>
+        <div class="student-score">Score: <span id="displayScore">0 / 10</span></div>
+        <div class="student-attempt" id="attemptDisplay" style="display:none;">Attempt: <span id="attemptNumber">1</span></div>
+        <div class="student-timer" id="timerDisplay" style="display:none;">
+            <span id="timeWarningMessage" style="display:none;color:#ff4444;font-weight:bold;margin-right:8px;"></span>
+            Time Remaining: <span id="timeRemaining"></span>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="page-header">
+            <h1 class="page-title" style="display:flex;align-items:center;justify-content:center;gap:18px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90" width="90" height="90" style="display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(77,166,255,0.5));">
+  <defs>
+    <radialGradient id="SEocnOL" cx="38%" cy="32%" r="65%">
+      <stop offset="0%"   stop-color="#6ec6f0"/>
+      <stop offset="40%"  stop-color="#1565c0"/>
+      <stop offset="100%" stop-color="#0a2060"/>
+    </radialGradient>
+    <radialGradient id="SEatmOL" cx="50%" cy="50%" r="50%">
+      <stop offset="78%" stop-color="rgba(77,166,255,0)"/>
+      <stop offset="100%" stop-color="rgba(77,166,255,0.38)"/>
+    </radialGradient>
+    <clipPath id="SEclpOL"><circle cx="45" cy="45" r="30"/></clipPath>
+  </defs>
+
+  <!-- Atmospheric glow -->
+  <circle cx="45" cy="45" r="41" fill="url(#SEatmOL)"/>
+
+  <!-- Orbital ring -->
+  <ellipse cx="45" cy="45" rx="43" ry="9"
+           fill="none" stroke="rgba(77,166,255,0.28)" stroke-width="1.4">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 45 45" to="360 45 45" dur="16.5s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- Ocean base -->
+  <circle cx="45" cy="45" r="30" fill="url(#SEocnOL)"/>
+
+  <!-- Spinning continent layer -->
+  <g clip-path="url(#SEclpOL)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 45 45" to="360 45 45" dur="11s" repeatCount="indefinite"/>
+      <!-- Latitude swirl lines -->
+      <ellipse cx="45" cy="33.4" rx="29.6" ry="5.8"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <ellipse cx="45" cy="45.0" rx="30.9" ry="7.1" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <ellipse cx="45" cy="56.6" rx="28.3" ry="5.8"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <!-- North America -->
+      <path d="M16.7,25.7 Q21.9,19.3 29.6,20.6 Q34.7,21.9 32.1,30.9 Q29.6,37.3 23.1,39.9 Q15.4,37.3 14.1,30.9 Z"
+            fill="#2e7d32" opacity="0.9"/>
+      <!-- South America -->
+      <path d="M24.4,42.4 Q29.6,39.9 33.4,45.0 Q34.7,52.7 29.6,59.1 Q23.1,56.6 21.9,48.9 Z"
+            fill="#388e3c" opacity="0.86"/>
+      <!-- Europe -->
+      <path d="M45.0,19.3 Q51.4,18.0 52.7,24.4 Q50.1,29.6 45.0,28.3 Z"
+            fill="#33691e" opacity="0.9"/>
+      <!-- Africa -->
+      <path d="M43.7,30.9 Q51.4,29.6 52.7,38.6 Q54.0,48.9 47.6,55.3 Q39.9,52.7 39.9,45.0 Q41.1,36.0 43.7,30.9 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Asia (east) -->
+      <path d="M52.7,15.4 Q66.9,12.9 72.0,21.9 Q70.7,29.6 61.7,29.6 Q51.4,28.3 52.7,20.6 Z"
+            fill="#33691e" opacity="0.86"/>
+      <path d="M60.4,32.1 Q70.7,30.9 74.6,38.6 Q70.7,45.0 61.7,43.7 Q54.0,42.4 55.3,36.0 Z"
+            fill="#388e3c" opacity="0.8"/>
+      <!-- Australia -->
+      <path d="M64.3,46.3 Q74.6,45.0 75.9,51.4 Q74.6,57.9 66.9,56.6 Q61.7,54.0 63.0,48.9 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Greenland/ice cap -->
+      <path d="M24.4,12.9 Q32.1,9.0 36.0,14.1 Q32.1,19.3 24.4,18.0 Z"
+            fill="#dde8f2" opacity="0.9"/>
+      <!-- Antarctica -->
+      <path d="M11.6,66.9 Q45.0,61.7 78.4,66.9 Q75.9,78.4 45.0,78.4 Q14.1,78.4 11.6,66.9 Z"
+            fill="#dde8f2" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- Atmosphere rim -->
+  <circle cx="45" cy="45" r="30" fill="none" stroke="rgba(135,206,235,0.4)" stroke-width="2"/>
+  <!-- Specular highlight -->
+  <ellipse cx="34" cy="34" rx="8" ry="4"
+           fill="rgba(255,255,255,0.18)" transform="rotate(-35 34 34)"/>
+</svg>
+                    <span>Congratulations!</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90" width="90" height="90" style="display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(77,166,255,0.5));">
+  <defs>
+    <radialGradient id="SEocnOR" cx="38%" cy="32%" r="65%">
+      <stop offset="0%"   stop-color="#6ec6f0"/>
+      <stop offset="40%"  stop-color="#1565c0"/>
+      <stop offset="100%" stop-color="#0a2060"/>
+    </radialGradient>
+    <radialGradient id="SEatmOR" cx="50%" cy="50%" r="50%">
+      <stop offset="78%" stop-color="rgba(77,166,255,0)"/>
+      <stop offset="100%" stop-color="rgba(77,166,255,0.38)"/>
+    </radialGradient>
+    <clipPath id="SEclpOR"><circle cx="45" cy="45" r="30"/></clipPath>
+  </defs>
+
+  <!-- Atmospheric glow -->
+  <circle cx="45" cy="45" r="41" fill="url(#SEatmOR)"/>
+
+  <!-- Orbital ring -->
+  <ellipse cx="45" cy="45" rx="43" ry="9"
+           fill="none" stroke="rgba(77,166,255,0.28)" stroke-width="1.4">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 45 45" to="360 45 45" dur="21.0s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- Ocean base -->
+  <circle cx="45" cy="45" r="30" fill="url(#SEocnOR)"/>
+
+  <!-- Spinning continent layer -->
+  <g clip-path="url(#SEclpOR)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 45 45" to="360 45 45" dur="14s" repeatCount="indefinite"/>
+      <!-- Latitude swirl lines -->
+      <ellipse cx="45" cy="33.4" rx="29.6" ry="5.8"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <ellipse cx="45" cy="45.0" rx="30.9" ry="7.1" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <ellipse cx="45" cy="56.6" rx="28.3" ry="5.8"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+      <!-- North America -->
+      <path d="M16.7,25.7 Q21.9,19.3 29.6,20.6 Q34.7,21.9 32.1,30.9 Q29.6,37.3 23.1,39.9 Q15.4,37.3 14.1,30.9 Z"
+            fill="#2e7d32" opacity="0.9"/>
+      <!-- South America -->
+      <path d="M24.4,42.4 Q29.6,39.9 33.4,45.0 Q34.7,52.7 29.6,59.1 Q23.1,56.6 21.9,48.9 Z"
+            fill="#388e3c" opacity="0.86"/>
+      <!-- Europe -->
+      <path d="M45.0,19.3 Q51.4,18.0 52.7,24.4 Q50.1,29.6 45.0,28.3 Z"
+            fill="#33691e" opacity="0.9"/>
+      <!-- Africa -->
+      <path d="M43.7,30.9 Q51.4,29.6 52.7,38.6 Q54.0,48.9 47.6,55.3 Q39.9,52.7 39.9,45.0 Q41.1,36.0 43.7,30.9 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Asia (east) -->
+      <path d="M52.7,15.4 Q66.9,12.9 72.0,21.9 Q70.7,29.6 61.7,29.6 Q51.4,28.3 52.7,20.6 Z"
+            fill="#33691e" opacity="0.86"/>
+      <path d="M60.4,32.1 Q70.7,30.9 74.6,38.6 Q70.7,45.0 61.7,43.7 Q54.0,42.4 55.3,36.0 Z"
+            fill="#388e3c" opacity="0.8"/>
+      <!-- Australia -->
+      <path d="M64.3,46.3 Q74.6,45.0 75.9,51.4 Q74.6,57.9 66.9,56.6 Q61.7,54.0 63.0,48.9 Z"
+            fill="#2e7d32" opacity="0.86"/>
+      <!-- Greenland/ice cap -->
+      <path d="M24.4,12.9 Q32.1,9.0 36.0,14.1 Q32.1,19.3 24.4,18.0 Z"
+            fill="#dde8f2" opacity="0.9"/>
+      <!-- Antarctica -->
+      <path d="M11.6,66.9 Q45.0,61.7 78.4,66.9 Q75.9,78.4 45.0,78.4 Q14.1,78.4 11.6,66.9 Z"
+            fill="#dde8f2" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- Atmosphere rim -->
+  <circle cx="45" cy="45" r="30" fill="none" stroke="rgba(135,206,235,0.4)" stroke-width="2"/>
+  <!-- Specular highlight -->
+  <ellipse cx="34" cy="34" rx="8" ry="4"
+           fill="rgba(255,255,255,0.18)" transform="rotate(-35 34 34)"/>
+</svg>
+                </h1>
+            <p class="page-subtitle">You've Completed the EvolLand Journey</p>
+        </div>
+
+        <div class="outro-content">
+
+            <!-- Avatar outro video -->
+            <div class="video-container">
+                <video controls preload="metadata" playsinline>
+                    <source src="videos/evol_outro.mp4" type="video/mp4">
+                </video>
+                <div class="video-placeholder" id="outroPlaceholder">
+                    <div class="vp-icon">🎬</div>
+                    <p>Outro Avatar Video</p>
+                    <span class="vp-note">Place <em>evol_outro.mp4</em> in the videos/ folder</span>
+                </div>
+            </div>
+
+            <!-- Score display -->
+            <div class="score-display">
+                <h2>🏆 Your Final Score</h2>
+                <div class="score-value" id="finalScore">— / 10</div>
+                <div class="score-label" id="scoreLabel">questions answered correctly</div>
+                <div class="score-bar"><div class="score-fill" id="scoreFill"></div></div>
+            </div>
+
+            <!-- Submit button -->
+            <div class="submit-wrap">
+                <button class="submit-btn" id="submitBtn" onclick="submitQuiz()">✓ Submit Quiz</button>
+                <p id="submitConfirmMsg"></p>
+            </div>
+
+            <!-- Learning outcomes -->
+            <div class="outcomes-box">
+                <div class="outcomes-title">📌 What You Learned in This Module</div>
+                <ul>
+                    <li>How the ozone layer enabled the colonization of land by blocking lethal UV radiation</li>
+                    <li>The sequence of plant innovations from Cooksonia to flowering angiosperms</li>
+                    <li>How oxygen levels drove animal body size in the Carboniferous</li>
+                    <li>The cause and consequences of the End-Permian extinction</li>
+                    <li>The origin and rise of dinosaurs, birds, and mammals through the Mesozoic</li>
+                    <li>The co-evolution of flowers and insect pollinators in the Cretaceous</li>
+                    <li>The emergence of Homo sapiens in the African Cenozoic</li>
+                </ul>
+            </div>
+
+            <!-- Closing image -->
+            <div class="closing-img">
+                <img src="images/Wild_Flowers.jpeg" alt="Wildflowers">
+                <p>From barren rock to blooming meadows — 500 million years in the making</p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-button" onclick="window.location.href='slide10.html'">← Previous</button>
+        <div class="page-counter">12 / 12</div>
+        <button class="nav-button" disabled>Finished</button>
+    </div>
+
+    <div class="timeline-indicator">
+        <div class="timeline-dot"         onclick="window.location.href='intro.html'"   title="Introduction"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide1.html'"  title="1: Pioneers"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide2.html'"  title="2: First Forests"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide3.html'"  title="3: Coal Forests"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide4.html'"  title="4: Pangaea"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide5.html'"  title="5: Recovery"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide6.html'"  title="6: Giant Dinos"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide7.html'"  title="7: Flowers"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide8.html'"  title="8: Mammals"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide9.html'"  title="9: Atmosphere"></div>
+        <div class="timeline-dot"         onclick="window.location.href='slide10.html'" title="10: Big Picture"></div>
+        <div class="timeline-dot active"  onclick="window.location.href='outro.html'"   title="Conclusion"></div>
+    </div>
+</div>
+
+<script>
+    // Hide placeholder if outro video loads
+    const vid = document.querySelector('.video-container video');
+    if (vid) { vid.addEventListener('loadeddata', () => { document.getElementById('outroPlaceholder').style.display='none'; }); }
+</script>
+<script src="evol-shared.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rawScore = parseFloat(sessionStorage.getItem('score') || '0');
+        const cfg      = JSON.parse(sessionStorage.getItem('quizConfig') || '{}');
+        const ppq      = parseFloat((cfg.restrictions && cfg.restrictions.pointsPerQuestion) || 1.0);
+        const maxPts   = 10 * ppq;
+        const curPts   = rawScore * ppq;
+        const pct      = Math.round((rawScore / 10) * 100);
+
+        const finalEl  = document.getElementById('finalScore');
+        const labelEl  = document.getElementById('scoreLabel');
+        const fillEl   = document.getElementById('scoreFill');
+
+        if (finalEl) {
+            const cs = (curPts % 1) ? curPts.toFixed(1) : curPts.toString();
+            const ms = (maxPts % 1) ? maxPts.toFixed(1) : maxPts.toString();
+            finalEl.textContent = `${cs} / ${ms}`;
+        }
+        if (labelEl) {
+            const qr = Math.round(rawScore);
+            labelEl.textContent = ppq !== 1.0
+                ? `${qr} question${qr!==1?'s':''} right out of 10 (${ppq} pt${ppq!==1?'s':''} each)`
+                : `${qr} question${qr!==1?'s':''} answered correctly out of 10`;
+        }
+        if (fillEl) setTimeout(() => { fillEl.style.width = pct + '%'; }, 400);
+
+        // Banner score
+        const bse = document.getElementById('displayScore');
+        if (bse) {
+            const cs = (curPts % 1) ? curPts.toFixed(1) : curPts.toString();
+            const ms = (maxPts % 1) ? maxPts.toFixed(1) : maxPts.toString();
+            bse.textContent = `${cs} / ${ms}`;
+        }
+
+        // If auto-submitted
+        if (sessionStorage.getItem('quizCompleted') === 'true') {
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('submitConfirmMsg');
+            if (btn) btn.disabled = true;
+            if (msg) { msg.style.display='block'; msg.textContent='✓ Quiz auto-submitted (time expired).'; }
+        }
+    });
+</script>
+</body>
+</html>

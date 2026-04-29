@@ -31,9 +31,25 @@
             background:#000; border:2px solid rgba(77,166,255,0.4);
             border-radius:12px; overflow:hidden;
             box-shadow:0 10px 30px rgba(0,0,0,0.5);
-            aspect-ratio:4/3; position:relative;
+            aspect-ratio:4/3; position:relative; cursor:pointer;
         }
         .video-container video { display:block; width:100%; height:100%; object-fit:cover; object-position:top center; background:#000; }
+        /* Custom play overlay — no native controls blocking the frame */
+        .vc-overlay {
+            position:absolute; inset:0; display:flex;
+            align-items:center; justify-content:center;
+            background:rgba(0,0,0,0); transition:background 0.25s;
+        }
+        .vc-overlay:hover { background:rgba(0,0,0,0.12); }
+        .vc-play-btn {
+            width:64px; height:64px; border-radius:50%;
+            background:rgba(0,0,0,0.55); border:3px solid rgba(255,255,255,0.85);
+            display:flex; align-items:center; justify-content:center;
+            transition:opacity 0.3s, transform 0.2s;
+        }
+        .vc-play-btn svg { width:26px; height:26px; fill:white; margin-left:4px; }
+        .vc-overlay.playing .vc-play-btn { opacity:0; }
+        .vc-overlay.playing:hover .vc-play-btn { opacity:0.7; transform:scale(1.08); }
         .video-placeholder {
             position:absolute; inset:0; display:flex; flex-direction:column;
             align-items:center; justify-content:center; gap:12px;
@@ -105,9 +121,14 @@
 
             <!-- Avatar video box -->
             <div class="video-container">
-                <video controls preload="metadata" playsinline>
+                <video preload="metadata" playsinline>
                     <source src="videos/evol_intro.mp4" type="video/mp4">
                 </video>
+                <div class="vc-overlay" id="vcOverlay" onclick="toggleAvatarVid()">
+                    <div class="vc-play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
                 <div class="video-placeholder" id="introPlaceholder">
                     <div class="vp-icon">🎬</div>
                     <p>Intro Avatar Video</p>
@@ -158,11 +179,34 @@
     </div>
 </div>
 
-<script>
-    // Hide placeholder if video file loads
-    const vid = document.querySelector('.video-container video');
-    if (vid) { vid.addEventListener('loadeddata', () => { document.getElementById('introPlaceholder').style.display='none'; }); }
-</script>
+
 <script src="evol-shared.js"></script>
+<script>
+function toggleAvatarVid() {
+    const vid     = document.querySelector('.video-container video');
+    const overlay = document.getElementById('vcOverlay');
+    if (!vid) return;
+    if (vid.paused) {
+        vid.play().catch(() => {});
+        overlay.classList.add('playing');
+    } else {
+        vid.pause();
+        overlay.classList.remove('playing');
+    }
+}
+// When video ends, show play button again
+document.addEventListener('DOMContentLoaded', function() {
+    const vid = document.querySelector('.video-container video');
+    const overlay = document.getElementById('vcOverlay');
+    if (vid && overlay) {
+        vid.addEventListener('ended', () => overlay.classList.remove('playing'));
+        // Hide placeholder once video is ready
+        vid.addEventListener('loadeddata', () => {
+            const ph = document.querySelector('.video-placeholder');
+            if (ph) ph.style.display = 'none';
+        });
+    }
+});
+</script>
 </body>
 </html>

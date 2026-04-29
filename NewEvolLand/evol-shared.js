@@ -362,7 +362,16 @@ function initHoverContainers() {
         const hint = el.querySelector('.hint');
         if (hint) hint.textContent = isMobile ? 'tap to animate' : 'hover to animate';
         const vid = el.querySelector('video');
-        if (vid) vid.load();
+        if (!vid) return;
+        vid.load();
+        // After enough data is buffered, seek to 0.08 s to force the GPU to
+        // decode and upload a complete first frame into its compositor buffer.
+        // Without this the bottom of the frame can render black on first play
+        // because H.264 block decoding hasn't finished filling the buffer yet.
+        vid.addEventListener('loadeddata', function primeFrame() {
+            vid.currentTime = 0.08;
+            vid.removeEventListener('loadeddata', primeFrame);
+        });
     });
 
     if (isMobile) {
@@ -372,12 +381,12 @@ function initHoverContainers() {
             el.addEventListener('touchend', function(e) {
                 e.preventDefault();
                 if (el.classList.contains('playing')) {
-                    vid.pause(); vid.currentTime = 0; el.classList.remove('playing');
+                    vid.pause(); vid.currentTime = 0.08; el.classList.remove('playing');
                 } else {
                     containers.forEach(other => {
                         if (other !== el && other.classList.contains('playing')) {
                             const ov = other.querySelector('video');
-                            ov.pause(); ov.currentTime = 0; other.classList.remove('playing');
+                            ov.pause(); ov.currentTime = 0.08; other.classList.remove('playing');
                         }
                     });
                     el.classList.add('playing');
@@ -403,12 +412,22 @@ function initHoverContainers() {
         const vid = el.querySelector('video');
         if (!vid) return;
         el.classList.add('desktop');
+
+        let dwellTimer = null;
+        const DWELL_MS = 350; // cursor must rest this long before video starts
+
         el.addEventListener('mouseenter', () => {
-            vid.muted = !pageActivated;
-            vid.play().catch(() => { vid.muted = true; vid.play().catch(() => {}); });
+            dwellTimer = setTimeout(() => {
+                vid.muted = !pageActivated;
+                vid.play().catch(() => { vid.muted = true; vid.play().catch(() => {}); });
+            }, DWELL_MS);
         });
+
         el.addEventListener('mouseleave', () => {
-            vid.pause(); vid.currentTime = 0; vid.muted = false;
+            // Cancel pending play if cursor just passed through
+            clearTimeout(dwellTimer);
+            dwellTimer = null;
+            vid.pause(); vid.currentTime = 0.08; vid.muted = false;
         });
     });
 }

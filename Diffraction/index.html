@@ -127,11 +127,11 @@
                         .limit(1).get();
 
                     if (dbSnapshot.empty) {
-                        // Fall back to local password check
-                        if (password !== QUIZ_PASSWORD) {
-                            errorDiv.textContent = 'Invalid lab password.';
-                            errorDiv.style.display = 'block'; return;
-                        }
+                        // Firebase is reachable but no active database matches this password.
+                        // Do NOT silently fall back to the local password — that would bypass
+                        // all date/time and attempt restrictions set by the teacher.
+                        errorDiv.textContent = 'Invalid lab password.';
+                        errorDiv.style.display = 'block'; return;
                     } else {
                         const activeDb = dbSnapshot.docs[0].data();
                         quizConfig.className  = activeDb.className;

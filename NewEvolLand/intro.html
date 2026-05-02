@@ -121,10 +121,10 @@
 
             <!-- Avatar video box -->
             <div class="video-container">
-                <video preload="metadata" playsinline>
+                <video preload="metadata" playsinline webkit-playsinline x-webkit-airplay="allow">
                     <source src="videos/evol_intro.mp4" type="video/mp4">
                 </video>
-                <div class="vc-overlay" id="vcOverlay" onclick="toggleAvatarVid()">
+                <div class="vc-overlay" id="vcOverlay">
                     <div class="vc-play-btn">
                         <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
                     </div>
@@ -182,30 +182,51 @@
 
 <script src="evol-shared.js"></script>
 <script>
-function toggleAvatarVid() {
+document.addEventListener('DOMContentLoaded', function() {
     const vid     = document.querySelector('.video-container video');
     const overlay = document.getElementById('vcOverlay');
-    if (!vid) return;
-    if (vid.paused) {
-        vid.play().catch(() => {});
-        overlay.classList.add('playing');
-    } else {
-        vid.pause();
+    const ph      = document.querySelector('.video-placeholder');
+
+    if (!vid || !overlay) return;
+
+    // ── Hide placeholder ────────────────────────────────────────
+    // iOS often skips loadeddata on cellular; hide after canplay too,
+    // and also hide immediately if video has already buffered.
+    function hidePlaceholder() { if (ph) ph.style.display = 'none'; }
+    vid.addEventListener('loadeddata', hidePlaceholder);
+    vid.addEventListener('canplay',    hidePlaceholder);
+    if (vid.readyState >= 2) hidePlaceholder(); // already ready
+
+    // ── Play / pause toggle ──────────────────────────────────────
+    // Use BOTH touchend (iOS) and click (desktop) on the overlay.
+    // touchend must call e.preventDefault() so iOS doesn't also
+    // fire a synthetic click (double-trigger).
+    function togglePlay(e) {
+        if (e.type === 'touchend') e.preventDefault();
+        if (vid.paused) {
+            // Force load first in case iOS deferred it
+            if (vid.readyState === 0) vid.load();
+            vid.play().then(() => {
+                overlay.classList.add('playing');
+            }).catch(() => {
+                // Second attempt muted (iOS autoplay policy)
+                vid.muted = true;
+                vid.play().then(() => overlay.classList.add('playing')).catch(() => {});
+            });
+        } else {
+            vid.pause();
+            overlay.classList.remove('playing');
+        }
+    }
+
+    overlay.addEventListener('touchend', togglePlay, { passive: false });
+    overlay.addEventListener('click',    togglePlay);
+
+    // Show play button again when video ends
+    vid.addEventListener('ended', () => {
         overlay.classList.remove('playing');
-    }
-}
-// When video ends, show play button again
-document.addEventListener('DOMContentLoaded', function() {
-    const vid = document.querySelector('.video-container video');
-    const overlay = document.getElementById('vcOverlay');
-    if (vid && overlay) {
-        vid.addEventListener('ended', () => overlay.classList.remove('playing'));
-        // Hide placeholder once video is ready
-        vid.addEventListener('loadeddata', () => {
-            const ph = document.querySelector('.video-placeholder');
-            if (ph) ph.style.display = 'none';
-        });
-    }
+        vid.currentTime = 0;
+    });
 });
 </script>
 </body>

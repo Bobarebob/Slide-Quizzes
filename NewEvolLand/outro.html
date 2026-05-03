@@ -406,27 +406,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!vid || !overlay) return;
 
-    // ── Hide placeholder ────────────────────────────────────────
-    // iOS often skips loadeddata on cellular; hide after canplay too,
-    // and also hide immediately if video has already buffered.
-    function hidePlaceholder() { if (ph) ph.style.display = 'none'; }
-    vid.addEventListener('loadeddata', hidePlaceholder);
-    vid.addEventListener('canplay',    hidePlaceholder);
-    if (vid.readyState >= 2) hidePlaceholder(); // already ready
+    // ── Hide placeholder immediately ─────────────────────────────
+    // iOS ignores preload="metadata" entirely — loadeddata/canplay
+    // never fire until actual playback begins, so the placeholder
+    // would block the tap target forever. Hide it right away.
+    // Only show it again if the video src genuinely fails to load.
+    if (ph) ph.style.display = 'none';
+    vid.addEventListener('error', () => {
+        if (ph) ph.style.display = 'flex'; // show only on real error
+    });
 
     // ── Play / pause toggle ──────────────────────────────────────
-    // Use BOTH touchend (iOS) and click (desktop) on the overlay.
-    // touchend must call e.preventDefault() so iOS doesn't also
-    // fire a synthetic click (double-trigger).
     function togglePlay(e) {
         if (e.type === 'touchend') e.preventDefault();
         if (vid.paused) {
-            // Force load first in case iOS deferred it
             if (vid.readyState === 0) vid.load();
             vid.play().then(() => {
                 overlay.classList.add('playing');
             }).catch(() => {
-                // Second attempt muted (iOS autoplay policy)
                 vid.muted = true;
                 vid.play().then(() => overlay.classList.add('playing')).catch(() => {});
             });
@@ -439,7 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.addEventListener('touchend', togglePlay, { passive: false });
     overlay.addEventListener('click',    togglePlay);
 
-    // Show play button again when video ends
     vid.addEventListener('ended', () => {
         overlay.classList.remove('playing');
         vid.currentTime = 0;

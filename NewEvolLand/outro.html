@@ -31,25 +31,10 @@
             background:#000; border:2px solid rgba(77,166,255,0.4);
             border-radius:12px; overflow:hidden;
             box-shadow:0 10px 30px rgba(0,0,0,0.5);
-            aspect-ratio:4/3; position:relative; cursor:pointer;
+            aspect-ratio:4/3; position:relative;
         }
         .video-container video { display:block; width:100%; height:100%; object-fit:cover; object-position:top center; background:#000; }
-        /* Custom play overlay — no native controls blocking the frame */
-        .vc-overlay {
-            position:absolute; inset:0; display:flex;
-            align-items:center; justify-content:center;
-            background:rgba(0,0,0,0); transition:background 0.25s;
-        }
-        .vc-overlay:hover { background:rgba(0,0,0,0.12); }
-        .vc-play-btn {
-            width:64px; height:64px; border-radius:50%;
-            background:rgba(0,0,0,0.55); border:3px solid rgba(255,255,255,0.85);
-            display:flex; align-items:center; justify-content:center;
-            transition:opacity 0.3s, transform 0.2s;
-        }
-        .vc-play-btn svg { width:26px; height:26px; fill:white; margin-left:4px; }
-        .vc-overlay.playing .vc-play-btn { opacity:0; }
-        .vc-overlay.playing:hover .vc-play-btn { opacity:0.7; transform:scale(1.08); }
+
         .video-placeholder {
             position:absolute; inset:0; display:flex; flex-direction:column;
             align-items:center; justify-content:center; gap:12px;
@@ -279,14 +264,9 @@
 
             <!-- Avatar outro video -->
             <div class="video-container">
-                <video preload="metadata" playsinline webkit-playsinline x-webkit-airplay="allow">
+                <video controls preload="metadata" playsinline webkit-playsinline>
                     <source src="videos/evol_outro.mp4" type="video/mp4">
                 </video>
-                <div class="vc-overlay" id="vcOverlay">
-                    <div class="vc-play-btn">
-                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
-                    </div>
-                </div>
                 <div class="video-placeholder" id="outroPlaceholder">
                     <div class="vp-icon">🎬</div>
                     <p>Outro Avatar Video</p>
@@ -400,46 +380,20 @@
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const vid     = document.querySelector('.video-container video');
-    const overlay = document.getElementById('vcOverlay');
-    const ph      = document.querySelector('.video-placeholder');
-
-    if (!vid || !overlay) return;
-
-    // ── Hide placeholder immediately ─────────────────────────────
-    // iOS ignores preload="metadata" entirely — loadeddata/canplay
-    // never fire until actual playback begins, so the placeholder
-    // would block the tap target forever. Hide it right away.
-    // Only show it again if the video src genuinely fails to load.
-    if (ph) ph.style.display = 'none';
-    vid.addEventListener('error', () => {
-        if (ph) ph.style.display = 'flex'; // show only on real error
-    });
-
-    // ── Play / pause toggle ──────────────────────────────────────
-    function togglePlay(e) {
-        if (e.type === 'touchend') e.preventDefault();
-        if (vid.paused) {
-            if (vid.readyState === 0) vid.load();
-            vid.play().then(() => {
-                overlay.classList.add('playing');
-            }).catch(() => {
-                vid.muted = true;
-                vid.play().then(() => overlay.classList.add('playing')).catch(() => {});
-            });
-        } else {
-            vid.pause();
-            overlay.classList.remove('playing');
-        }
+    // Hide placeholder as soon as any data arrives — or immediately
+    // if the video is already ready (desktop cache hit).
+    const vid = document.querySelector('.video-container video');
+    const ph  = document.querySelector('.video-placeholder');
+    if (!vid || !ph) return;
+    function hidePh() { ph.style.display = 'none'; }
+    if (vid.readyState >= 1) { hidePh(); }
+    else {
+        vid.addEventListener('loadedmetadata', hidePh, { once: true });
+        vid.addEventListener('canplay',        hidePh, { once: true });
+        // Fallback: hide after 1.5 s regardless — video IS there,
+        // iOS just won't fire events until the user taps play.
+        setTimeout(hidePh, 1500);
     }
-
-    overlay.addEventListener('touchend', togglePlay, { passive: false });
-    overlay.addEventListener('click',    togglePlay);
-
-    vid.addEventListener('ended', () => {
-        overlay.classList.remove('playing');
-        vid.currentTime = 0;
-    });
 });
 </script>
 </body>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydro-Buoyancy Cocktail Lab</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,800;1,400&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <header class="main-header">
+        <div class="logo-area">
+            <span class="icon">🍹</span>
+            <h1>HYDRO-BUOYANCY <span class="accent-text">COCKTAIL LAB</span></h1>
+        </div>
+        <div class="system-status">
+            <span class="status-indicator online"></span>
+            <span class="status-text">HYDROSTATIC ANALYZER v2.6: ONLINE</span>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- LEFT COLUMN: MIXER CONTROLS -->
+        <section class="panel glass-panel controls-panel" id="dispenser-controls">
+            <div class="panel-header">
+                <h2>1. INGREDIENT DISPENSER</h2>
+                <span class="panel-tag">INPUT</span>
+            </div>
+            
+            <div class="recipe-presets">
+                <h3>Select Preset Concoction</h3>
+                <div class="preset-grid">
+                    <button class="btn btn-preset active" data-preset="distilled-water">Pure Water</button>
+                    <button class="btn btn-preset" data-preset="weak-whiskey">Dilute Whiskey (10% ABV)</button>
+                    <button class="btn btn-preset" data-preset="neat-whiskey">Neat Whiskey (25% ABV)</button>
+                    <button class="btn btn-preset" data-preset="sinking-booster">Overproof Whiskey (45% ABV)</button>
+                </div>
+            </div>
+
+            <div class="ingredient-sliders">
+                <h3>Custom Recipe Blender</h3>
+                
+                <!-- Water Slider -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label for="water-volume">Distilled Water</label>
+                        <span class="volume-display"><span id="water-val">200</span> ml</span>
+                    </div>
+                    <input type="range" id="water-volume" min="0" max="400" step="10" value="200" class="neon-slider slider-water">
+                    <div class="ingredient-specs">
+                        <span>SG: 1.0000</span>
+                        <span>0% ABV (0 Proof)</span>
+                    </div>
+                </div>
+
+                <!-- Whiskey Slider -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label for="whiskey-volume">50 Proof Whiskey</label>
+                        <span class="volume-display"><span id="whiskey-val">0</span> ml</span>
+                    </div>
+                    <input type="range" id="whiskey-volume" min="0" max="400" step="10" value="0" class="neon-slider slider-whiskey">
+                    <div class="ingredient-specs">
+                        <span>SG: 0.9473</span>
+                        <span>25% ABV (50 Proof)</span>
+                    </div>
+                </div>
+
+                <!-- Booster Slider (To allow sinking!) -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label for="booster-volume">150 Proof Overproof Booster</label>
+                        <span class="volume-display"><span id="booster-val">0</span> ml</span>
+                    </div>
+                    <input type="range" id="booster-volume" min="0" max="400" step="10" value="0" class="neon-slider slider-booster">
+                    <div class="ingredient-specs">
+                        <span>SG: 0.8418</span>
+                        <span>75% ABV (150 Proof)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mixture-preview">
+                <h3>Mixture Properties (Pre-pour)</h3>
+                <div class="spec-grid">
+                    <div class="spec-card">
+                        <span class="spec-label">Total Volume</span>
+                        <span class="spec-value" id="mixture-volume">200 ml</span>
+                    </div>
+                    <div class="spec-card">
+                        <span class="spec-label">Est. Alcohol (ABV)</span>
+                        <span class="spec-value text-amber" id="mixture-abv">0.0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-action btn-pour" id="pour-btn">Pour Drink 🧪</button>
+                <button class="btn btn-action btn-reset" id="reset-btn">Reset Glass 🔄</button>
+            </div>
+        </section>
+
+        <!-- CENTER COLUMN: GRAPHICS AND GUESSING GAME -->
+        <section class="center-stage">
+            <!-- Guessing Game Widget -->
+            <div class="panel glass-panel guess-panel" id="guessing-game">
+                <div class="panel-header">
+                    <h2>2. SPECIFIC GRAVITY PREDICTION GAME</h2>
+                    <span class="panel-tag">GUESS</span>
+                </div>
+                <div class="guess-container">
+                    <p class="guess-instruction">
+                        Analyze your mixture composition. Before dropping the ice cube, can you guess the final **Specific Gravity** of the liquid?
+                    </p>
+                    <div class="guess-input-area">
+                        <div class="guess-input-wrapper">
+                            <span class="guess-label">YOUR SG GUESS:</span>
+                            <input type="number" id="sg-guess" min="0.750" max="1.100" step="0.001" placeholder="e.g. 0.985" class="neon-input">
+                        </div>
+                        <button class="btn btn-submit-guess" id="submit-guess-btn">Lock In Guess 🔒</button>
+                    </div>
+                    <div class="guess-feedback hidden" id="guess-feedback">
+                        <div class="feedback-text">Locked in! Now drop the ice cube to test your scientific intuition!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Physics Simulator Canvas Container -->
+            <div class="simulator-container">
+                <div class="telemetry-hud">
+                    <div class="hud-item"><span class="hud-label">ICE STATE:</span> <span id="hud-state" class="hud-value neon-cyan">READY</span></div>
+                    <div class="hud-item"><span class="hud-label">APPARENT g:</span> <span id="hud-accel" class="hud-value neon-amber">-- m/s²</span></div>
+                    <div class="hud-item"><span class="hud-label">VELOCITY:</span> <span id="hud-vel" class="hud-value neon-amber">0.00 m/s</span></div>
+                </div>
+                
+                <canvas id="physics-canvas" width="450" height="520"></canvas>
+                
+                <div class="canvas-controls">
+                    <button class="btn btn-drop-ice disabled" id="drop-ice-btn" disabled>Drop Ice Cube 🧊</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: SENSOR TELEMETRY & DIAGNOSTICS -->
+        <section class="panel glass-panel diagnostics-panel" id="telemetry-diagnostics">
+            <div class="panel-header">
+                <h2>3. SENSOR telemetry</h2>
+                <span class="panel-tag">OUTPUT</span>
+            </div>
+
+            <div class="telemetry-group">
+                <h3>Physical Constants</h3>
+                <div class="data-row">
+                    <span>Reference Liquid (Water) Density:</span>
+                    <span class="data-val">1.0000 g/cm³</span>
+                </div>
+                <div class="data-row">
+                    <span>Ice Cube Density (SG<sub>ice</sub>):</span>
+                    <span class="data-val text-cyan">0.9170 g/cm³</span>
+                </div>
+                <div class="data-row">
+                    <span>Standard Gravitational Constant (g):</span>
+                    <span class="data-val">9.810 m/s²</span>
+                </div>
+            </div>
+
+            <div class="telemetry-group">
+                <h3>Live Buoyancy Report</h3>
+                <div class="report-box" id="report-empty">
+                    <p class="blink">Awaiting drink dispensing and ice cube deployment...</p>
+                </div>
+                
+                <div class="report-box hidden" id="report-active">
+                    <div class="report-header" id="report-state-tag">FLOATING</div>
+                    
+                    <div class="telemetry-grid">
+                        <div class="telemetry-card">
+                            <span class="card-label" id="meas-label">Submerged Vol (f)</span>
+                            <span class="card-val neon-cyan" id="meas-val">--</span>
+                        </div>
+                        <div class="telemetry-card">
+                            <span class="card-label">Apparent g (Descent)</span>
+                            <span class="card-val neon-amber" id="telemetry-apparent-g">--</span>
+                        </div>
+                    </div>
+
+                    <div class="scientific-calculation">
+                        <h4>Buoyancy Equation (Derived)</h4>
+                        <div class="equation-box" id="equation-display">
+                            $$\text{SG}_{\text{liquid}} = \frac{\text{SG}_{\text{ice}}}{f}$$
+                        </div>
+                        <div class="calculation-steps" id="calculation-steps">
+                            <!-- Populated by Javascript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="telemetry-group" id="game-results-panel">
+                <h3>Calibration & Game Results</h3>
+                <div class="results-box inactive" id="results-box">
+                    <div class="results-placeholder">Lock in your guess and drop the ice cube to calibrate the sensors!</div>
+                    <div class="results-active hidden" id="results-active-content">
+                        <div class="results-row">
+                            <span>Your Predicted SG:</span>
+                            <span class="results-val text-cyan" id="res-guessed-sg">--</span>
+                        </div>
+                        <div class="results-row">
+                            <span>Calculated Liquid SG:</span>
+                            <span class="results-val text-green" id="res-actual-sg">--</span>
+                        </div>
+                        <div class="results-row error-row">
+                            <span>Absolute Deviation:</span>
+                            <span class="results-val text-red" id="res-error-sg">--</span>
+                        </div>
+                        <div class="score-badge" id="res-badge">CALIBRATION SCORE: --</div>
+                        <div class="score-comment" id="res-comment">Pour a fresh mix to play again!</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER: SCIENTIFIC DETAILS -->
+    <footer class="scientific-ledger">
+        <h2>Scientific Methodology: Hydrometry via Buoyancy</h2>
+        <div class="ledger-columns">
+            <div class="ledger-col">
+                <h3>1. Density & Alcohol Proof</h3>
+                <p>
+                    Ethanol has a specific gravity of <strong>0.789</strong>, whereas distilled water has a specific gravity of <strong>1.000</strong>. When mixed, they create a liquid with a density proportional to their volumetric ratio. By definition, <strong>50 Proof Whiskey</strong> contains exactly <strong>25% ABV</strong> (Alcohol By Volume).
+                </p>
+                <p>
+                    Because sugar syrup is extremely dense (~1.300), sweet cocktails have high specific gravity, making ice float high even if they contain high ABV. This is called "density masking" in hydrometry!
+                </p>
+            </div>
+            
+            <div class="ledger-col">
+                <h3>2. The Physics of Floating</h3>
+                <p>
+                    According to Archimedes' Principle, a floating body displaces a volume of fluid whose weight is equal to the weight of the body. Since the weight of the ice cube is $W = \text{SG}_{\text{ice}} \cdot V_{\text{total}} \cdot \rho_{\text{water}} \cdot g$ and the buoyant force is $F_b = \text{SG}_{\text{liquid}} \cdot V_{\text{submerged}} \cdot \rho_{\text{water}} \cdot g$, equating them gives:
+                </p>
+                <div class="math-callout">
+                    $$\text{SG}_{\text{liquid}} = \frac{\text{SG}_{\text{ice}}}{f}$$
+                </div>
+                <p>
+                    Where $f = V_{\text{submerged}} / V_{\text{total}}$ is the fraction of the ice cube under the liquid surface.
+                </p>
+            </div>
+
+            <div class="ledger-col">
+                <h3>3. The Physics of Sinking</h3>
+                <p>
+                    If the liquid's specific gravity is less than the ice cube's specific gravity ($\text{SG}_{\text{liquid}} < \text{SG}_{\text{ice}} = 0.917$), the upward buoyant force is insufficient to balance gravity. The ice cube sinks. The downward net force is:
+                    $$F_{\text{net}} = m_{\text{ice}} \cdot g - F_b = m_{\text{ice}} \cdot g_{\text{apparent}}$$
+                </p>
+                <p>
+                    Substituting masses and volumes yields the apparent gravity $g_{\text{apparent}}$:
+                </p>
+                <div class="math-callout">
+                    $$g_{\text{apparent}} = g \cdot \left(1 - \frac{\text{SG}_{\text{liquid}}}{\text{SG}_{\text{ice}}}\right)$$
+                </div>
+                <p>
+                    By tracking this downward acceleration rate, the machine computes the exact specific gravity:
+                    $$\text{SG}_{\text{liquid}} = \text{SG}_{\text{ice}} \cdot \left(1 - \frac{g_{\text{apparent}}}{g}\right)$$
+                </p>
+            </div>
+        </div>
+        <div class="copyright">
+            Designed for Hydrodynamic Research & Mixological Fun • DeepMind Antigravity Project 🧪
+        </div>
+    </footer>
+
+    <!-- App JavaScript Modules -->
+    <script src="physics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

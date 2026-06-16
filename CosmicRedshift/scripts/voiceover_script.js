@@ -4,7 +4,7 @@
 // Keep the wrapper:  window.VOICEOVER_SCRIPT = ` ... `;  intact.
 window.VOICEOVER_SCRIPT = `In this animation, we follow the path of a monochromatic pulse of blue light as it leaves a blue star very early in the evolution of the Universe, about 450 million years after the Big Bang.
 
-Because the Universe has been expanding since the Big Bang, we see the blue light's wave pattern get stretched with the expanding Universe, first going through all the colors of the rainbow, from shortest to longest wavelengths – 400 nanometers (blue) to 700 nanometers (red), and then it becomes infrared light, ending up as mid-infrared light – with a wavelength of 10 microns -- when it gets to Earth some 13.3 billion years later.
+Because the Universe has been expanding since the Big Bang, we see the blue light's wave pattern get stretched with the expanding Universe, first going through all the colors of the rainbow, from shortest to longest wavelengths – 400 nanometers (blue) to 700 nanometers (red), and then it becomes infrared light, ending up as mid-infrared light – with a wavelength of a little over 5 microns -- when it gets to Earth some 13.3 billion years later.
 
 The crossover point -- when the originally blue light becomes infrared light -- occurs 6.3 billion years after it left its blue star -- or about 6.8 billion years after the Big Bang. That's some 7 billion years ago, since the Universe is now 13.8 billion years old.
 

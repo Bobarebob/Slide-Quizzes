@@ -19,7 +19,13 @@ try {
     console.warn('Firebase not available, running in standalone mode');
 }
 
-const QUIZ_PASSWORD = "banana";
+// ============================================================
+// QUIZ_ID — the permanent identifier baked into THIS quiz file.
+// It must EXACTLY match the "Quiz ID" you type in newteacher.html
+// when you create this quiz. The password is NOT baked in anymore;
+// students type it, and it is verified against this ID.
+// ============================================================
+const QUIZ_ID = "RETRO01";
 
 let quizConfig = {
     className: null,
@@ -46,31 +52,59 @@ const quizQuestions = {
     5: { correct: 1 }, 6: { correct: 3 }
 };
 
-async function loadQuizConfig() {
+// Page-load (cosmetic): fetch the login field labels for this quiz, if available.
+// Resolves by QUIZ_ID only, so it is best-effort and never blocks login.
+async function loadLoginDescriptors() {
     try {
-        if (!db) {
-            throw new Error('Database not available - running in standalone mode');
+        if (!db) return false;
+        const snap = await db.collection('quizzes').where('quizId', '==', QUIZ_ID).limit(1).get();
+        if (snap.empty) return false;
+        const q = snap.docs[0].data();
+        const settingsDoc = await db.collection('quizSettings')
+            .doc(`${q.className}_${q.name}`).get();
+        if (settingsDoc.exists && settingsDoc.data().loginDescriptors) {
+            quizConfig.loginDescriptors = settingsDoc.data().loginDescriptors;
         }
-        const dbSnapshot = await db.collection('databases').where('password', '==', QUIZ_PASSWORD).where('active', '==', true).limit(1).get();
-        if (dbSnapshot.empty) throw new Error('No active database found');
-        
-        const activeDb = dbSnapshot.docs[0].data();
-        quizConfig.className = activeDb.className;
-        quizConfig.quizName = activeDb.quizName;
-        quizConfig.databaseId = dbSnapshot.docs[0].id;
-        
-        const settingsDoc = await db.collection('quizSettings').doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+        return true;
+    } catch (error) {
+        console.warn('Could not preload login descriptors:', error);
+        return false;
+    }
+}
+
+// Login-time: verify QUIZ_ID + the password the student typed.
+// Returns true only when exactly one class-quiz matches (no cross-contamination).
+async function resolveQuizConfig(enteredPassword) {
+    try {
+        if (!db) throw new Error('Database not available - running in standalone mode');
+
+        const snap = await db.collection('quizzes')
+            .where('quizId', '==', QUIZ_ID)
+            .where('password', '==', enteredPassword)
+            .limit(1)
+            .get();
+
+        if (snap.empty) return false; // wrong password for THIS quiz
+
+        const q = snap.docs[0].data();
+        quizConfig.className = q.className;
+        quizConfig.quizName = q.name;
+        // One database per class-quiz, at a fixed id:
+        quizConfig.databaseId = `${q.className}_${q.name}`;
+
+        const settingsDoc = await db.collection('quizSettings')
+            .doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
             if (settings.restrictions) quizConfig.restrictions = settings.restrictions;
             if (settings.idValidation) quizConfig.idValidation = settings.idValidation;
         }
-        
+
         sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
         return true;
     } catch (error) {
-        console.error('Error loading quiz configuration:', error);
+        console.error('Error resolving quiz configuration:', error);
         return false;
     }
 }

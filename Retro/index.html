@@ -31,11 +31,16 @@
     <script src="retro-shared.js"></script>
     <script>
 window.addEventListener('load', async () => {
-    const success = await loadQuizConfig();
-    if (success) {
-        document.getElementById('studentName').placeholder = quizConfig.loginDescriptors.name || 'Enter name';
-        document.getElementById('studentID').placeholder = quizConfig.loginDescriptors.id || 'Enter ID';
-        document.getElementById('studentPassword').placeholder = quizConfig.loginDescriptors.pass || 'Enter password';
+    // Sensible defaults so fields never stay on "Loading..."
+    document.getElementById('studentName').placeholder = 'Enter your name';
+    document.getElementById('studentID').placeholder = 'Enter your student ID';
+    document.getElementById('studentPassword').placeholder = 'Enter quiz password';
+    // Best-effort: replace with the teacher's custom labels if available
+    const ok = await loadLoginDescriptors();
+    if (ok) {
+        document.getElementById('studentName').placeholder = quizConfig.loginDescriptors.name || 'Enter your name';
+        document.getElementById('studentID').placeholder = quizConfig.loginDescriptors.id || 'Enter your student ID';
+        document.getElementById('studentPassword').placeholder = quizConfig.loginDescriptors.pass || 'Enter quiz password';
     }
 });
 
@@ -46,9 +51,31 @@ async function startQuiz() {
     const errorDiv = document.getElementById('loginError');
     errorDiv.style.display = 'none';
     
-    if (!name || !studentID) { errorDiv.textContent = 'Fill all fields'; errorDiv.style.display = 'block'; return; }
-    if (password !== QUIZ_PASSWORD) { errorDiv.textContent = 'Incorrect password'; errorDiv.style.display = 'block'; return; }
-    if (!quizConfig.className) { errorDiv.textContent = 'Config not loaded'; errorDiv.style.display = 'block'; return; }
+    if (!name || !studentID || !password) { errorDiv.textContent = 'Fill all fields'; errorDiv.style.display = 'block'; return; }
+
+    // Verify QUIZ_ID + the typed password together. This resolves the exact
+    // class-quiz and blocks a password that belongs to a different quiz.
+    const resolved = await resolveQuizConfig(password);
+    if (!resolved) { errorDiv.textContent = 'Incorrect password for this quiz'; errorDiv.style.display = 'block'; return; }
+
+    // Enforce the Student ID rule set in the dashboard (Page 3), if any.
+    const idv = quizConfig.idValidation;
+    if (idv && idv.type && idv.type !== 'none' && idv.value) {
+        let valid = true, msg = 'Student ID is not in the required format';
+        if (idv.type === 'digits') {
+            const n = parseInt(idv.value, 10);
+            valid = new RegExp('^\\d{' + n + '}$').test(studentID);
+            msg = `Student ID must be exactly ${n} digits`;
+        } else if (idv.type === 'startsWith') {
+            valid = studentID.startsWith(idv.value);
+            msg = `Student ID must start with "${idv.value}"`;
+        } else if (idv.type === 'regex') {
+            try { valid = new RegExp(idv.value).test(studentID); }
+            catch (e) { valid = true; } // invalid pattern -> don't block the student
+            msg = 'Student ID is not in the required format';
+        }
+        if (!valid) { errorDiv.textContent = msg; errorDiv.style.display = 'block'; return; }
+    }
     
     const now = new Date();
     console.log('Date check:', {
@@ -78,7 +105,7 @@ async function startQuiz() {
     
     if (quizConfig.restrictions.attemptsAllowed > 0) {
         try {
-            const snap = await db.collection('students').where('studentID', '==', studentID).where('quizPassword', '==', QUIZ_PASSWORD).get();
+            const snap = await db.collection('students').where('studentID', '==', studentID).where('quizPassword', '==', password).get();
             if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
                 errorDiv.textContent = `Used all ${quizConfig.restrictions.attemptsAllowed} attempts`;
                 errorDiv.style.display = 'block';
@@ -113,7 +140,7 @@ async function startQuiz() {
             name, studentID,
             className: quizConfig.className,
             quizName: quizConfig.quizName,
-            quizPassword: QUIZ_PASSWORD,
+            quizPassword: password,
             databaseId: quizConfig.databaseId,
             startTime: firebase.firestore.Timestamp.now(),
             answers: {}, score: 0, completed: false

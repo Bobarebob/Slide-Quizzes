@@ -293,6 +293,9 @@
                 <div class="score-display">
                     <h2>Your Final Score</h2>
                     <div class="score-value" id="finalScore">Loading...</div>
+                    <div id="reviewNotice" style="display:none; max-width:640px; margin:18px auto 0; padding:14px 18px;
+                        background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.5); border-radius:10px;
+                        color:#ffc266; font-size:1.05em; line-height:1.5; text-align:left;"></div>
                 </div>
 
                 <div class="outro-text">
@@ -356,6 +359,23 @@
                 const maxText = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
                 
                 scoreEl.textContent = scoreText + ' / ' + maxText;
+            }
+
+            // Review sessions still show the score — it just doesn't count for anything.
+            const reviewMode = sessionStorage.getItem('reviewMode');
+            if (reviewMode) {
+                const closedOn = sessionStorage.getItem('creditCloseLabel');
+                const notice = document.getElementById('reviewNotice');
+                const why = reviewMode === 'closed'
+                    ? (closedOn
+                        ? `The graded window for this assignment closed ${closedOn}.`
+                        : 'The graded window for this assignment has closed.')
+                    : 'You had already used all of your attempts.';
+                if (notice) {
+                    notice.innerHTML = `<strong>Review only — this score was not graded.</strong><br>${why} `
+                        + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
+                    notice.style.display = 'block';
+                }
             }
         });
     </script>

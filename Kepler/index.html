@@ -31,6 +31,15 @@
     
     <script src="kepler-shared.js"></script>
     <script>
+        // Best-effort: replace the field labels with the teacher's custom ones.
+        window.addEventListener('load', async () => {
+            const ok = await loadLoginDescriptors();
+            if (!ok) return;
+            document.getElementById('studentName').placeholder     = quizConfig.loginDescriptors.name || 'Student Name';
+            document.getElementById('studentID').placeholder       = quizConfig.loginDescriptors.id   || 'Student ID';
+            document.getElementById('studentPassword').placeholder = quizConfig.loginDescriptors.pass || 'Quiz Password';
+        });
+
         async function startQuiz() {
             const name = document.getElementById('studentName').value.trim();
             const studentID = document.getElementById('studentID').value.trim();
@@ -46,30 +55,13 @@
             }
 
             try {
-                // 1. Authenticate Password & Load Config dynamically
-                const dbSnapshot = await db.collection('databases')
-                                         .where('password', '==', password)
-                                         .where('active', '==', true)
-                                         .limit(1)
-                                         .get();
-                
-                if (dbSnapshot.empty) {
-                    errorDiv.textContent = 'Invalid or inactive quiz password.';
+                // 1. Verify QUIZ_ID + the typed password together. This resolves the
+                // exact class-quiz and blocks a password belonging to a different quiz.
+                const resolved = await resolveQuizConfig(password);
+                if (!resolved) {
+                    errorDiv.textContent = 'Incorrect password for this quiz.';
                     errorDiv.style.display = 'block';
                     return;
-                }
-
-                const activeDb = dbSnapshot.docs[0].data();
-                quizConfig.className = activeDb.className;
-                quizConfig.quizName = activeDb.quizName;
-                quizConfig.databaseId = dbSnapshot.docs[0].id;
-                
-                const settingsDoc = await db.collection('quizSettings').doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
-                if (settingsDoc.exists) {
-                    const settings = settingsDoc.data();
-                    if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
-                    if (settings.restrictions) quizConfig.restrictions = settings.restrictions;
-                    if (settings.idValidation) quizConfig.idValidation = settings.idValidation;
                 }
 
                 // 2. Validate Student ID formatting based on rules
@@ -106,46 +98,67 @@
                 }
 
                 // 3. Date & Time Window Validation
+                // Availability has THREE dates:
+                //   startDateTime      — nothing before this
+                //   stopDateTime       — graded attempts end here (the due date)
+                //   reviewStopDateTime — ungraded review ends here (blank = same as stop)
                 const now = new Date();
-                
-                if (quizConfig.restrictions.startDateTime) {
-                    const start = new Date(quizConfig.restrictions.startDateTime);
-                    if (now < start) { 
-                        errorDiv.textContent = `Quiz is not available yet. It will open on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`; 
-                        errorDiv.style.display = 'block'; 
-                        return; 
+                const startStr = quizConfig.restrictions.startDateTime;
+                const stopStr = quizConfig.restrictions.stopDateTime;
+                const hardStopStr = quizConfig.restrictions.reviewStopDateTime || stopStr;
+
+                if (startStr) {
+                    const start = new Date(startStr);
+                    if (now < start) {
+                        errorDiv.textContent = `Quiz is not available yet. It will open on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`;
+                        errorDiv.style.display = 'block';
+                        return;
                     }
                 }
-                
-                if (quizConfig.restrictions.stopDateTime) {
-                    const stop = new Date(quizConfig.restrictions.stopDateTime);
-                    if (now > stop) { 
-                        errorDiv.textContent = `Quiz has closed. The deadline was ${stop.toLocaleDateString()} at ${stop.toLocaleTimeString()}.`; 
-                        errorDiv.style.display = 'block'; 
-                        return; 
+
+                if (hardStopStr) {
+                    const hardStop = new Date(hardStopStr);
+                    if (now > hardStop) {
+                        errorDiv.textContent = `Quiz has closed. It was available until ${hardStop.toLocaleDateString()} at ${hardStop.toLocaleTimeString()}.`;
+                        errorDiv.style.display = 'block';
+                        return;
                     }
                 }
+
+                // Past the due date but still inside the review window: the quiz opens,
+                // but nothing is graded — unused attempts are forfeit once credit closes.
+                const creditClosed = !!(stopStr && now > new Date(stopStr));
                 
-                // 4. Attempt Limits Validation
-                if (quizConfig.restrictions.attemptsAllowed > 0) {
-                    // IMPORTANT FIX: Now querying specifically by the active databaseId 
-                    // so past attempts in archived DBs are ignored.
+                // 4. Attempt Limits / review decision
+                // Two ways into an ungraded review session:
+                //   1. attempts are used up
+                //   2. the credit window has closed
+                // Neither locks the student out while the review window is open.
+                const maxAttempts = parseInt(quizConfig.restrictions.attemptsAllowed, 10) || 0;
+                let reviewMode = creditClosed ? 'closed' : '';
+
+                if (maxAttempts > 0) {
+                    // Query by databaseId so attempts in archived DBs are ignored.
                     const snap = await db.collection('students')
                                          .where('studentID', '==', studentID)
                                          .where('databaseId', '==', quizConfig.databaseId)
                                          .get();
-                                         
-                    if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
-                        errorDiv.textContent = `Access Denied: You have used all ${quizConfig.restrictions.attemptsAllowed} of your allowed attempts.`;
-                        errorDiv.style.display = 'block';
-                        return;
-                    }
-                    sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
-                    sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+
+                    // Review sessions are NOT attempts and must never inflate the count.
+                    const priorAttempts = snap.docs.filter(d => d.data().review !== true).length;
+                    if (priorAttempts >= maxAttempts) reviewMode = reviewMode || 'attempts';
+
+                    sessionStorage.setItem('attemptNumber', (reviewMode ? priorAttempts : priorAttempts + 1).toString());
+                    sessionStorage.setItem('maxAttempts', maxAttempts.toString());
                 } else {
                     sessionStorage.setItem('attemptNumber', '1');
                     sessionStorage.setItem('maxAttempts', '0'); // 0 implies unlimited in display logic
                 }
+
+                // Read by updateBanner() and outro.html: '' | 'attempts' | 'closed'
+                sessionStorage.setItem('reviewMode', reviewMode);
+                sessionStorage.setItem('creditCloseLabel',
+                    creditClosed && stopStr ? new Date(stopStr).toLocaleString() : '');
                 
                 // 5. Success! Setup Session and create DB record
                 const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -172,7 +185,10 @@
                     startTime: firebase.firestore.Timestamp.now(),
                     answers: {}, 
                     score: 0, 
-                    completed: false
+                    completed: false,
+                    // review:true marks an ungraded study run — the dashboard reports skip these.
+                    review: !!reviewMode,
+                    reviewReason: reviewMode || null
                 });
                 
                 // Redirect to first page

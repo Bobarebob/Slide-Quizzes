@@ -19,14 +19,23 @@ try {
     console.warn('Firebase not available, running in standalone mode');
 }
 
-const QUIZ_PASSWORD = "potato";
+// ============================================================
+// QUIZ_ID — the permanent identifier baked into THIS quiz.
+// It must EXACTLY match the "Quiz ID" typed in the dashboard.
+// The password is NOT baked in: students type it and it is
+// verified against this ID, so two quizzes open at once can
+// never resolve to each other.
+// ============================================================
+const QUIZ_ID = "KEPLER01";
 
 let quizConfig = {
     className: null,
     quizName: null,
     databaseId: null,
     loginDescriptors: { name: 'Student Name', id: 'Student ID', pass: 'Quiz Password' },
-    restrictions: { timeLimit: 0, lowTimeWarning: 3, startDate: '', startTime: '', stopDate: '', stopTime: '', attemptsAllowed: 0, pointsPerQuestion: 1.0 }
+    // reviewStopDateTime is the third availability date: ungraded review closes here.
+    // Absent on quizzes saved before the three-date change, which means "same as stop".
+    restrictions: { timeLimit: 0, lowTimeWarning: 3, startDate: '', startTime: '', stopDate: '', stopTime: '', reviewStopDateTime: null, attemptsAllowed: 0, pointsPerQuestion: 1.0 }
 };
 
 let studentData = {
@@ -52,31 +61,57 @@ const keplerQuizData = {
     'law3Q1': { dbNum: 6, correctLetter: 'D', correctIndex: 3 }  // Mercury
 };
 
-async function loadQuizConfig() {
+// Page-load (cosmetic): fetch this quiz's login field labels.
+// Resolves by QUIZ_ID alone, so it is best-effort and never blocks login.
+async function loadLoginDescriptors() {
     try {
-        if (!db) {
-            throw new Error('Database not available - running in standalone mode');
+        if (!db) return false;
+        const snap = await db.collection('quizzes').where('quizId', '==', QUIZ_ID).limit(1).get();
+        if (snap.empty) return false;
+        const q = snap.docs[0].data();
+        const settingsDoc = await db.collection('quizSettings').doc(`${q.className}_${q.name}`).get();
+        if (settingsDoc.exists && settingsDoc.data().loginDescriptors) {
+            quizConfig.loginDescriptors = settingsDoc.data().loginDescriptors;
         }
-        const dbSnapshot = await db.collection('databases').where('password', '==', QUIZ_PASSWORD).where('active', '==', true).limit(1).get();
-        if (dbSnapshot.empty) throw new Error('No active database found');
-        
-        const activeDb = dbSnapshot.docs[0].data();
-        quizConfig.className = activeDb.className;
-        quizConfig.quizName = activeDb.quizName;
-        quizConfig.databaseId = dbSnapshot.docs[0].id;
-        
-        const settingsDoc = await db.collection('quizSettings').doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
+        return true;
+    } catch (error) {
+        console.warn('Could not preload login descriptors:', error);
+        return false;
+    }
+}
+
+// Login-time: verify QUIZ_ID + the password the student typed.
+// True only when exactly one class-quiz matches — no cross-contamination.
+async function resolveQuizConfig(enteredPassword) {
+    try {
+        if (!db) throw new Error('Database not available - running in standalone mode');
+
+        const snap = await db.collection('quizzes')
+            .where('quizId', '==', QUIZ_ID)
+            .where('password', '==', enteredPassword)
+            .limit(1)
+            .get();
+
+        if (snap.empty) return false; // wrong password for THIS quiz
+
+        const q = snap.docs[0].data();
+        quizConfig.className = q.className;
+        quizConfig.quizName = q.name;
+        // One database per class-quiz, at a fixed id:
+        quizConfig.databaseId = `${q.className}_${q.name}`;
+
+        const settingsDoc = await db.collection('quizSettings').doc(quizConfig.databaseId).get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
             if (settings.restrictions) quizConfig.restrictions = settings.restrictions;
             if (settings.idValidation) quizConfig.idValidation = settings.idValidation;
         }
-        
+
         sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
         return true;
     } catch (error) {
-        console.error('Error loading quiz configuration:', error);
+        console.error('Error resolving quiz configuration:', error);
         return false;
     }
 }
@@ -123,16 +158,33 @@ function updateBanner() {
         scoreEl.textContent = scoreText + ' / ' + maxText;
     }
     
-    // Show attempt number in "X of Y" format
+    // Attempts field. Normally "X of Y"; during an ungraded review session it says so
+    // instead, because there is no attempt number to report. reviewMode is set at login:
+    //   'attempts' — the student used all their attempts
+    //   'closed'   — the graded window closed (any unused attempts are forfeit)
     const attemptNumber = sessionStorage.getItem('attemptNumber');
     const maxAttempts = sessionStorage.getItem('maxAttempts');
-    if (attemptNumber && maxAttempts && attemptEl && attemptDisplayEl) {
-        if (maxAttempts === '0') {
-            attemptEl.textContent = attemptNumber;
-        } else {
-            attemptEl.textContent = `${attemptNumber} of ${maxAttempts}`;
+    const reviewMode = sessionStorage.getItem('reviewMode');
+    if (attemptEl && attemptDisplayEl) {
+        if (reviewMode === 'attempts') {
+            attemptEl.textContent = (maxAttempts && maxAttempts !== '0')
+                ? `Attempts used (${maxAttempts} of ${maxAttempts}) — reviewing, not graded`
+                : 'Reviewing — not graded';
+            attemptDisplayEl.style.display = 'block';
+        } else if (reviewMode === 'closed') {
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            attemptEl.textContent = closedOn
+                ? `Assignment closed ${closedOn} — reviewing, not graded`
+                : 'Assignment closed — reviewing, not graded';
+            attemptDisplayEl.style.display = 'block';
+        } else if (attemptNumber && maxAttempts) {
+            if (maxAttempts === '0') {
+                attemptEl.textContent = attemptNumber;
+            } else {
+                attemptEl.textContent = `${attemptNumber} of ${maxAttempts}`;
+            }
+            attemptDisplayEl.style.display = 'block';
         }
-        attemptDisplayEl.style.display = 'block';
     }
     
     if (bannerEl) bannerEl.style.display = 'flex';

@@ -212,9 +212,12 @@
                 <div style="font-size: 6em; color: #4da6ff; font-weight: bold; margin: 20px 0;">
                     <span id="finalScore">0</span> / <span id="finalMaxScore">6</span>
                 </div>
+                <div id="reviewNotice" style="display:none; max-width:640px; margin:0 auto; padding:14px 18px;
+                    background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.5); border-radius:10px;
+                    color:#ffc266; font-size:1.05em; line-height:1.5;"></div>
             </div>
             
-            <div class="outro-text">
+            <div class="outro-text" id="savedText">
                 Thank you for participating! Your responses have been saved.
             </div>
         </div>
@@ -296,7 +299,21 @@
             const maxText = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
             document.getElementById('displayScore').textContent = scoreText + ' / ' + maxText;
             
-            if (attemptNumber) {
+            // reviewMode is set at login: '' | 'attempts' | 'closed'. In review there is no
+            // attempt number to report, so say what this session actually is.
+            const reviewMode = sessionStorage.getItem('reviewMode');
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            if (reviewMode === 'attempts') {
+                document.getElementById('attemptNumber').textContent = maxAttempts && maxAttempts !== '0'
+                    ? `Attempts used (${maxAttempts} of ${maxAttempts}) — reviewing, not graded`
+                    : 'Reviewing — not graded';
+                document.getElementById('attemptDisplay').style.display = 'block';
+            } else if (reviewMode === 'closed') {
+                document.getElementById('attemptNumber').textContent = closedOn
+                    ? `Assignment closed ${closedOn} — reviewing, not graded`
+                    : 'Assignment closed — reviewing, not graded';
+                document.getElementById('attemptDisplay').style.display = 'block';
+            } else if (attemptNumber) {
                 document.getElementById('attemptNumber').textContent = maxAttempts && maxAttempts !== '0' ? `${attemptNumber} of ${maxAttempts}` : attemptNumber;
                 document.getElementById('attemptDisplay').style.display = 'block';
             }
@@ -304,6 +321,28 @@
             document.getElementById('studentBanner').style.display = 'flex';
         }
         
+        // Review sessions still show the score — it just doesn't count for anything.
+        (function showReviewNotice() {
+            const mode = sessionStorage.getItem('reviewMode');
+            if (!mode) return;
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            const notice = document.getElementById('reviewNotice');
+            const saved = document.getElementById('savedText');
+            const why = mode === 'closed'
+                ? (closedOn
+                    ? `The graded window for this assignment closed ${closedOn}.`
+                    : 'The graded window for this assignment has closed.')
+                : 'You had already used all of your attempts.';
+            if (notice) {
+                notice.innerHTML = `<strong>Review only — this score was not graded.</strong><br>${why} `
+                    + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
+                notice.style.display = 'block';
+            }
+            if (saved) {
+                saved.textContent = 'This was a review session. It was saved as practice only and was not graded.';
+            }
+        })();
+
         // Timer logic
         const timeIsUp = timerEndTime > 0 && timerEndTime <= Date.now();
         const isLocked = allAnswered || timeIsUp;

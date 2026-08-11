@@ -400,19 +400,49 @@ function startTimerDisplay() {
     }, 1000);
 }
 
-function submitQuiz() {
-    // When manually submitted, lock the quiz
-    sessionStorage.setItem('quizCompleted', 'true'); 
-    
-    if (db) db.collection('students').doc(studentData.sessionId).update({
-        completed: true,
-        completedTime: db ? firebase.firestore.Timestamp.now() : new Date()
-    }).then(() => {
-        window.location.href = 'outro.html';
-    }).catch(e => {
-        console.error(e);
-        alert('Error submitting. Please try again.');
-    });
+async function submitQuiz() {
+    const submitBtn  = document.getElementById('submitBtn');
+    const confirmMsg = document.getElementById('submitConfirmMsg');
+    const isReview   = !!sessionStorage.getItem('reviewMode');
+
+    if (sessionStorage.getItem('quizSubmitted') === 'true') {
+        if (submitBtn) submitBtn.disabled = true;
+        if (confirmMsg) {
+            confirmMsg.style.display = 'block';
+            confirmMsg.textContent = isReview ? '\u2713 Review already finished.' : '\u2713 Quiz already submitted.';
+        }
+        return;
+    }
+
+    // Lock the quiz and mark it submitted so a second click can't double-write.
+    sessionStorage.setItem('quizCompleted', 'true');
+    sessionStorage.setItem('quizSubmitted', 'true');
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    if (submitBtn) submitBtn.disabled = true;
+    if (confirmMsg) { confirmMsg.style.display = 'block'; confirmMsg.textContent = 'Submitting\u2026'; }
+
+    if (db && studentData.sessionId) {
+        try {
+            await db.collection('students').doc(studentData.sessionId).update({
+                completed: true,
+                // completedTime is the field the dashboard reads for "Time to Complete".
+                completedTime: firebase.firestore.Timestamp.now(),
+                score: studentData.score,
+                answers: studentData.answers
+            });
+            if (confirmMsg) confirmMsg.textContent = isReview
+                ? '\u2713 Review finished. Nothing was graded.'
+                : '\u2713 Quiz submitted successfully!';
+        } catch (e) {
+            console.error('Submit error:', e);
+            // Let them try again rather than stranding an unsubmitted attempt.
+            sessionStorage.removeItem('quizSubmitted');
+            if (submitBtn) submitBtn.disabled = false;
+            if (confirmMsg) confirmMsg.textContent = '\u26a0 Could not submit \u2014 check your connection and try again.';
+        }
+    } else {
+        if (confirmMsg) confirmMsg.textContent = '\u2713 Answers recorded locally.';
+    }
 }
 
 if (document.readyState === 'loading') {

@@ -216,6 +216,46 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
+        .submit-wrap {
+            text-align: center;
+            margin: 30px 0 10px;
+        }
+
+        .submit-btn {
+            padding: 16px 45px;
+            background: linear-gradient(135deg, #4dffb8 0%, #2fd39a 100%);
+            color: #10241d;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.15em;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .submit-btn:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        #submitConfirmMsg {
+            display: none;
+            margin-top: 14px;
+            color: #4dffb8;
+            font-size: 1.05em;
+            font-weight: 600;
+        }
+
         .nav-button:disabled {
             background: #555;
             cursor: not-allowed;
@@ -314,9 +354,14 @@
                 
                 
 
+                <div class="submit-wrap">
+                    <button class="submit-btn" id="submitBtn" onclick="submitQuiz()">&#10003; Submit Quiz</button>
+                    <p id="submitConfirmMsg"></p>
+                </div>
+
                 <div class="outro-text">
                     <p><strong class="highlight">Thank you for exploring the wonders of planetary motion!</strong></p>
-                    <p>Your quiz has been submitted and your results have been recorded.</p>
+                    <p id="outroSubmitNote">Press <strong>Submit Quiz</strong> above to record your results.</p>
                 </div>
             </div>
         </div>
@@ -361,6 +406,18 @@
                 scoreEl.textContent = scoreText + ' / ' + maxText;
             }
 
+            // The quiz is only recorded when the student presses Submit — or when the
+            // timer already auto-submitted for them.
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('submitConfirmMsg');
+            const note = document.getElementById('outroSubmitNote');
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                sessionStorage.setItem('quizSubmitted', 'true');
+                if (btn) btn.disabled = true;
+                if (msg) { msg.style.display = 'block'; msg.textContent = '\u2713 Quiz auto-submitted (time expired).'; }
+                if (note) note.textContent = 'Your results have been recorded.';
+            }
+
             // Review sessions still show the score — it just doesn't count for anything.
             const reviewMode = sessionStorage.getItem('reviewMode');
             if (reviewMode) {
@@ -375,6 +432,12 @@
                     notice.innerHTML = `<strong>Review only — this score was not graded.</strong><br>${why} `
                         + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
                     notice.style.display = 'block';
+                }
+                const rbtn = document.getElementById('submitBtn');
+                const rnote = document.getElementById('outroSubmitNote');
+                if (rbtn && !rbtn.disabled) rbtn.innerHTML = '&#10003; Finish Review';
+                if (rnote && sessionStorage.getItem('quizCompleted') !== 'true') {
+                    rnote.textContent = 'This was a review session — nothing will be graded.';
                 }
             }
         });

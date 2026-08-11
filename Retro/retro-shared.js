@@ -32,7 +32,9 @@ let quizConfig = {
     quizName: null,
     databaseId: null,
     loginDescriptors: { name: 'Student Name', id: 'Student ID', pass: 'Quiz Password' },
-    restrictions: { timeLimit: 0, lowTimeWarning: 3, startDate: '', startTime: '', stopDate: '', stopTime: '', attemptsAllowed: 0, pointsPerQuestion: 1.0 }
+    // reviewStopDateTime is the third availability date: ungraded review closes here.
+    // Absent on quizzes saved before the three-date change, which means "same as stop".
+    restrictions: { timeLimit: 0, lowTimeWarning: 3, startDate: '', startTime: '', stopDate: '', stopTime: '', reviewStopDateTime: null, attemptsAllowed: 0, pointsPerQuestion: 1.0 }
 };
 
 let studentData = {
@@ -151,16 +153,33 @@ function updateBanner() {
         scoreEl.textContent = scoreText + ' / ' + maxText;
     }
     
-    // Show attempt number in "X of Y" format
+    // Attempts field. Normally "X of Y"; during an ungraded review session it says so
+    // instead, because there is no attempt number to report. reviewMode is set at login:
+    //   'attempts' — the student used all their attempts
+    //   'closed'   — the graded window closed (any unused attempts are forfeit)
     const attemptNumber = sessionStorage.getItem('attemptNumber');
     const maxAttempts = sessionStorage.getItem('maxAttempts');
-    if (attemptNumber && maxAttempts && attemptEl && attemptDisplayEl) {
-        if (maxAttempts === '0') {
-            attemptEl.textContent = attemptNumber;
-        } else {
-            attemptEl.textContent = `${attemptNumber} of ${maxAttempts}`;
+    const reviewMode = sessionStorage.getItem('reviewMode');
+    if (attemptEl && attemptDisplayEl) {
+        if (reviewMode === 'attempts') {
+            attemptEl.textContent = maxAttempts && maxAttempts !== '0'
+                ? `Attempts used (${maxAttempts} of ${maxAttempts}) — reviewing, not graded`
+                : 'Reviewing — not graded';
+            attemptDisplayEl.style.display = 'block';
+        } else if (reviewMode === 'closed') {
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            attemptEl.textContent = closedOn
+                ? `Assignment closed ${closedOn} — reviewing, not graded`
+                : 'Assignment closed — reviewing, not graded';
+            attemptDisplayEl.style.display = 'block';
+        } else if (attemptNumber && maxAttempts) {
+            if (maxAttempts === '0') {
+                attemptEl.textContent = attemptNumber;
+            } else {
+                attemptEl.textContent = `${attemptNumber} of ${maxAttempts}`;
+            }
+            attemptDisplayEl.style.display = 'block';
         }
-        attemptDisplayEl.style.display = 'block';
     }
     
     if (bannerEl) bannerEl.style.display = 'flex';

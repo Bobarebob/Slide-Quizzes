@@ -328,7 +328,8 @@ function startTimerDisplay() {
                 const ptsPerQ = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
                 db.collection('students').doc(studentData.sessionId).update({
                     completed: true,
-                    completionTime: firebase.firestore.Timestamp.now(),
+                    // completedTime is the field the dashboard reads for "Time to Complete".
+                    completedTime: firebase.firestore.Timestamp.now(),
                     autoSubmitted: true,
                     score: studentData.score * ptsPerQ,
                     answers: studentData.answers
@@ -380,11 +381,14 @@ async function submitQuiz() {
             const ptsPerQ = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
             await db.collection('students').doc(studentData.sessionId).update({
                 completed: true,
-                completionTime: firebase.firestore.Timestamp.now(),
+                // completedTime is the field the dashboard reads for "Time to Complete".
+                completedTime: firebase.firestore.Timestamp.now(),
                 score: studentData.score * ptsPerQ,
                 answers: studentData.answers
             });
-            if (confirmMsg) confirmMsg.textContent = '\u2713 Quiz submitted successfully!';
+            if (confirmMsg) confirmMsg.textContent = sessionStorage.getItem('reviewMode')
+                ? '\u2713 Review finished. Nothing was graded.'
+                : '\u2713 Quiz submitted successfully!';
         } catch (e) {
             console.warn('Submit error:', e);
             if (confirmMsg) confirmMsg.textContent = '\u2713 Answers recorded locally.';

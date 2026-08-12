@@ -107,6 +107,9 @@
                 <div class="score-display">
                     <h2>Your Final Score</h2>
                     <div class="score-value" id="finalScore">Loading...</div>
+                    <div id="reviewNotice" style="display:none; max-width:640px; margin:18px auto 0; padding:14px 18px;
+                        background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.5); border-radius:10px;
+                        color:#ffc266; font-size:1.05em; line-height:1.5; text-align:left;"></div>
                 </div>
 
                 <div class="outro-text">
@@ -126,7 +129,7 @@
                 </div>
 
                 <div class="outro-text">
-                    <p style="text-align: center;">You may still <strong class="highlight">navigate back</strong> to any slide to answer unanswered questions — as long as the timer has not expired. When you are satisfied with your answers, click <strong class="highlight">Submit Quiz</strong> below to lock your results permanently.</p>
+                    <p style="text-align: center;" id="lockNote">You may still <strong class="highlight">navigate back</strong> to any slide to answer unanswered questions — as long as the timer has not expired. When you are satisfied with your answers, click <strong class="highlight">Submit Quiz</strong> below to lock your results permanently.</p>
                 </div>
 
                 <div class="submit-btn-wrap">
@@ -176,6 +179,29 @@
             // If timer already expired, show submitted state on arrival
             if (sessionStorage.getItem('quizCompleted') === 'true') {
                 showSubmittedState();
+            }
+
+            // Review sessions still show the score — it just doesn't count for anything.
+            const reviewMode = sessionStorage.getItem('reviewMode');
+            if (reviewMode) {
+                const closedOn = sessionStorage.getItem('creditCloseLabel');
+                const notice = document.getElementById('reviewNotice');
+                const why = reviewMode === 'closed'
+                    ? (closedOn
+                        ? `The graded window for this assignment closed ${closedOn}.`
+                        : 'The graded window for this assignment has closed.')
+                    : 'You had already used all of your attempts.';
+                if (notice) {
+                    notice.innerHTML = `<strong>Review only — this score was not graded.</strong><br>${why} `
+                        + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
+                    notice.style.display = 'block';
+                }
+                const btn = document.getElementById('submitBtn');
+                if (btn && !btn.disabled) btn.textContent = '\u2714 Finish Review';
+                const confirmEl = document.getElementById('submitConfirm');
+                if (confirmEl) confirmEl.textContent = '\u2705 Review finished. Nothing was graded.';
+                const lockNote = document.getElementById('lockNote');
+                if (lockNote) lockNote.innerHTML = 'This was a <strong class="highlight">review session</strong> — nothing will be graded. Click <strong class="highlight">Finish Review</strong> below when you are done.';
             }
         });
 

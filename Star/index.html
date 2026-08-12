@@ -152,6 +152,18 @@
 
     <script src="star-shared.js"></script>
     <script>
+        // Best-effort: replace the field labels with the teacher's custom ones.
+        window.addEventListener('load', async () => {
+            const ok = await loadLoginDescriptors();
+            if (!ok) return;
+            const n = document.getElementById('studentName');
+            const i = document.getElementById('studentID');
+            const p = document.getElementById('studentPassword');
+            if (n) n.placeholder = quizConfig.loginDescriptors.name || n.placeholder;
+            if (i) i.placeholder = quizConfig.loginDescriptors.id   || i.placeholder;
+            if (p) p.placeholder = quizConfig.loginDescriptors.pass || p.placeholder;
+        });
+
         async function startQuiz() {
             const name       = document.getElementById('studentName').value.trim();
             const studentID  = document.getElementById('studentID').value.trim();
@@ -160,6 +172,10 @@
 
             errorDiv.style.display = 'none';
 
+            // Set inside the db branch below; read again when writing the session doc.
+            let creditClosed = false;
+            let reviewMode = '';
+
             if (!name || !studentID || !password) {
                 errorDiv.textContent = 'Please fill in all fields.';
                 errorDiv.style.display = 'block'; return;
@@ -167,28 +183,12 @@
 
             try {
                 if (db) {
-                    const dbSnapshot = await db.collection('databases')
-                        .where('password', '==', password)
-                        .where('active', '==', true)
-                        .limit(1).get();
-
-                    if (dbSnapshot.empty) {
-                        errorDiv.textContent = 'Invalid or inactive quiz password.';
+                    // Verify QUIZ_ID + the typed password together. This resolves the
+                    // exact class-quiz and blocks a password belonging to another quiz.
+                    const resolved = await resolveQuizConfig(password);
+                    if (!resolved) {
+                        errorDiv.textContent = 'Incorrect password for this quiz.';
                         errorDiv.style.display = 'block'; return;
-                    }
-
-                    const activeDb = dbSnapshot.docs[0].data();
-                    quizConfig.className  = activeDb.className;
-                    quizConfig.quizName   = activeDb.quizName;
-                    quizConfig.databaseId = dbSnapshot.docs[0].id;
-
-                    const settingsDoc = await db.collection('quizSettings')
-                        .doc(`${quizConfig.className}_${quizConfig.quizName}`).get();
-                    if (settingsDoc.exists) {
-                        const s = settingsDoc.data();
-                        if (s.loginDescriptors) quizConfig.loginDescriptors = s.loginDescriptors;
-                        if (s.restrictions)     quizConfig.restrictions     = s.restrictions;
-                        if (s.idValidation)     quizConfig.idValidation     = s.idValidation;
                     }
 
                     // ID format validation
@@ -209,46 +209,68 @@
                         }
                     }
 
-                    // Date/time restrictions
+                    // Date/time restrictions. Availability has THREE dates:
+                    //   startDateTime      — nothing before this
+                    //   stopDateTime       — graded attempts end here (the due date)
+                    //   reviewStopDateTime — ungraded review ends here (blank = same as stop)
                     const now = new Date();
-                    if (quizConfig.restrictions.startDateTime) {
-                        const st = new Date(quizConfig.restrictions.startDateTime);
+                    const startStr    = quizConfig.restrictions.startDateTime;
+                    const stopStr     = quizConfig.restrictions.stopDateTime;
+                    const hardStopStr = quizConfig.restrictions.reviewStopDateTime || stopStr;
+
+                    if (startStr) {
+                        const st = new Date(startStr);
                         if (now < st) {
                             errorDiv.textContent = `Quiz not yet open. Opens ${st.toLocaleDateString()} at ${st.toLocaleTimeString()}.`;
                             errorDiv.style.display = 'block'; return;
                         }
                     }
-                    if (quizConfig.restrictions.stopDateTime) {
-                        const sp = new Date(quizConfig.restrictions.stopDateTime);
-                        if (now > sp) {
-                            errorDiv.textContent = `Quiz has closed. Deadline was ${sp.toLocaleDateString()} at ${sp.toLocaleTimeString()}.`;
+                    if (hardStopStr) {
+                        const hs = new Date(hardStopStr);
+                        if (now > hs) {
+                            errorDiv.textContent = `Quiz has closed. It was available until ${hs.toLocaleDateString()} at ${hs.toLocaleTimeString()}.`;
                             errorDiv.style.display = 'block'; return;
                         }
                     }
+                    // Past the due date but still inside the review window: the quiz opens,
+                    // but nothing is graded — unused attempts are forfeit once credit closes.
+                    creditClosed = !!(stopStr && now > new Date(stopStr));
 
-                    // Attempt limits
-                    if (quizConfig.restrictions.attemptsAllowed > 0) {
+                    // Attempt limits / review decision.
+                    // Two ways into an ungraded review session:
+                    //   1. attempts are used up
+                    //   2. the credit window has closed
+                    // Neither locks the student out while the review window is open.
+                    const maxAttempts = parseInt(quizConfig.restrictions.attemptsAllowed, 10) || 0;
+                    reviewMode = creditClosed ? 'closed' : '';
+
+                    if (maxAttempts > 0) {
                         const snap = await db.collection('students')
                             .where('studentID', '==', studentID)
                             .where('databaseId', '==', quizConfig.databaseId).get();
-                        if (snap.size >= quizConfig.restrictions.attemptsAllowed) {
-                            errorDiv.textContent = `Access denied: all ${quizConfig.restrictions.attemptsAllowed} attempts used.`;
-                            errorDiv.style.display = 'block'; return;
-                        }
-                        sessionStorage.setItem('attemptNumber', (snap.size + 1).toString());
-                        sessionStorage.setItem('maxAttempts', quizConfig.restrictions.attemptsAllowed.toString());
+                        // Review sessions are NOT attempts and must never inflate the count.
+                        const priorAttempts = snap.docs.filter(d => d.data().review !== true).length;
+                        if (priorAttempts >= maxAttempts) reviewMode = reviewMode || 'attempts';
+
+                        sessionStorage.setItem('attemptNumber', (reviewMode ? priorAttempts : priorAttempts + 1).toString());
+                        sessionStorage.setItem('maxAttempts', maxAttempts.toString());
                     } else {
                         sessionStorage.setItem('attemptNumber', '1');
                         sessionStorage.setItem('maxAttempts', '0');
                     }
+
+                    // Read by updateBanner() and outro.html: '' | 'attempts' | 'closed'
+                    sessionStorage.setItem('reviewMode', reviewMode);
+                    sessionStorage.setItem('creditCloseLabel',
+                        creditClosed && stopStr ? new Date(stopStr).toLocaleString() : '');
                 } else {
-                    // Standalone mode – just check password locally
-                    if (password !== QUIZ_PASSWORD) {
-                        errorDiv.textContent = 'Invalid quiz password.';
-                        errorDiv.style.display = 'block'; return;
-                    }
+                    // Standalone mode (no Firebase, e.g. a local preview). The password
+                    // now lives in the database and is verified against QUIZ_ID, so there
+                    // is nothing to check against offline — let the preview run ungraded.
                     sessionStorage.setItem('attemptNumber', '1');
                     sessionStorage.setItem('maxAttempts', '0');
+                    sessionStorage.setItem('reviewMode', '');
+                    sessionStorage.setItem('creditCloseLabel', '');
                 }
 
                 const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -273,7 +295,10 @@
                         quizPassword: password,
                         databaseId: quizConfig.databaseId || 'standalone',
                         startTime:  firebase.firestore.Timestamp.now(),
-                        answers: {}, score: 0, completed: false
+                        answers: {}, score: 0, completed: false,
+                        // review:true marks an ungraded study run — the dashboard reports skip these.
+                        review: !!reviewMode,
+                        reviewReason: reviewMode || null
                     });
                 }
 

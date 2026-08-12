@@ -22,7 +22,14 @@ try {
     console.warn('Firebase not available – running in standalone mode');
 }
 
-const QUIZ_PASSWORD = "coffee";
+// ============================================================
+// QUIZ_ID — the permanent identifier baked into THIS quiz.
+// It must EXACTLY match the "Quiz ID" typed in the dashboard.
+// The password is NOT baked in: students type it and it is
+// verified against this ID, so two quizzes open at once can
+// never resolve to each other.
+// ============================================================
+const QUIZ_ID = "STAR01";
 
 let quizConfig = {
     className: null,
@@ -32,9 +39,67 @@ let quizConfig = {
     restrictions: {
         timeLimit: 0, lowTimeWarning: 3,
         startDate: '', startTime: '', stopDate: '', stopTime: '',
+        // Third availability date: ungraded review closes here.
+        // Absent on quizzes saved before the three-date change = "same as stop".
+        reviewStopDateTime: null,
         attemptsAllowed: 0, pointsPerQuestion: 1.0
     }
 };
+
+// Page-load (cosmetic): fetch this quiz's login field labels.
+// Resolves by QUIZ_ID alone, so it is best-effort and never blocks login.
+async function loadLoginDescriptors() {
+    try {
+        if (!db) return false;
+        const snap = await db.collection('quizzes').where('quizId', '==', QUIZ_ID).limit(1).get();
+        if (snap.empty) return false;
+        const q = snap.docs[0].data();
+        const settingsDoc = await db.collection('quizSettings').doc(`${q.className}_${q.name}`).get();
+        if (settingsDoc.exists && settingsDoc.data().loginDescriptors) {
+            quizConfig.loginDescriptors = settingsDoc.data().loginDescriptors;
+        }
+        return true;
+    } catch (e) {
+        console.warn('Could not preload login descriptors:', e);
+        return false;
+    }
+}
+
+// Login-time: verify QUIZ_ID + the password the student typed.
+// True only when exactly one class-quiz matches — no cross-contamination.
+async function resolveQuizConfig(enteredPassword) {
+    try {
+        if (!db) throw new Error('Database not available - running in standalone mode');
+
+        const snap = await db.collection('quizzes')
+            .where('quizId', '==', QUIZ_ID)
+            .where('password', '==', enteredPassword)
+            .limit(1)
+            .get();
+
+        if (snap.empty) return false; // wrong password for THIS quiz
+
+        const q = snap.docs[0].data();
+        quizConfig.className  = q.className;
+        quizConfig.quizName   = q.name;
+        // One database per class-quiz, at a fixed id:
+        quizConfig.databaseId = `${q.className}_${q.name}`;
+
+        const settingsDoc = await db.collection('quizSettings').doc(quizConfig.databaseId).get();
+        if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
+            if (settings.restrictions)     quizConfig.restrictions     = settings.restrictions;
+            if (settings.idValidation)     quizConfig.idValidation     = settings.idValidation;
+        }
+
+        sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
+        return true;
+    } catch (e) {
+        console.error('Error resolving quiz configuration:', e);
+        return false;
+    }
+}
 
 let studentData = {
     name:      sessionStorage.getItem('studentName')  || '',
@@ -122,16 +187,31 @@ function updateBanner() {
     }
     if (bannerEl) bannerEl.style.display = 'flex';
 
+    // Attempts field. Normally "X / Y"; during an ungraded review session it says so
+    // instead, because there is no attempt number to report. reviewMode is set at login:
+    //   'attempts' — the student used all their attempts
+    //   'closed'   — the graded window closed (any unused attempts are forfeit)
     const storedAttempt = sessionStorage.getItem('attemptNumber');
     const maxAttempts   = sessionStorage.getItem('maxAttempts');
-    if (storedAttempt && parseInt(storedAttempt) > 1 && attemptEl && attemptDisplayEl) {
-        attemptEl.textContent = storedAttempt;
-        attemptDisplayEl.style.display = 'block';
-    }
-    if (maxAttempts && parseInt(maxAttempts) > 0 && attemptDisplayEl) {
-        attemptDisplayEl.style.display = 'block';
-        if (attemptEl) {
-            attemptEl.textContent = `${storedAttempt || '1'} / ${maxAttempts}`;
+    const reviewMode    = sessionStorage.getItem('reviewMode');
+    if (attemptDisplayEl) {
+        if (reviewMode === 'attempts') {
+            attemptDisplayEl.style.display = 'block';
+            if (attemptEl) attemptEl.textContent = (maxAttempts && maxAttempts !== '0')
+                ? `Attempts used (${maxAttempts} of ${maxAttempts}) — reviewing, not graded`
+                : 'Reviewing — not graded';
+        } else if (reviewMode === 'closed') {
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            attemptDisplayEl.style.display = 'block';
+            if (attemptEl) attemptEl.textContent = closedOn
+                ? `Assignment closed ${closedOn} — reviewing, not graded`
+                : 'Assignment closed — reviewing, not graded';
+        } else if (maxAttempts && parseInt(maxAttempts) > 0) {
+            attemptDisplayEl.style.display = 'block';
+            if (attemptEl) attemptEl.textContent = `${storedAttempt || '1'} / ${maxAttempts}`;
+        } else if (storedAttempt && parseInt(storedAttempt) > 1 && attemptEl) {
+            attemptEl.textContent = storedAttempt;
+            attemptDisplayEl.style.display = 'block';
         }
     }
 }
@@ -278,7 +358,8 @@ function startTimerDisplay() {
                     const ptsPerQ = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
                     db.collection('students').doc(studentData.sessionId).update({
                         completed: true,
-                        completionTime: firebase.firestore.Timestamp.now(),
+                        // completedTime is the field the dashboard reads for "Time to Complete".
+                        completedTime: firebase.firestore.Timestamp.now(),
                         autoSubmitted: true,
                         score: studentData.score * ptsPerQ,
                         answers: studentData.answers
@@ -337,11 +418,14 @@ async function submitQuiz() {
             const ptsPerQ = parseFloat(quizConfig.restrictions.pointsPerQuestion) || 1.0;
             await db.collection('students').doc(studentData.sessionId).update({
                 completed: true,
-                completionTime: firebase.firestore.Timestamp.now(),
+                // completedTime is the field the dashboard reads for "Time to Complete".
+                completedTime: firebase.firestore.Timestamp.now(),
                 score: studentData.score * ptsPerQ,
                 answers: studentData.answers
             });
-            if (confirmMsg) confirmMsg.textContent = '✓ Quiz submitted successfully!';
+            if (confirmMsg) confirmMsg.textContent = sessionStorage.getItem('reviewMode')
+                ? '✓ Review finished. Nothing was graded.'
+                : '✓ Quiz submitted successfully!';
         } catch (e) {
             console.warn('Submit error:', e);
             if (confirmMsg) confirmMsg.textContent = '✓ Answers recorded locally.';

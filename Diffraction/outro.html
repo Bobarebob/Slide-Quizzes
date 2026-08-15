@@ -188,7 +188,10 @@
                 <div class="score-grade-bar">
                     <div class="score-grade-fill" id="scoreFill" style="width:0%"></div>
                 </div>
-                <div class="score-note">Score is based on the guided calculation steps (0.5 pts each × 12 steps).</div>
+                <div class="score-note" id="scoreNote">Score is based on the guided calculation steps.</div>
+                <div id="reviewNotice" style="display:none; max-width:640px; margin:18px auto 0; padding:14px 18px;
+                    background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.5); border-radius:10px;
+                    color:#ffc266; font-size:1.02em; line-height:1.5; text-align:left;"></div>
             </div>
 
             <!-- Submit button -->
@@ -234,7 +237,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const rawScore  = parseFloat(sessionStorage.getItem('labScore') || '0');
-        const maxScore  = 6.0;
+        const perStep   = (typeof ptsPerQuestion === 'function') ? ptsPerQuestion() : 0.5;
+        const maxScore  = (typeof maxLabScore    === 'function') ? maxLabScore()    : 6.0;
         const pctFill   = Math.min(100, Math.round((rawScore / maxScore) * 100));
 
         const finalEl = document.getElementById('finalScore');
@@ -242,8 +246,11 @@
         const fillEl  = document.getElementById('scoreFill');
 
         if (finalEl) finalEl.textContent = rawScore.toFixed(1) + ' / ' + maxScore.toFixed(1);
+        const noteEl = document.getElementById('scoreNote');
+        if (noteEl) noteEl.textContent =
+            `Score is based on the guided calculation steps (${perStep} pts each \u00d7 12 steps).`;
         if (labelEl) {
-            const steps = Math.round(rawScore / 0.5);
+            const steps = perStep > 0 ? Math.round(rawScore / perStep) : 0;
             labelEl.textContent = `${steps} calculation step${steps !== 1 ? 's' : ''} completed correctly`;
         }
         if (fillEl) {
@@ -254,12 +261,36 @@
         const bse = document.getElementById('displayScore');
         if (bse) bse.textContent = rawScore.toFixed(1) + ' / ' + maxScore.toFixed(1) + ' pts';
 
+        // Review sessions still SHOW the score — it just doesn't count for anything.
+        const reviewMode = sessionStorage.getItem('reviewMode');
+        if (reviewMode) {
+            const closedOn = sessionStorage.getItem('creditCloseLabel');
+            const why = reviewMode === 'closed'
+                ? (closedOn
+                    ? `The graded window for this lab closed ${closedOn}.`
+                    : 'The graded window for this lab has closed.')
+                : 'You had already used all of your attempts.';
+            const notice = document.getElementById('reviewNotice');
+            if (notice) {
+                notice.innerHTML = `<strong>Review only — this score was not graded.</strong><br>${why} `
+                    + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
+                notice.style.display = 'block';
+            }
+            const rbtn = document.getElementById('submitBtn');
+            if (rbtn && !rbtn.disabled) rbtn.textContent = '\u2713 Finish Review';
+        }
+
         // If auto-submitted by timer
         if (sessionStorage.getItem('labCompleted') === 'true') {
             const btn = document.getElementById('submitBtn');
             const msg = document.getElementById('submitConfirmMsg');
             if (btn) btn.disabled = true;
-            if (msg) { msg.style.display = 'block'; msg.textContent = '✓ Lab auto-submitted (time expired).'; }
+            if (msg) {
+                msg.style.display = 'block';
+                msg.textContent = reviewMode
+                    ? '✓ Review session ended (time expired). Nothing was graded.'
+                    : '✓ Lab auto-submitted (time expired).';
+            }
         }
     });
 </script>

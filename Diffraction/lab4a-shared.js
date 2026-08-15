@@ -22,8 +22,22 @@ try {
     console.warn('Firebase not available – running in standalone mode');
 }
 
-const QUIZ_PASSWORD = "carrot";
-const MAX_LAB_SCORE = 6.0;
+// ============================================================
+// QUIZ_ID — the permanent identifier baked into THIS lab.
+// It must EXACTLY match the "Quiz ID" typed in the dashboard.
+// The password is NOT baked in any more: students type it and it
+// is verified against this ID, so two quizzes open at once can
+// never resolve to each other. (Was: QUIZ_PASSWORD = "carrot")
+// ============================================================
+const QUIZ_ID = "DIFF01";
+
+// 12 scored calculation cells; the per-cell award comes from the
+// dashboard (pointsPerQuestion), so the max follows it.
+const TOTAL_STEPS = 12;
+function ptsPerQuestion() {
+    return parseFloat(quizConfig.restrictions && quizConfig.restrictions.pointsPerQuestion) || 0.5;
+}
+function maxLabScore() { return TOTAL_STEPS * ptsPerQuestion(); }
 
 let quizConfig = {
     className: null,
@@ -32,7 +46,7 @@ let quizConfig = {
     loginDescriptors: { name: 'Student Name', id: 'Student ID', pass: 'Lab Password' },
     restrictions: {
         timeLimit: 0, lowTimeWarning: 3,
-        startDateTime: '', stopDateTime: '',
+        startDateTime: '', stopDateTime: '', reviewStopDateTime: null,
         attemptsAllowed: 0, pointsPerQuestion: 0.5
     }
 };
@@ -46,6 +60,57 @@ let studentData = {
 
 let timerInterval = null;
 let timerEndTime = parseInt(sessionStorage.getItem('timerEndTime') || '0');
+
+// ── Login: resolve this lab against the dashboard ───────────
+// Page-load (cosmetic): fetch this lab's login field labels.
+// Resolves by QUIZ_ID alone, so it is best-effort and never blocks login.
+async function loadLoginDescriptors() {
+    try {
+        if (!db) return false;
+        const snap = await db.collection('quizzes').where('quizId', '==', QUIZ_ID).limit(1).get();
+        if (snap.empty) return false;
+        const q = snap.docs[0].data();
+        const settingsDoc = await db.collection('quizSettings').doc(`${q.className}_${q.name}`).get();
+        if (settingsDoc.exists && settingsDoc.data().loginDescriptors) {
+            quizConfig.loginDescriptors = settingsDoc.data().loginDescriptors;
+        }
+        return true;
+    } catch (e) {
+        console.warn('Could not preload login descriptors:', e);
+        return false;
+    }
+}
+
+// Login-time: verify QUIZ_ID + the password the student typed.
+// True only when exactly one class-quiz matches — no cross-contamination.
+async function resolveQuizConfig(enteredPassword) {
+    try {
+        if (!db) throw new Error('Database not available - running in standalone mode');
+        const snap = await db.collection('quizzes')
+            .where('quizId', '==', QUIZ_ID)
+            .where('password', '==', enteredPassword)
+            .limit(1).get();
+        if (snap.empty) return false;          // wrong password for THIS lab
+
+        const q = snap.docs[0].data();
+        quizConfig.className  = q.className;
+        quizConfig.quizName   = q.name;
+        quizConfig.databaseId = `${q.className}_${q.name}`;
+
+        const settingsDoc = await db.collection('quizSettings').doc(quizConfig.databaseId).get();
+        if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            if (settings.loginDescriptors) quizConfig.loginDescriptors = settings.loginDescriptors;
+            if (settings.restrictions)     quizConfig.restrictions     = settings.restrictions;
+            if (settings.idValidation)     quizConfig.idValidation     = settings.idValidation;
+        }
+        sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
+        return true;
+    } catch (error) {
+        console.error('Error resolving quiz configuration:', error);
+        return false;
+    }
+}
 
 // ── Page initialisation ─────────────────────────────────────
 function initializePage() {
@@ -93,13 +158,28 @@ function updateBanner() {
     if (idEl)     idEl.textContent    = studentData.studentID;
     if (scoreEl) {
         const pts = parseFloat(sessionStorage.getItem('labScore') || '0');
-        scoreEl.textContent = pts.toFixed(1) + ' / ' + MAX_LAB_SCORE.toFixed(1) + ' pts';
+        scoreEl.textContent = pts.toFixed(1) + ' / ' + maxLabScore().toFixed(1) + ' pts';
     }
     if (bannerEl) bannerEl.style.display = 'flex';
 
+    // Attempts field. Normally "X / Y"; during an ungraded review session it says
+    // so instead, because there is no attempt number to report. reviewMode is set
+    // at login:  'attempts' — all attempts used   'closed' — graded window shut.
     const storedAttempt = sessionStorage.getItem('attemptNumber');
     const maxAttempts   = sessionStorage.getItem('maxAttempts');
-    if (maxAttempts && parseInt(maxAttempts) > 0 && attemptDisplayEl) {
+    const reviewMode    = sessionStorage.getItem('reviewMode');
+    if (attemptEl && attemptDisplayEl && reviewMode === 'attempts') {
+        attemptEl.textContent = (maxAttempts && maxAttempts !== '0')
+            ? `used (${maxAttempts} of ${maxAttempts}) — reviewing, not graded`
+            : 'Reviewing — not graded';
+        attemptDisplayEl.style.display = 'block';
+    } else if (attemptEl && attemptDisplayEl && reviewMode === 'closed') {
+        const closedOn = sessionStorage.getItem('creditCloseLabel');
+        attemptEl.textContent = closedOn
+            ? `closed ${closedOn} — reviewing, not graded`
+            : 'closed — reviewing, not graded';
+        attemptDisplayEl.style.display = 'block';
+    } else if (maxAttempts && parseInt(maxAttempts) > 0 && attemptDisplayEl) {
         attemptDisplayEl.style.display = 'block';
         if (attemptEl) attemptEl.textContent = `${storedAttempt || '1'} / ${maxAttempts}`;
     } else if (storedAttempt && parseInt(storedAttempt) > 1 && attemptEl && attemptDisplayEl) {
@@ -113,7 +193,7 @@ function updateBannerScore(pts) {
     studentData.score = pts;
     sessionStorage.setItem('labScore', pts.toFixed(1));
     const scoreEl = document.getElementById('displayScore');
-    if (scoreEl) scoreEl.textContent = pts.toFixed(1) + ' / ' + MAX_LAB_SCORE.toFixed(1) + ' pts';
+    if (scoreEl) scoreEl.textContent = pts.toFixed(1) + ' / ' + maxLabScore().toFixed(1) + ' pts';
     // Live-save to Firebase — field name 'score' matches teacher.html reads
     if (db && studentData.sessionId) {
         db.collection('students').doc(studentData.sessionId).update({
@@ -157,7 +237,7 @@ function startTimerDisplay() {
                 if (db && studentData.sessionId) {
                     db.collection('students').doc(studentData.sessionId).update({
                         completed: true,
-                        completionTime: firebase.firestore.Timestamp.now(),
+                        completedTime: firebase.firestore.Timestamp.now(),
                         autoSubmitted: true,
                         score: parseFloat(sessionStorage.getItem('labScore') || '0')
                     }).catch(e => console.warn('Auto-submit error:', e));
@@ -201,20 +281,26 @@ async function submitLab() {
         return;
     }
 
+    // Review sessions still show a score — it just doesn't count for anything.
+
     if (submitBtn)  submitBtn.disabled = true;
     if (confirmMsg) { confirmMsg.style.display = 'block'; confirmMsg.textContent = 'Submitting…'; }
 
     const finalScore = parseFloat(sessionStorage.getItem('labScore') || '0');
+
+    const reviewMode = sessionStorage.getItem('reviewMode');
 
     if (db && studentData.sessionId) {
         try {
             // 'score' is the field teacher.html reads from the students collection
             await db.collection('students').doc(studentData.sessionId).update({
                 completed: true,
-                completionTime: firebase.firestore.Timestamp.now(),
+                completedTime: firebase.firestore.Timestamp.now(),
                 score: finalScore
             });
-            if (confirmMsg) confirmMsg.textContent = '✓ Lab submitted successfully!';
+            if (confirmMsg) confirmMsg.textContent = reviewMode
+                ? '✓ Review finished. Nothing was graded.'
+                : '✓ Lab submitted successfully!';
         } catch (e) {
             console.warn('Submit error:', e);
             if (confirmMsg) confirmMsg.textContent = '✓ Score recorded locally.';

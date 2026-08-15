@@ -356,7 +356,7 @@ table.ctable td.clbl small{display:block;font-size:.56rem;color:rgba(196,196,220
 <div id="calc-section">
   <div id="calc-header">
     <button class="cbtn secondary" onclick="resetCalcs()">↺ Restart All Calculations</button>
-    <div id="calc-score">Score: 0.0 / 6.0 pts</div>
+    <div id="calc-score">Score: 0.0 pts</div>
     <div id="calc-escape-note">Press <strong>Escape</strong> to restart the entire lab</div>
   </div>
   <table class="ctable" id="ctable">
@@ -970,7 +970,7 @@ function showResult(s){
   const storedVal=s.absVal?Math.abs(val):val;
   SR[s.storeKey]=storedVal;
   const correct=checkResultCorrectness(s.storeKey,storedVal);
-  const scoreVal=(s.storeKey==='d')?0:(correct?0.5:0);
+  const scoreVal=(s.storeKey==='d')?0:(correct?labPts():0);
   CC[s.storeKey]={done:true,score:scoreVal};
   const displayVal=s.absVal?Math.abs(val):val;
   const resultStr=fmtResult(displayVal);
@@ -1043,7 +1043,7 @@ function renderCell(key,color,unlocked){
     else if(key.startsWith('sintheta_'))disp=(v||0).toFixed(5);
     else if(key.startsWith('pcterror_'))disp=Math.abs(v||0).toFixed(2)+'%';
     else disp=(v||0).toFixed(1)+' nm';
-    const ptsStr=(key==='d')?'':(d.score===0.5?'0.5 pts':'');
+    const ptsStr=(key==='d')?'':(d.score>0?d.score.toFixed(1)+' pts':'');
     const xBtn=`<button class="redo-x" title="Redo" onclick="redoCell('${key}')">✕</button>`;
     return`<div class="ccell"><div style="display:flex;align-items:center;gap:2px;"><div class="ccell-val ${cc}">${disp}</div>${xBtn}</div><div class="ccell-pts">${ptsStr}</div></div>`;
   }
@@ -1091,9 +1091,14 @@ function showStep5(){
 }
 
 // ── SCORE (also updates shared banner) ────────────────────────
+// Per-cell award comes from the dashboard (pointsPerQuestion via lab4a-shared.js).
+// Falls back to the historic 0.5 x 12 = 6.0 when the shared script isn't loaded.
+function labPts(){ return (typeof ptsPerQuestion==='function') ? ptsPerQuestion() : 0.5; }
+function labMax(){ return (typeof maxLabScore==='function') ? maxLabScore() : 6.0; }
+
 function updateScore(){
   let pts=Object.values(CC).reduce((a,v)=>a+(v.score||0),0);
-  document.getElementById('calc-score').textContent=`Score: ${pts.toFixed(1)} / 6.0 pts`;
+  document.getElementById('calc-score').textContent=`Score: ${pts.toFixed(1)} / ${labMax().toFixed(1)} pts`;
   // Sync to session + banner
   if(typeof updateBannerScore==='function') updateBannerScore(pts);
 }

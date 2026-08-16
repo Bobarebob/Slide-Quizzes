@@ -1137,8 +1137,9 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── VOICE ─────────────────────────────────────────────────────
-function speak(txt){if(!txt||typeof speechSynthesis==='undefined')return;speechSynthesis.cancel();const parts=txt.split('[pause]').map(s=>s.trim()).filter(Boolean);let d=0;parts.forEach((p,i)=>{if(i===0)ttsSpeak(p);else setTimeout(()=>ttsSpeak(p),d);d+=p.split(/\s+/).length/148*60000+1200;});}
-function ttsSpeak(txt){const u=new SpeechSynthesisUtterance(txt);u.rate=.88;u.pitch=1;u.volume=1;speechSynthesis.speak(u);}
+function speak(txt){if(!txt||typeof speechSynthesis==='undefined')return;speechSynthesis.cancel();const parts=txt.split('[pause]').map(s=>s.trim()).filter(Boolean);const wpm=148*(ttsRate()/.88);let d=0;parts.forEach((p,i)=>{if(i===0)ttsSpeak(p);else setTimeout(()=>ttsSpeak(p),d);d+=p.split(/\s+/).length/wpm*60000+1200;});}
+function ttsRate(){return (typeof LabVoice!=='undefined')?LabVoice.rate():.88;}
+function ttsSpeak(txt){const u=new SpeechSynthesisUtterance(txt);u.volume=1;if(typeof LabVoice!=='undefined'){LabVoice.apply(u);}else{u.rate=.88;u.pitch=1;}speechSynthesis.speak(u);}
 
 // ── RESET ─────────────────────────────────────────────────────
 function resetLab(){

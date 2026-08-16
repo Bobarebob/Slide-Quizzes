@@ -329,3 +329,217 @@ document.addEventListener('DOMContentLoaded', function() {
     document.head.appendChild(clockFix);
     initializePage();
 });
+
+// ============================================================
+// VOICE  –  narration voice selection
+//
+// Web Speech API voices differ by browser and by machine, and no
+// browser exposes a setting a page can read. So the choice lives
+// here and persists in localStorage for this origin.
+//
+// Press Ctrl+Shift+V on any lab page to open the picker.
+// Students never see it unless they know the combination.
+// ============================================================
+const LabVoice = (function () {
+    const KEY_VOICE = 'mp_voice', KEY_RATE = 'mp_rate', KEY_PITCH = 'mp_pitch';
+    const DEFAULT_RATE = 0.88, DEFAULT_PITCH = 1;
+
+    // Tried in order when nothing has been saved yet.
+    // Zira is the hard-wired default. Matched by pattern because the name
+    // varies: Chrome/Edge report "Microsoft Zira - English (United States)",
+    // Firefox usually reports "Microsoft Zira Desktop - English (United States)".
+    // The rest are fallbacks for machines with no Zira installed (Mac, ChromeOS).
+    const PREFERRED = [
+        /^Microsoft Zira\b/,
+        /^Google US English$/,
+        /^Microsoft Aria Online \(Natural\)/,
+        /^Samantha$/
+    ];
+
+    function byPreference(vs) {
+        for (let i = 0; i < PREFERRED.length; i++) {
+            const hit = vs.filter(v => PREFERRED[i].test(v.name))[0];
+            if (hit) return hit;
+        }
+        return null;
+    }
+
+    let current = null, panel = null, sel = null;
+
+    const ok = () => typeof speechSynthesis !== 'undefined';
+    function read(k, def) {
+        try { const v = localStorage.getItem(k); return v === null ? def : v; }
+        catch (e) { return def; }
+    }
+    function write(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    function pick() {
+        if (!ok()) return null;
+        const vs = speechSynthesis.getVoices();
+        if (!vs.length) return null;                 // Chrome loads these late
+
+        const saved = read(KEY_VOICE, null);
+        current =
+            (saved && vs.filter(v => v.name === saved)[0]) ||
+            byPreference(vs) ||
+            vs.filter(v => v.lang.indexOf('en') === 0 && !v.localService)[0] ||
+            vs.filter(v => v.lang.indexOf('en') === 0)[0] ||
+            vs[0];
+
+        if (panel) fillSelect();
+        return current;
+    }
+
+    function browserName() {
+        const ua = navigator.userAgent;
+        if (/Firefox\//.test(ua)) return 'Firefox';
+        if (/Edg\//.test(ua))     return 'Edge';
+        if (/OPR\//.test(ua))     return 'Opera';
+        if (/Chrome\//.test(ua))  return 'Chrome';
+        if (/Safari\//.test(ua))  return 'Safari';
+        return 'Browser';
+    }
+
+    function fillSelect() {
+        if (!sel) return;
+        const vs = speechSynthesis.getVoices();
+        sel.innerHTML = vs.map(v =>
+            '<option value="' + encodeURIComponent(v.name) + '"' +
+            (current && v.name === current.name ? ' selected' : '') + '>' +
+            v.name + ' (' + v.lang + ')' + (v.localService ? '' : ' \u2601') +
+            '</option>'
+        ).join('');
+        const head = panel.querySelector('[data-lv="head"]');
+        if (head) head.textContent = browserName() + ' \u2014 ' + vs.length + ' voices';
+    }
+
+    function build() {
+        panel = document.createElement('div');
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'Narration voice');
+        panel.style.cssText =
+            'position:fixed;bottom:14px;right:14px;z-index:99999;width:330px;' +
+            'background:#fff;color:#16202b;border:1px solid #9aa7b5;border-radius:6px;' +
+            'padding:12px 13px;box-shadow:0 6px 22px rgba(0,0,0,.32);' +
+            'font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45';
+
+        panel.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">' +
+              '<strong style="font-size:11px;letter-spacing:.14em;text-transform:uppercase">Narration voice</strong>' +
+              '<span data-lv="head" style="font:11px ui-monospace,Menlo,monospace;color:#64748b"></span>' +
+            '</div>' +
+            '<select data-lv="sel" style="width:100%;font:12px ui-monospace,Menlo,monospace;padding:6px;' +
+              'border:1px solid #c7d0da;border-radius:3px;background:#fff;color:#16202b"></select>' +
+            '<div style="display:flex;gap:12px;margin-top:10px">' +
+              '<label style="flex:1;font-size:11px;color:#64748b">Rate <b data-lv="rv" style="color:#16202b"></b>' +
+                '<input data-lv="rate" type="range" min="0.5" max="1.4" step="0.02" style="width:100%;margin-top:3px"></label>' +
+              '<label style="flex:1;font-size:11px;color:#64748b">Pitch <b data-lv="pv" style="color:#16202b"></b>' +
+                '<input data-lv="pitch" type="range" min="0" max="2" step="0.05" style="width:100%;margin-top:3px"></label>' +
+            '</div>' +
+            '<div style="display:flex;gap:7px;margin-top:11px">' +
+              '<button data-lv="test" style="flex:1;padding:7px;border:1px solid #16202b;background:#16202b;' +
+                'color:#fff;border-radius:3px;cursor:pointer;font-size:11.5px">Test</button>' +
+              '<button data-lv="reset" style="flex:1;padding:7px;border:1px solid #16202b;background:transparent;' +
+                'color:#16202b;border-radius:3px;cursor:pointer;font-size:11.5px">Defaults</button>' +
+              '<button data-lv="close" style="flex:0 0 auto;padding:7px 11px;border:1px solid #16202b;' +
+                'background:transparent;color:#16202b;border-radius:3px;cursor:pointer;font-size:11.5px">Close</button>' +
+            '</div>' +
+            '<div data-lv="msg" style="margin-top:9px;font-size:11px;color:#64748b">' +
+              'Saved for this browser on this site. Ctrl+Shift+V closes.</div>';
+
+        document.body.appendChild(panel);
+
+        sel = panel.querySelector('[data-lv="sel"]');
+        const rate  = panel.querySelector('[data-lv="rate"]');
+        const pitch = panel.querySelector('[data-lv="pitch"]');
+        const rv    = panel.querySelector('[data-lv="rv"]');
+        const pv    = panel.querySelector('[data-lv="pv"]');
+        const msg   = panel.querySelector('[data-lv="msg"]');
+
+        rate.value  = api.rate();
+        pitch.value = api.pitch();
+        rv.textContent = parseFloat(rate.value).toFixed(2);
+        pv.textContent = parseFloat(pitch.value).toFixed(2);
+
+        sel.addEventListener('change', () => {
+            write(KEY_VOICE, decodeURIComponent(sel.value));
+            pick();
+            msg.textContent = 'Voice set to ' + (current ? current.name : '?') + '.';
+        });
+        rate.addEventListener('input', () => {
+            rv.textContent = parseFloat(rate.value).toFixed(2);
+            write(KEY_RATE, rate.value);
+        });
+        pitch.addEventListener('input', () => {
+            pv.textContent = parseFloat(pitch.value).toFixed(2);
+            write(KEY_PITCH, pitch.value);
+        });
+
+        panel.querySelector('[data-lv="test"]').addEventListener('click', () => {
+            if (typeof speak === 'function') {
+                speak('Measure L, the horizontal distance from the grating to the wall. ' +
+                      '[pause] L is 412 millimeters.');
+            } else {
+                api.say('Measure L, the horizontal distance from the grating to the wall.');
+            }
+        });
+        panel.querySelector('[data-lv="reset"]').addEventListener('click', () => {
+            try { localStorage.removeItem(KEY_VOICE); localStorage.removeItem(KEY_RATE);
+                  localStorage.removeItem(KEY_PITCH); } catch (e) {}
+            current = null; pick();
+            rate.value = DEFAULT_RATE; pitch.value = DEFAULT_PITCH;
+            rv.textContent = DEFAULT_RATE.toFixed(2); pv.textContent = DEFAULT_PITCH.toFixed(2);
+            msg.textContent = 'Back to defaults: ' + (current ? current.name : 'browser default') + '.';
+        });
+        panel.querySelector('[data-lv="close"]').addEventListener('click', api.toggle);
+
+        fillSelect();
+    }
+
+    const api = {
+        voice: () => current,
+        rate:  () => parseFloat(read(KEY_RATE, DEFAULT_RATE))  || DEFAULT_RATE,
+        pitch: () => { const p = parseFloat(read(KEY_PITCH, DEFAULT_PITCH)); return isNaN(p) ? DEFAULT_PITCH : p; },
+
+        // Applies the saved voice/rate/pitch to an utterance.
+        apply: function (u) {
+            if (!current) pick();
+            if (current) { u.voice = current; u.lang = current.lang; }
+            u.rate = api.rate();
+            u.pitch = api.pitch();
+            return u;
+        },
+
+        // One-off speech that does not depend on the page's own speak().
+        say: function (txt) {
+            if (!ok() || !txt) return;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(api.apply(new SpeechSynthesisUtterance(txt)));
+        },
+
+        toggle: function () {
+            if (!ok()) return;
+            if (!panel) { build(); return; }
+            const open = panel.style.display !== 'none';
+            panel.style.display = open ? 'none' : 'block';
+            if (!open) fillSelect();
+        }
+    };
+
+    if (ok()) {
+        pick();
+        speechSynthesis.onvoiceschanged = pick;
+        // Chrome sometimes needs a few polls before getVoices() is populated.
+        let tries = 0;
+        const poll = setInterval(() => { if (pick() || ++tries > 20) clearInterval(poll); }, 250);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'V' || e.key === 'v')) {
+                e.preventDefault();
+                api.toggle();
+            }
+        });
+    }
+
+    return api;
+})();

@@ -15,6 +15,15 @@
         .login-box input:focus { outline: none; border-color: #4da6ff; box-shadow: 0 0 15px rgba(77, 166, 255, 0.3); }
         .login-box button { width: 100%; padding: 15px; background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3); transition: all 0.3s ease; }
         .login-box button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5); }
+        .pw-wrap { position: relative; margin-bottom: 20px; }
+        .login-box .pw-wrap input { margin-bottom: 0; padding-right: 52px; }
+        .login-box .pw-toggle { position: absolute; top: 0; right: 0; height: 100%; width: 46px;
+            display: flex; align-items: center; justify-content: center; padding: 0;
+            background: none; border: none; box-shadow: none; border-radius: 0 10px 10px 0;
+            color: #7b8ba3; cursor: pointer; transition: color 0.2s ease; }
+        .login-box .pw-toggle:hover { color: #4da6ff; transform: none; box-shadow: none; }
+        .login-box .pw-toggle:focus-visible { outline: 2px solid #4da6ff; outline-offset: -3px; }
+        .login-box .pw-toggle svg { width: 21px; height: 21px; display: block; }
         #loginError { color: #ff6b6b; margin-top: 15px; margin-bottom: 15px; display: none; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 8px; text-align: left; }
     </style>
 </head>
@@ -24,7 +33,24 @@
         <p>Enter your information to begin</p>
         <input type="text" id="studentName" placeholder="Student Name">
         <input type="text" id="studentID" placeholder="Student ID">
-        <input type="password" id="studentPassword" placeholder="Quiz Password">
+        <div class="pw-wrap">
+            <input type="password" id="studentPassword" placeholder="Quiz Password">
+            <button type="button" class="pw-toggle" id="pwToggle" onclick="togglePassword()"
+                    aria-label="Show password" title="Show password">
+                <svg id="pwIconShow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg id="pwIconHide" style="display:none" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            </button>
+        </div>
         <div id="loginError"></div>
         <button onclick="startQuiz()">Start Quiz</button>
     </div>
@@ -42,6 +68,21 @@
             if (i) i.placeholder = quizConfig.loginDescriptors.id   || i.placeholder;
             if (p) p.placeholder = quizConfig.loginDescriptors.pass || p.placeholder;
         });
+
+        // Reveal/hide the quiz password. Field returns to masked on submit, so a
+        // revealed password is never left on screen after login.
+        function togglePassword() {
+            const field = document.getElementById('studentPassword');
+            const showing = field.type === 'text';
+            field.type = showing ? 'password' : 'text';
+            document.getElementById('pwIconShow').style.display = showing ? 'block' : 'none';
+            document.getElementById('pwIconHide').style.display = showing ? 'none' : 'block';
+            const btn = document.getElementById('pwToggle');
+            const label = showing ? 'Show password' : 'Hide password';
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            field.focus();
+        }
 
         async function startQuiz() {
             const name = document.getElementById('studentName').value.trim();

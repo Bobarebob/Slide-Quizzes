@@ -105,7 +105,7 @@
   // ---------- physics / mapping ----------
   // A 450 nm blue-star photon, redshifted by cosmic expansion. Wavelength grows
   // as lambda = 450 * (1+z), where z is tied to distance by the real LCDM
-  // lookback relation. A 450 nm photon leaves the visible band (~750 nm) at
+  // lookback relation. A 450 nm photon leaves the visible band (750 nm) at
   // z ~= 0.67, a lookback distance of ~6 billion ly. The timeline is LINEAR in
   // distance; the wavelength curve is what is non-linear (slow, then explosive).
   const LAMBDA_EMIT = 450;          // nm  (blue O/B star)
@@ -150,7 +150,7 @@
   }
   function band(nm){
     if(nm<380) return 'ULTRAVIOLET';
-    if(nm<=700) return 'VISIBLE LIGHT';
+    if(nm<=750) return 'VISIBLE LIGHT';
     if(nm<1e6)  return 'INFRARED';
     return 'MICROWAVE';
   }
@@ -163,21 +163,21 @@
     else if(wl>=490&&wl<510){g=1;b=-(wl-510)/20;}
     else if(wl>=510&&wl<580){r=(wl-510)/70;g=1;}
     else if(wl>=580&&wl<645){r=1;g=-(wl-645)/65;}
-    else if(wl>=645&&wl<=700){r=1;}
+    else if(wl>=645&&wl<=750){r=1;}
     else return [0,0,0,0];
-    if(wl>670)a=0.35+0.65*(700-wl)/30;
+    if(wl>670)a=0.35+0.65*(750-wl)/80;
     const gm=0.8; return [Math.pow(r,gm),Math.pow(g,gm),Math.pow(b,gm),Math.max(0,Math.min(1,a))];
   }
   // false color for invisible infrared: a deep brownish red that darkens and
   // dims as the wavelength stretches further beyond the visible
   function falseRGB(nm){
-    const t=Math.max(0,Math.min(1,(Math.log(nm)-Math.log(700))/(Math.log(6000)-Math.log(700))));
-    // 700nm: dark red ember -> 6µm: very dark brown, fading toward black
+    const t=Math.max(0,Math.min(1,(Math.log(nm)-Math.log(750))/(Math.log(6000)-Math.log(750))));
+    // 750nm: dark red ember -> 6µm: very dark brown, fading toward black
     const r=140-100*t, g=46-30*t, b=30-20*t;          // declining brownish red
     const a=Math.max(0.18, 1-0.82*t);                  // dimming as it stretches
     return [r/255,g/255,b/255,a];
   }
-  const colourAt = nm => nm<=700 ? visRGB(nm) : falseRGB(nm);
+  const colourAt = nm => nm<=750 ? visRGB(nm) : falseRGB(nm);
   const rgb=(c,a=1)=>`rgba(${(c[0]*255)|0},${(c[1]*255)|0},${(c[2]*255)|0},${a*(c[3]??1)})`;
 
   // ---------- background ----------
@@ -296,20 +296,20 @@
     const tw=ctx.measureText(txt).width,sw=rgb(c,(c[3]??1));
     ctx.fillStyle='#0a0a0e';rr(px+tw+18,py+H*0.088-H*0.046,H*0.05,H*0.05,6);ctx.fill();
     ctx.fillStyle=sw;ctx.shadowBlur=16*(c[3]??1);ctx.shadowColor=sw;rr(px+tw+18,py+H*0.088-H*0.046,H*0.05,H*0.05,6);ctx.fill();ctx.shadowBlur=0;
-    ctx.font=`500 ${(H*0.024)|0}px var(--mono),monospace`;ctx.fillStyle=lam>700?'#c98a6a':'#9fb0d6';
+    ctx.font=`500 ${(H*0.024)|0}px var(--mono),monospace`;ctx.fillStyle=lam>750?'#c98a6a':'#9fb0d6';
     const zStr = z<10 ? z.toFixed(2) : Math.round(z).toLocaleString();
-    ctx.fillText(`${bd}   ·   z = ${zStr}` + (lam>700?'   ·   false color (invisible)':''),px,py+H*0.128);
+    ctx.fillText(`${bd}   ·   z = ${zStr}` + (lam>750?'   ·   false color (invisible)':''),px,py+H*0.128);
     // log spectrum bar (top-right)
     const bw=W*0.36,bh=H*0.03,bx=W*0.95-bw,by=H*0.085;
     const lo=Math.log(400),hi=Math.log(10000);
     const grad=ctx.createLinearGradient(bx,0,bx+bw,0);
-    for(let s=0;s<=60;s++){const f=s/60,nm=Math.exp(lo+(hi-lo)*f),cc=colourAt(nm);grad.addColorStop(f, nm<=700?rgb(cc,1):rgb(cc,(cc[3]??1)));}
+    for(let s=0;s<=60;s++){const f=s/60,nm=Math.exp(lo+(hi-lo)*f),cc=colourAt(nm);grad.addColorStop(f, nm<=750?rgb(cc,1):rgb(cc,(cc[3]??1)));}
     ctx.fillStyle=grad;rr(bx,by,bw,bh,4);ctx.fill();ctx.strokeStyle='#27324a';ctx.lineWidth=1;rr(bx,by,bw,bh,4);ctx.stroke();
     const mf=Math.max(0,Math.min(1,(Math.log(lam)-lo)/(hi-lo))),mx=bx+bw*mf;
     ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(mx,by-6);ctx.lineTo(mx-5,by-13);ctx.lineTo(mx+5,by-13);ctx.closePath();ctx.fill();ctx.fillRect(mx-1,by-6,2,bh+6);
     ctx.font=`400 ${(H*0.017)|0}px var(--mono),monospace`;ctx.fillStyle='#5d6b85';
     const tick=(nm,lab)=>{const f=(Math.log(nm)-lo)/(hi-lo);ctx.fillText(lab,bx+bw*f-8,by+bh+H*0.027);};
-    tick(400,'400nm');tick(700,'700nm');tick(1000,'1µm');tick(2000,'2µm');tick(5000,'5µm');tick(10000,'10µm');
+    tick(400,'400nm');tick(750,'750nm');tick(1000,'1µm');tick(2000,'2µm');tick(5000,'5µm');tick(10000,'10µm');
     // distance meter (bottom)
     const mxL=W*0.05,mxR=W*0.95,my=H*0.86,th=H*0.012;
     // label raised on its own row so the running value never covers it

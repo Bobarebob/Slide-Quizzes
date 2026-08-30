@@ -8,7 +8,7 @@ Because the Universe has been expanding since the Big Bang, we see the blue ligh
 
 The crossover point -- when the originally blue light becomes infrared light -- occurs 6.3 billion years after it left its blue star -- or about 6.8 billion years after the Big Bang. That's some 7 billion years ago, since the Universe is now 13.8 billion years old.
 
-The distances called out, for example 6.3 Giga-light-years at crossover, correspond exactly to the travel time of the light pulse.
+The distances called out, for example 6.3 Gigalight-years at crossover, correspond exactly to the travel time of the light pulse.
 
 Since we can't see infrared light, we falsely color it in the animation as a dull and dimming brown. Although we can't literally draw the light pulse wavelengths in the animation, we show the pulse getting stretched out as it moves from the blue star to earthly observer, almost like an accordion bellow being opened.
 

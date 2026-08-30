@@ -1,0 +1,25 @@
+COSMIC REDSHIFT — OUTRO AVATAR SCRIPT
+Target video: videos/redshift_outro.mp4   (4:3, matches outro.html player)
+Approximate spoken length: 70–80 seconds
+
+------------------------------------------------------------------
+
+Nicely done. You have followed the journey of a pulse of blue light across thirteen plus billion light-years of distance, over thirteen plus billion years of time.
+
+Let's see what that light pulse taught us.
+
+First. Cosmic redshift is not a so-called Doppler shift. The star was not running away from you. Instead, space itself expanded while the light was in transit, and the light pulse's typical wavelength stretched along with expanding space. The redshift z we observed was just the bookkeeping for how much that wavelength stretched.
+
+We learned that observed wavelength equals emitted wavelength times one plus z.
+At z equals one, the wavelength has doubled. At z equals ten point three, the wavelength has grown eleven point three times longer.
+
+Second. The wavelength stretching is uneven. That surprises many people. Our light pulse spent the first six billion years of its trip still visible — drifting from blue light through green light, and then yellow light through orange light. Only then, at a redshift of just zero point six seven, the light pulse crossed out of the visible band of the electromagnetic spectrum, and became infrared (that is, invisible) light. The remaining seven plus billion years of the light pulse's journey saw its typical wavelength get stretched all the way out to a mid-infrared wavelength.
+
+Third. This is the part that should genuinely unsettle you. The blue
+star that emitted this light pulse died early on in the light pulse's journey. The star swelled into a red supergiant, exploded as a supernova, and collapsed into a black hole, all while its own previously emitted light continued crossing the Universe toward us. In a nutshell, the light arrives here on Earth, but its source no longer exists.
+
+Fourth. This exercise illustrates the ultimate answers to Olbers' Paradox. The night sky is not dark because the Universe is empty of stars, or full of dust. It is dark for two reasons: the Universe has a finite age, and the Universe is expanding. Visible light that travels a long distance gets redshifted to the point that it is no longer visible to us. To answer Mr. Olbers question, the night sky is actually brimming with light, but most of that light is invisible.
+
+Your score is shown above. If there is one or more questions you haven't answered yet, and time has not yet expired, feel free to navigate back to that question or questions needing answers before you click Submit Quiz. When you are truly finished with this exercise, click Submit Quiz to lock in your results.
+
+Thank you, and keep looking up.

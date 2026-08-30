@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Redshift - Introduction</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; background: rgba(30, 30, 50, 0.9); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(77, 166, 255, 0.2); overflow: hidden; min-height: 100vh; }
+        
+        /* Restored Student Info Banner Styles */
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+        .page-content { padding: 40px; min-height: calc(100vh - 200px); }
+        .page-header { text-align: center; margin-bottom: 35px; padding-bottom: 20px; border-bottom: 3px solid #4da6ff; }
+        .page-title { font-size: 2.8em; color: #4da6ff; margin-bottom: 10px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .page-subtitle { font-size: 1.4em; color: #b0b0b0; font-style: italic; }
+        .intro-content { text-align: center; padding: 20px 40px 40px; max-width: 960px; margin: 0 auto; }
+
+        /* Fixed 4:3 Video Player */
+        .video-container {
+            width: 100%;
+            max-width: 860px;
+            margin: 0 auto 40px;
+            background: #000;
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            aspect-ratio: 16 / 9;
+        }
+        video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .intro-text { font-size: 1.2em; line-height: 1.8; margin: 20px 0; color: #d0d0d0; text-align: left; }
+        .highlight { color: #ffa64d; font-weight: bold; }
+        .key-fact { background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); border-left: 4px solid #ffc107; padding: 20px 25px; margin: 25px 0; border-radius: 8px; text-align: left; }
+        .key-fact-title { font-size: 1.2em; color: #4dffb8; font-weight: bold; margin-bottom: 12px; }
+        .key-fact ul { list-style: none; margin-top: 10px; font-size: 1.05em; }
+        .key-fact li { padding-left: 25px; position: relative; margin-top: 10px; }
+        .key-fact li::before { content: "→"; position: absolute; left: 0; color: #4dffb8; }
+        
+        .navigation { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3); }
+        .nav-button { padding: 14px 35px; background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-size: 1.1em; font-weight: 600; transition: all 0.3s ease; }
+        .nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-counter { font-size: 1.2em; color: #4da6ff; font-weight: 600; }
+        
+        .timeline-indicator { display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5); }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); cursor: pointer; }
+        .timeline-dot.active { background: #4da6ff; border: 2px solid #fff; transform: scale(1.4); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 6</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Cosmic Redshift</h1>
+                <p class="page-subtitle">How Expanding Space Turns Blue Light Invisible</p>
+            </div>
+
+            <div class="intro-content">
+                <div class="video-container">
+                    <video controls preload="auto">
+                        <source src="videos/redshift_intro.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div class="intro-text">
+                    <p>Welcome to an interactive exploration of <strong class="highlight">cosmic redshift</strong> &mdash; the reason the earliest galaxies in the Universe can only be photographed by infrared telescopes, and never by optical ones. Over the next three pages you will follow a single pulse of blue light from a star that formed 450 million years after the Big Bang, all the way to a detector on Earth 13.3 billion years later.</p>
+                </div>
+
+                <div class="key-fact">
+                    <div class="key-fact-title">What You&rsquo;ll Discover:</div>
+                    <ul>
+                        <li>Why expanding space stretches a light wave &mdash; and why this is not the Doppler effect</li>
+                        <li>How to read the redshift number z, and the one formula that runs the whole module</li>
+                        <li>Where along its 13.3 billion light-year journey the pulse stops being visible</li>
+                        <li>Why the star that emitted this light died long before the light arrived &mdash; and what that says about Olbers&rsquo; Paradox</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-button" disabled>← Previous</button>
+            <div class="page-counter"><span>1</span> / <span>5</span></div>
+            <button class="nav-button" onclick="window.location.href='slide1.html'">Next →</button>
+        </div>
+
+        <div class="timeline-indicator">
+            <div class="timeline-dot active" onclick="window.location.href='intro.html'" title="Introduction"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide1.html'" title="Slide 1: Why Light Stretches"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide2.html'" title="Slide 2: Blue Star to Mid-Infrared"></div>
+            <div class="timeline-dot" onclick="window.location.href='slide3.html'" title="Slide 3: Run the Animation"></div>
+            <div class="timeline-dot" onclick="window.location.href='outro.html'" title="Conclusion"></div>
+        </div>
+    </div>
+
+    <script src="redshift-shared.js"></script>
+</body>
+</html>

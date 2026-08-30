@@ -1,0 +1,50 @@
+COSMIC REDSHIFT — SLIDE QUIZ
+Built to match the Atmospheric Pressure module structure.
+
+DASHBOARD SETUP
+---------------
+Quiz ID (must be typed EXACTLY in TeacherQuiz):   REDSHIFT01
+Total questions:                                   6
+Question distribution:                             2 on slide1, 2 on slide2, 2 on slide3
+
+The password is NOT baked into the files. Students type it at login and it
+is verified against QUIZ_ID, same as Atmosphere.
+
+ANSWER KEY
+----------
+ dbNum   Question   Correct   Topic
+   1      s1Q1         C      Redshift is caused by expansion of space, not Doppler motion
+   2      s1Q2         C      450 nm at z=1 -> 900 nm
+   3      s2Q1         B      Visible->IR crossover at ~6.3 Gly, z ~ 0.67
+   4      s2Q2         D      Arrives mid-infrared, a little over 5 microns
+   5      s3Q1         A      Blue main-sequence -> red supergiant -> supernova -> black hole
+   6      s3Q2         B      Light arrives from sources that no longer exist; sky light redshifted out of view
+
+PAGE ORDER
+----------
+  index.html   login
+  intro.html   avatar intro video          1 / 5
+  slide1.html  Why Light Stretches         2 / 5
+  slide2.html  From Blue Star to Mid-IR    3 / 5
+  slide3.html  Run the Animation           4 / 5
+  outro.html   avatar outro + submit       5 / 5
+
+THE ANIMATION
+-------------
+animation/ is your CosmicRedshift package copied in BYTE-FOR-BYTE — index.html,
+scripts/voiceover_script.js and audio/voiceover.mp3 are untouched, rev J label
+intact. slide3.html embeds it with:
+
+    <iframe src="animation/index.html" style="width:100%; height:1020px; ...">
+
+It sits in its own folder so its relative paths (scripts/, audio/) do not
+collide with the quiz's own scripts/ and audio/ folders. If the frame shows a
+scrollbar or dead space on your display, adjust that height value only.
+
+STILL NEEDED
+------------
+  audio/slide1.mp3, slide2.mp3, slide3.mp3   (see audio/README.txt)
+  videos/redshift_intro.mp4, redshift_outro.mp4   (see videos/README.txt)
+
+All pages work without them — the audio controls simply produce no sound and
+the video players show an empty frame.

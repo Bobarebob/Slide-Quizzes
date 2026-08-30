@@ -1,0 +1,24 @@
+COSMIC REDSHIFT — INTRO AVATAR SCRIPT
+Target video: videos/redshift_intro.mp4   (4:3, matches intro.html player)
+Approximate spoken length: 70–80 seconds
+
+------------------------------------------------------------------
+
+Welcome to Cosmic Redshift.
+
+Here is the one big question this exercise answers. If a star from far across the Universe sends out a pulse of blue light, and that light travels towards
+us for thirteen billion years, is it still blue when it gets here?
+
+The answer: no, it is not. And the reason for that has nothing to do with the star.
+
+While that light is in flight across the vastness of our visible Universe, the space that light is flying through is expanding. The light pulse is a wave, and that wave transforms with expanding space by getting stretched out — the way a wave drawn on a rubber sheet gets stretched when you pull the sheet apart. 
+
+A stretched or longer wavelength means the light gets redder. Keep stretching the light, and its typical wavelength will get so long that it runs right off the red end of the visible spectrum and disappears from human view entirely.
+
+In this module you will follow one particular pulse of light, a blue colored pulse. It leaves a hot blue star four hundred and fifty million years after the Big Bang, with a typical wavelength of four hundred and fifty nanometers. It arrives at Earth thirteen point three billion years later, with a wavelength of a little over five microns — five thousand nanometers, more than eleven times longer than its original wavelength - a wavelength that corresponds to mid-infrared light, light completely invisible to your eyes.
+
+In this exercise, you will work through three pages, and address one big question per page. The first question: why does light stretch at all, and what does the redshift number z tell us about that stretching. The second question: what happens to the blue light pulse as it travels on its long journey through space, specifically when does that light pulse become invisible to the viewer. Finally, the third question: as you run an animation of that light pulse's journey, what happens to the star that originally sent out the light pulse.
+
+For each of these three pages, you will see at the bottom two quiz questions. Take your time answering them, and then proceed on to the next page.
+
+Let's begin.

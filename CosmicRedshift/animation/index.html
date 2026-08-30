@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cosmic Redshift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#04060c;
+    --mono:"IBM Plex Mono", ui-monospace, monospace;
+    --serif:"Cormorant Garamond", Georgia, serif;
+    --dim:#5d6b85;
+    --line:#1a2438;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{background:var(--bg);}
+  body{background:var(--bg);}
+  body{
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    min-height:100vh;gap:14px;padding:18px;
+    font-family:var(--mono);color:#cfd8ec;-webkit-font-smoothing:antialiased;
+  }
+  #stage{
+    position:relative;width:100%;max-width:min(1280px, 128vh);aspect-ratio:16/9;flex:0 0 auto;
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    box-shadow:0 0 60px rgba(40,80,160,.12), inset 0 0 120px rgba(0,0,0,.6);
+    background:radial-gradient(120% 90% at 6% 45%, #0a1322 0%, #04060c 55%, #020306 100%);
+  }
+  canvas{display:block;width:100%;height:100%;}
+  #bar{width:100%;max-width:1280px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--dim);}
+  button{font-family:var(--mono);font-size:13px;color:#cfd8ec;background:#0c1322;border:1px solid var(--line);border-radius:6px;padding:7px 14px;cursor:pointer;transition:border-color .15s,background .15s;}
+  button:hover{border-color:#3a5680;background:#111b2e;}
+  .grp{display:flex;align-items:center;gap:7px;}
+  input[type=range]{accent-color:#6aa3ff;width:120px;}
+  label{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);}
+  .hint{margin-left:auto;font-size:11px;color:#33415c;letter-spacing:.05em;}
+  .uihidden #bar{visibility:hidden;}
+
+  /* ---- Voiceover panel (Magellica slide-quiz house pattern) ---- */
+  #voPanel{
+    width:100%;max-width:1280px;
+    background:rgba(12,19,34,0.92);border:1px solid rgba(77,166,255,0.30);
+    border-radius:10px;padding:14px 18px;
+  }
+  .vo-header{color:#4da6ff;font-weight:600;font-size:14px;letter-spacing:.05em;margin-bottom:10px;}
+  .vo-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .vo-controls button{
+    font-family:var(--mono);font-size:13px;color:#dfe8fa;background:#13203a;
+    border:1px solid rgba(77,166,255,0.35);border-radius:6px;padding:7px 16px;cursor:pointer;
+    transition:border-color .15s,background .15s,box-shadow .15s;
+  }
+  .vo-controls button:hover{border-color:#4da6ff;background:#182a4a;}
+  #voPlay.blink{animation:voBlink 1.2s ease-in-out infinite;}
+  @keyframes voBlink{0%,100%{box-shadow:0 0 0 rgba(77,166,255,0);}50%{box-shadow:0 0 14px rgba(77,166,255,0.85);border-color:#4da6ff;}}
+  #voToggle{margin-left:auto;background:transparent;border:none;color:#5d6b85;cursor:pointer;font-family:var(--mono);font-size:12px;}
+  #voToggle:hover{color:#9fb0d6;}
+  #voScript{
+    display:none;margin-top:12px;padding:14px 16px;background:rgba(8,12,22,0.8);
+    border-left:3px solid #4da6ff;border-radius:6px;color:#c4cfe6;
+    font-family:Calibri,'Trebuchet MS',sans-serif;font-size:15px;line-height:1.7;
+    max-height:260px;overflow-y:auto;
+  }
+  #voScript p{margin:0 0 10px;}
+  #voScript.open{display:block;}
+</style>
+</head>
+<body>
+  <!-- Voiceover panel -->
+  <div id="voPanel">
+    <div class="vo-header">🔊 Voiceover — Cosmic Redshift</div>
+    <audio id="voAudio" preload="metadata">
+      <source src="audio/voiceover.mp3" type="audio/mpeg">
+      <source src="audio/voiceover.ogg" type="audio/ogg">
+      <source src="audio/voiceover.wav" type="audio/wav">
+    </audio>
+    <div class="vo-controls">
+      <button id="voPlay" class="blink" onclick="voStart()">▶ Play</button>
+      <button onclick="voPauseResume()">⏸ Pause / Resume</button>
+      <button onclick="voStop()">⏹ Stop</button>
+      <button id="voToggle" onclick="voToggleScript()">show script ▾</button>
+    </div>
+    <div id="voScript">
+      <p style="color:#5d6b85;font-style:italic;">Script loads from scripts/voiceover_script.js</p>
+    </div>
+  </div>
+
+  <div id="stage"><canvas id="c"></canvas></div>
+  <div id="bar">
+    <button id="play">⏸ Pause</button>
+    <button id="restart">↺ Restart</button>
+    <div class="grp"><label>Duration</label><input id="dur" type="range" min="8" max="30" step="1" value="16"><span id="durVal">16s</span></div>
+    <div class="grp"><label>Loop</label><input id="loop" type="checkbox" checked></div>
+    <div class="grp"><label for="starDies" style="cursor:pointer;">Blue star dies?</label><input id="starDies" type="checkbox" checked></div>
+    <button id="full">⛶ Fullscreen</button>
+    <span class="hint">rev J · SPACE play/pause · R restart · H hide/show controls · crop to the framed box when recording</span>
+  </div>
+<script src="scripts/voiceover_script.js"></script>
+<script>
+(() => {
+  const canvas=document.getElementById('c'), ctx=canvas.getContext('2d'), stage=document.getElementById('stage');
+
+  // ---------- physics / mapping ----------
+  // A 450 nm blue-star photon, redshifted by cosmic expansion. Wavelength grows
+  // as lambda = 450 * (1+z), where z is tied to distance by the real LCDM
+  // lookback relation. A 450 nm photon leaves the visible band (~750 nm) at
+  // z ~= 0.67, a lookback distance of ~6 billion ly. The timeline is LINEAR in
+  // distance; the wavelength curve is what is non-linear (slow, then explosive).
+  const LAMBDA_EMIT = 450;          // nm  (blue O/B star)
+  const Z_MAX       = 10.3;         // redshift of the first blue stars (~450 Myr after the Big Bang)
+  const Om=0.315, OL=0.685, TH=14.45; // matter/dark-energy density, Hubble time (Gyr)
+  const Efun = z => Math.sqrt(Om*Math.pow(1+z,3)+OL);
+
+  // Build a cumulative lookback-time table t_L(z), log-spaced in (1+z), then
+  // invert to get z(distance) and distance(z). Distance in Gly == lookback Gyr.
+  const NG=4000, zGrid=new Float64Array(NG+1), tGrid=new Float64Array(NG+1);
+  (function buildLookback(){
+    let t=0, fPrev=1/( (1+0)*Efun(0) );           // integrand 1/((1+z)E) at z=0
+    zGrid[0]=0; tGrid[0]=0;
+    for(let i=1;i<=NG;i++){
+      const z=Math.pow(1+Z_MAX, i/NG)-1, f=1/((1+z)*Efun(z));
+      t += TH*0.5*(fPrev+f)*(z-zGrid[i-1]);
+      zGrid[i]=z; tGrid[i]=t; fPrev=f;
+    }
+  })();
+  function zAtDistance(d){
+    if(d<=0)return 0; if(d>=tGrid[NG])return Z_MAX;
+    let lo=0,hi=NG; while(hi-lo>1){const m=(lo+hi)>>1; if(tGrid[m]<=d)lo=m;else hi=m;}
+    const f=(d-tGrid[lo])/(tGrid[hi]-tGrid[lo]); return zGrid[lo]+(zGrid[hi]-zGrid[lo])*f;
+  }
+  function distanceAtZ(z){
+    if(z<=0)return 0; if(z>=Z_MAX)return tGrid[NG];
+    let lo=0,hi=NG; while(hi-lo>1){const m=(lo+hi)>>1; if(zGrid[m]<=z)lo=m;else hi=m;}
+    const f=(z-zGrid[lo])/(zGrid[hi]-zGrid[lo]); return tGrid[lo]+(tGrid[hi]-tGrid[lo])*f;
+  }
+
+  const distanceAt = p => DIST_MAX * p;                          // linear timeline
+  const zAt        = p => zAtDistance(distanceAt(p));
+  const lambdaAt   = p => LAMBDA_EMIT * (1 + zAt(p));            // nm
+  const DIST_MAX   = tGrid[NG];                                  // Gly to first blue stars (~13.3)
+  const D_VIS_IR   = distanceAtZ((750-LAMBDA_EMIT)/LAMBDA_EMIT); // Gly where it leaves visible (~6)
+
+  function fmtWL(nm){
+    if(nm<1000)  return [nm.toFixed(0), 'nm'];
+    if(nm<1e6){ const v=nm/1000; return [v.toFixed(v<10?2:(v<100?1:0)), 'µm']; }
+    if(nm<1e7){ return [(nm/1e6).toFixed(3), 'mm']; }
+    return [(nm/1e7).toFixed(3), 'cm'];
+  }
+  function band(nm){
+    if(nm<380) return 'ULTRAVIOLET';
+    if(nm<=700) return 'VISIBLE LIGHT';
+    if(nm<1e6)  return 'INFRARED';
+    return 'MICROWAVE';
+  }
+
+  // visible spectrum -> RGB (Bruton). returns [r,g,b,alpha], alpha 0 outside visible
+  function visRGB(wl){
+    let r=0,g=0,b=0,a=1;
+    if(wl>=380&&wl<440){r=-(wl-440)/60;b=1;}
+    else if(wl>=440&&wl<490){g=(wl-440)/50;b=1;}
+    else if(wl>=490&&wl<510){g=1;b=-(wl-510)/20;}
+    else if(wl>=510&&wl<580){r=(wl-510)/70;g=1;}
+    else if(wl>=580&&wl<645){r=1;g=-(wl-645)/65;}
+    else if(wl>=645&&wl<=700){r=1;}
+    else return [0,0,0,0];
+    if(wl>670)a=0.35+0.65*(700-wl)/30;
+    const gm=0.8; return [Math.pow(r,gm),Math.pow(g,gm),Math.pow(b,gm),Math.max(0,Math.min(1,a))];
+  }
+  // false color for invisible infrared: a deep brownish red that darkens and
+  // dims as the wavelength stretches further beyond the visible
+  function falseRGB(nm){
+    const t=Math.max(0,Math.min(1,(Math.log(nm)-Math.log(700))/(Math.log(6000)-Math.log(700))));
+    // 700nm: dark red ember -> 6µm: very dark brown, fading toward black
+    const r=140-100*t, g=46-30*t, b=30-20*t;          // declining brownish red
+    const a=Math.max(0.18, 1-0.82*t);                  // dimming as it stretches
+    return [r/255,g/255,b/255,a];
+  }
+  const colourAt = nm => nm<=700 ? visRGB(nm) : falseRGB(nm);
+  const rgb=(c,a=1)=>`rgba(${(c[0]*255)|0},${(c[1]*255)|0},${(c[2]*255)|0},${a*(c[3]??1)})`;
+
+  // ---------- background ----------
+  let stars=[],galaxies=[],W=0,H=0,dpr=1;
+  function buildBg(){
+    stars=[];galaxies=[];
+    const n=(W*H/4200)|0;
+    for(let i=0;i<n;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1+0.2,a:Math.random()*0.6+0.25,tw:Math.random()*6.28,ts:0.6+Math.random()*1.6});
+    const gn=(W/120)|0;
+    for(let i=0;i<gn;i++){const rx=6+Math.random()*16;galaxies.push({x:Math.random()*W,y:Math.random()*H,rx,ry:rx*(0.35+Math.random()*0.4),rot:Math.random()*3.14,a:0.06+Math.random()*0.1,h:Math.random()<0.5?'180,200,255':'255,225,200'});}
+  }
+  function resize(){
+    const r=stage.getBoundingClientRect();
+    dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;
+    canvas.width=(W*dpr)|0;canvas.height=(H*dpr)|0;ctx.setTransform(dpr,0,0,dpr,0,0);buildBg();
+  }
+  addEventListener('resize',resize);
+  // Re-sync the canvas whenever the stage's rendered size changes for ANY reason
+  // (script panel opening, font load, fullscreen, zoom) — prevents the drift that
+  // previously needed a page reload to clear.
+  if(window.ResizeObserver){new ResizeObserver(()=>resize()).observe(stage);}
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(()=>resize());}
+
+  // ---------- timing ----------
+  let duration=16,playing=true,loop=true,starDies=true,progress=0,last=performance.now(),phase=0;
+
+  const geom=()=>({x0:W*0.055,x1:W*0.95,y:H*0.46,src:{x:W*0.045,y:H*0.46}});
+
+  function drawBg(t){
+    ctx.clearRect(0,0,W,H);
+    galaxies.forEach(g=>{ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.rot);const gr=ctx.createRadialGradient(0,0,0,0,0,g.rx);gr.addColorStop(0,`rgba(${g.h},${g.a})`);gr.addColorStop(1,`rgba(${g.h},0)`);ctx.fillStyle=gr;ctx.scale(1,g.ry/g.rx);ctx.beginPath();ctx.arc(0,0,g.rx,0,6.28);ctx.fill();ctx.restore();});
+    stars.forEach(s=>{const a=s.a*(0.6+0.4*Math.sin(t*0.0011*s.ts+s.tw));ctx.fillStyle=`rgba(210,225,255,${a})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill();});
+  }
+  function drawSource(g,p){
+    const s=g.src;
+    if(!starDies||p<0.04){ // healthy B-type blue star
+      const gr=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,54);
+      gr.addColorStop(0,'rgba(220,236,255,0.98)');gr.addColorStop(0.16,'rgba(120,180,255,0.72)');gr.addColorStop(0.45,'rgba(64,128,255,0.34)');gr.addColorStop(1,'rgba(46,104,255,0)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(s.x,s.y,54,0,6.28);ctx.fill();
+      ctx.fillStyle='rgba(230,242,255,0.98)';ctx.beginPath();ctx.arc(s.x,s.y,2.8,0,6.28);ctx.fill();
+      if(starDies)srcLabel(s,'B-type blue star');
+      return;
+    }
+    if(p<0.12){ // swelling into a red supergiant
+      const f=(p-0.04)/0.08, R=54+46*f;
+      const gr=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,R);
+      gr.addColorStop(0,`rgba(255,${210-90*f},${170-110*f},0.95)`);
+      gr.addColorStop(0.3,`rgba(255,${140-50*f},${70-30*f},0.6)`);
+      gr.addColorStop(1,'rgba(180,40,10,0)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(s.x,s.y,R,0,6.28);ctx.fill();
+      ctx.fillStyle='rgba(255,200,160,0.95)';ctx.beginPath();ctx.arc(s.x,s.y,3.5+2*f,0,6.28);ctx.fill();
+      srcLabel(s,'red supergiant');
+      return;
+    }
+    if(p<0.20){ // supernova: brilliant flash + expanding shell
+      const f=(p-0.12)/0.08, ring=20+220*f, fade=1-f;
+      const core=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,70*fade+10);
+      core.addColorStop(0,`rgba(255,255,255,${0.95*fade+0.05})`);
+      core.addColorStop(0.4,`rgba(255,230,180,${0.6*fade})`);
+      core.addColorStop(1,'rgba(255,180,80,0)');
+      ctx.fillStyle=core;ctx.beginPath();ctx.arc(s.x,s.y,70*fade+10,0,6.28);ctx.fill();
+      ctx.strokeStyle=`rgba(255,210,150,${0.85*fade})`;ctx.lineWidth=3*fade+0.5;
+      ctx.beginPath();ctx.arc(s.x,s.y,ring,0,6.28);ctx.stroke();
+      ctx.strokeStyle=`rgba(180,200,255,${0.5*fade})`;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(s.x,s.y,ring*0.7,0,6.28);ctx.stroke();
+      srcLabel(s,'supernova');
+      return;
+    }
+    // black hole remnant: dark void + thin amber accretion ring
+    const tilt=0.35;
+    ctx.save();ctx.translate(s.x,s.y);ctx.scale(1,tilt);
+    ctx.strokeStyle='rgba(255,190,100,0.9)';ctx.lineWidth=3;ctx.shadowBlur=16;ctx.shadowColor='rgba(255,170,70,0.95)';
+    ctx.beginPath();ctx.arc(0,0,28,0,6.28);ctx.stroke();ctx.shadowBlur=0;
+    ctx.restore();
+    const void_=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,20);
+    void_.addColorStop(0,'rgba(0,0,0,1)');void_.addColorStop(0.8,'rgba(0,0,0,0.95)');void_.addColorStop(1,'rgba(10,8,6,0)');
+    ctx.fillStyle=void_;ctx.beginPath();ctx.arc(s.x,s.y,20,0,6.28);ctx.fill();
+    ctx.strokeStyle='rgba(255,215,160,0.65)';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.arc(s.x,s.y,15,0,6.28);ctx.stroke();   // photon ring
+    srcLabel(s,'black hole');
+  }
+  function srcLabel(s,txt){
+    ctx.font=`500 ${(H*0.017)|0}px var(--mono),monospace`;
+    ctx.fillStyle='rgba(160,175,210,0.85)';
+    ctx.fillText(txt,Math.max(6,s.x-ctx.measureText(txt).width/2),s.y+H*0.115);
+  }
+  function drawTrail(g,p){
+    const {x0,x1,y}=g,xc=x0+(x1-x0)*p,step=4;ctx.lineWidth=2;
+    for(let x=x0;x<=xc;x+=step){const pp=(x-x0)/(x1-x0);const c=colourAt(lambdaAt(pp));ctx.strokeStyle=rgb(c,0.14*(c[3]??1));ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+step,y);ctx.stroke();}
+  }
+  function drawPulse(g,p){
+    const {x0,x1,y}=g,xc=x0+(x1-x0)*p,lam=lambdaAt(p),c=colourAt(lam),vis=c[3]??1;
+    const env=Math.max(60,W*0.085);
+    const period=Math.min(env*1.15, 8*(lam/LAMBDA_EMIT));
+    const amp=(H*0.10)*(0.55+0.45*vis);
+    const halo=ctx.createRadialGradient(xc,y,0,xc,y,env*1.1);
+    halo.addColorStop(0,rgb(c,0.20));halo.addColorStop(1,rgb(c,0));
+    ctx.fillStyle=halo;ctx.beginPath();ctx.arc(xc,y,env*1.1,0,6.28);ctx.fill();
+    const wave=(lw,al,gl)=>{ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';ctx.shadowBlur=gl;ctx.shadowColor=rgb(c,1);ctx.strokeStyle=rgb(c,al);ctx.beginPath();let st=false;
+      for(let dx=-env;dx<=env;dx+=2){const gx=xc+dx;if(gx<x0||gx>x1)continue;const e=Math.exp(-(dx*dx)/(2*(env*0.42)**2));const yy=y-Math.sin(dx/period*6.2832+phase)*amp*e;if(!st){ctx.moveTo(gx,yy);st=true;}else ctx.lineTo(gx,yy);}ctx.stroke();ctx.shadowBlur=0;};
+    wave(7,0.18,18);wave(2.4,0.95,10);
+    return {lam,c,vis};
+  }
+
+  function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+  function drawHUD(g,p,info){
+    const {lam,c,vis}=info,[wv,wu]=fmtWL(lam),bd=band(lam),dist=distanceAt(p),z=zAt(p);
+    const px=W*0.05,py=H*0.105;
+    // wavelength readout
+    ctx.textBaseline='alphabetic';
+    ctx.font=`500 ${(H*0.022)|0}px var(--mono),monospace`;ctx.fillStyle='#7f8db0';
+    ctx.fillText('OBSERVED WAVELENGTH',px,py);
+    ctx.font=`600 ${(H*0.075)|0}px var(--mono),monospace`;ctx.fillStyle='#eaf0ff';
+    const txt=`${wv} ${wu}`;ctx.fillText(txt,px,py+H*0.088);
+    const tw=ctx.measureText(txt).width,sw=rgb(c,(c[3]??1));
+    ctx.fillStyle='#0a0a0e';rr(px+tw+18,py+H*0.088-H*0.046,H*0.05,H*0.05,6);ctx.fill();
+    ctx.fillStyle=sw;ctx.shadowBlur=16*(c[3]??1);ctx.shadowColor=sw;rr(px+tw+18,py+H*0.088-H*0.046,H*0.05,H*0.05,6);ctx.fill();ctx.shadowBlur=0;
+    ctx.font=`500 ${(H*0.024)|0}px var(--mono),monospace`;ctx.fillStyle=lam>700?'#c98a6a':'#9fb0d6';
+    const zStr = z<10 ? z.toFixed(2) : Math.round(z).toLocaleString();
+    ctx.fillText(`${bd}   ·   z = ${zStr}` + (lam>700?'   ·   false color (invisible)':''),px,py+H*0.128);
+    // log spectrum bar (top-right)
+    const bw=W*0.36,bh=H*0.03,bx=W*0.95-bw,by=H*0.085;
+    const lo=Math.log(400),hi=Math.log(10000);
+    const grad=ctx.createLinearGradient(bx,0,bx+bw,0);
+    for(let s=0;s<=60;s++){const f=s/60,nm=Math.exp(lo+(hi-lo)*f),cc=colourAt(nm);grad.addColorStop(f, nm<=700?rgb(cc,1):rgb(cc,(cc[3]??1)));}
+    ctx.fillStyle=grad;rr(bx,by,bw,bh,4);ctx.fill();ctx.strokeStyle='#27324a';ctx.lineWidth=1;rr(bx,by,bw,bh,4);ctx.stroke();
+    const mf=Math.max(0,Math.min(1,(Math.log(lam)-lo)/(hi-lo))),mx=bx+bw*mf;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(mx,by-6);ctx.lineTo(mx-5,by-13);ctx.lineTo(mx+5,by-13);ctx.closePath();ctx.fill();ctx.fillRect(mx-1,by-6,2,bh+6);
+    ctx.font=`400 ${(H*0.017)|0}px var(--mono),monospace`;ctx.fillStyle='#5d6b85';
+    const tick=(nm,lab)=>{const f=(Math.log(nm)-lo)/(hi-lo);ctx.fillText(lab,bx+bw*f-8,by+bh+H*0.027);};
+    tick(400,'400nm');tick(700,'700nm');tick(1000,'1µm');tick(2000,'2µm');tick(5000,'5µm');tick(10000,'10µm');
+    // distance meter (bottom)
+    const mxL=W*0.05,mxR=W*0.95,my=H*0.86,th=H*0.012;
+    // label raised on its own row so the running value never covers it
+    ctx.font=`500 ${(H*0.022)|0}px var(--mono),monospace`;ctx.fillStyle='#7f8db0';
+    ctx.fillText('DISTANCE TRAVELLED',mxL,my-H*0.062);
+    // track + fill
+    ctx.fillStyle='#101a2c';rr(mxL,my,mxR-mxL,th,6);ctx.fill();
+    const fw=(mxR-mxL)*p,fg=ctx.createLinearGradient(mxL,0,mxR,0);
+    // fill gradient = the real wavelength color at each distance (incl. dimming IR)
+    for(let s=0;s<=40;s++){const f=s/40,cc=colourAt(lambdaAt(f));fg.addColorStop(f,rgb(cc,(cc[3]??1)));}
+    ctx.fillStyle=fg;rr(mxL,my,Math.max(th,fw),th,6);ctx.fill();
+    // live value: separate row between label and bar, tracks the fill head
+    ctx.font=`600 ${(H*0.028)|0}px var(--mono),monospace`;ctx.fillStyle='#eaf0ff';
+    const dT=`${dist.toFixed(2)} Gly`,dx=Math.min(mxR-ctx.measureText(dT).width,Math.max(mxL,mxL+fw-ctx.measureText(dT).width/2));
+    ctx.fillText(dT,dx,my-H*0.026);
+    // scale underneath the bar, in billions of light-years (Gly)
+    ctx.font=`400 ${(H*0.016)|0}px var(--mono),monospace`;
+    [0,2,4,6,8,10,12].forEach(v=>{const tx=mxL+(mxR-mxL)*(v/DIST_MAX);ctx.strokeStyle='#33415c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(tx,my+th+2);ctx.lineTo(tx,my+th+H*0.013);ctx.stroke();ctx.fillStyle='#5d6b85';const lab=String(v);ctx.fillText(lab,tx-ctx.measureText(lab).width/2,my+th+H*0.038);});
+    const ex=mxR;ctx.strokeStyle='#8189cc';ctx.beginPath();ctx.moveTo(ex,my+th+2);ctx.lineTo(ex,my+th+H*0.013);ctx.stroke();
+    ctx.fillStyle='#9aa0d0';const endN=DIST_MAX.toFixed(1);ctx.fillText(endN,ex-ctx.measureText(endN).width,my+th+H*0.038);
+    ctx.fillStyle='#5d6b85';ctx.fillText('billions of light-years (Gly)',mxL,my+th+H*0.062);
+    ctx.fillStyle='#9aa0d0';const edgeL='first blue stars · ~450 Myr after Big Bang · z≈10';ctx.fillText(edgeL,mxR-ctx.measureText(edgeL).width,my+th+H*0.062);
+    // visible -> infrared crossing marker (z ~= 0.67, ~6 Gly)
+    const cx=mxL+(mxR-mxL)*(D_VIS_IR/DIST_MAX);
+    ctx.strokeStyle='rgba(220,110,90,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(cx,my-H*0.012);ctx.lineTo(cx,my+th+H*0.013);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(228,140,110,0.95)';ctx.font=`500 ${(H*0.016)|0}px var(--mono),monospace`;
+    const cl1='visible → infrared',cl2=`z≈0.67 · ${D_VIS_IR.toFixed(1)} Gly`;
+    ctx.fillText(cl1,cx-ctx.measureText(cl1).width/2,my-H*0.022);
+    ctx.fillText(cl2,cx-ctx.measureText(cl2).width/2,my-H*0.006);
+    // copyright — matches the Magellica intro-page house style:
+    // Calibri, #e8d9ff, two-layer purple glow pulsing on a 3.5 s ease-in-out cycle
+    const cyc=(performance.now()/3500)%1, ease=0.5-0.5*Math.cos(cyc*2*Math.PI); // 0..1..0
+    const COPY='© 2026 Magellica Press, R. Mahoney';
+    ctx.font=`400 ${(H*0.024)|0}px Calibri,'Trebuchet MS',sans-serif`;
+    ctx.textAlign='center';
+    // outer glow layer (14px -> 22px+38px feel)
+    ctx.shadowColor=`rgba(${140+40*ease},${110+30*ease},${220+35*ease},${0.5+0.35*ease})`;
+    ctx.shadowBlur=14+24*ease;
+    ctx.fillStyle='#e8d9ff';
+    ctx.fillText(COPY,W/2,H*0.975);
+    // inner glow layer (6px -> 10px)
+    ctx.shadowColor=`rgba(${177+33*ease},${156+29*ease},${217+38*ease},${0.7+0.3*ease})`;
+    ctx.shadowBlur=6+4*ease;
+    ctx.fillText(COPY,W/2,H*0.975);
+    ctx.shadowBlur=0;
+    ctx.textAlign='left';
+  }
+
+  function frame(now){
+    const dt=(now-last)/1000;last=now;
+    if(playing){progress+=dt/duration;phase+=dt*5;if(progress>=1){if(loop)progress=0;else{progress=1;playing=false;pb.textContent='▶ Play';}}}
+    const g=geom();drawBg(now);drawTrail(g,progress);drawSource(g,progress);const info=drawPulse(g,progress);drawHUD(g,progress,info);
+    requestAnimationFrame(frame);
+  }
+
+  const pb=document.getElementById('play'),rb=document.getElementById('restart'),de=document.getElementById('dur'),dv=document.getElementById('durVal'),le=document.getElementById('loop'),fb=document.getElementById('full');
+  pb.onclick=()=>{playing=!playing;if(playing)last=performance.now();pb.textContent=playing?'⏸ Pause':'▶ Play';};
+  rb.onclick=()=>{progress=0;playing=true;last=performance.now();pb.textContent='⏸ Pause';};
+  de.oninput=()=>{duration=+de.value;dv.textContent=de.value+'s';};
+  le.onchange=()=>{loop=le.checked;};
+  const sd=document.getElementById('starDies');
+  sd.onchange=()=>{starDies=sd.checked;if(starDies){progress=0;playing=true;last=performance.now();pb.textContent='⏸ Pause';}};
+  fb.onclick=()=>{document.fullscreenElement?document.exitFullscreen?.():stage.requestFullscreen?.();};
+  addEventListener('keydown',e=>{if(document.activeElement&&document.activeElement.tagName==='BUTTON')document.activeElement.blur();if(e.code==='Space'){e.preventDefault();pb.click();}else if(e.key==='r'||e.key==='R')rb.click();else if(e.key==='h'||e.key==='H')document.body.classList.toggle('uihidden');});
+
+  resize();requestAnimationFrame(frame);
+})();
+
+// ---- Voiceover panel logic (Magellica slide-quiz house pattern) ----
+const voAudio=document.getElementById('voAudio');
+function voStart(){voAudio.currentTime=0;voAudio.play();document.getElementById('voPlay').classList.remove('blink');}
+function voPauseResume(){if(voAudio.paused)voAudio.play();else voAudio.pause();}
+function voStop(){voAudio.pause();voAudio.currentTime=0;}
+function voToggleScript(){
+  const s=document.getElementById('voScript'),t=document.getElementById('voToggle');
+  s.classList.toggle('open');
+  t.textContent=s.classList.contains('open')?'hide script ▴':'show script ▾';
+}
+// Render the transcript from window.VOICEOVER_SCRIPT (set in scripts/voiceover_script.js,
+// which is loaded by a <script> tag above — so this works locally over file://, no fetch).
+(function renderScript(){
+  const box=document.getElementById('voScript');
+  const txt=(typeof window.VOICEOVER_SCRIPT==='string')?window.VOICEOVER_SCRIPT:'';
+  if(!txt){box.innerHTML='<p style="color:#5d6b85;font-style:italic;">No script loaded — set window.VOICEOVER_SCRIPT in scripts/voiceover_script.js.</p>';return;}
+  box.innerHTML='';
+  txt.split(/\n\s*\n/).forEach(par=>{
+    const t=par.trim();if(!t)return;
+    const p=document.createElement('p');p.textContent=t;box.appendChild(p);
+  });
+})();
+</script>
+</body>
+</html>

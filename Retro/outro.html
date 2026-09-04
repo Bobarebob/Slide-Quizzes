@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Retrograde Motion - Conclusion</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(77, 166, 255, 0.2);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .page-content {
+            padding: 40px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4da6ff;
+        }
+        
+        .page-title {
+            font-size: 2.8em;
+            color: #4da6ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(77, 166, 255, 0.4);
+        }
+        
+        .page-subtitle {
+            font-size: 1.4em;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+        
+        .outro-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .outro-icon {
+            font-size: 8em;
+            margin: 30px 0;
+            animation: rotate 4s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .outro-text {
+            font-size: 1.3em;
+            line-height: 1.8;
+            margin: 30px 0;
+            color: #d0d0d0;
+        }
+        
+        .key-fact {
+            background: linear-gradient(135deg, rgba(77, 175, 80, 0.1) 0%, rgba(56, 142, 60, 0.1) 100%);
+            border-left: 4px solid #4caf50;
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+        
+        .key-fact-title {
+            font-size: 1.3em;
+            color: #4caf50;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .key-fact ul {
+            list-style: none;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+        
+        .key-fact li {
+            padding-left: 25px;
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        .key-fact li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+        }
+    
+
+
+    
+.nav-button {
+    padding: 14px 35px;
+    background: linear-gradient(135deg, #b8c6db 0%, #8fa3bf 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8fa3bf 0%, #7a8fa8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+    color: #999;
+}
+
+        /* Avatar Video Player -- sized to the source clip (1672x940, 16:9) */
+        .video-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 40px;
+            background: #000;
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            line-height: 0;
+        }
+        video {
+            display: block;
+            width: 100%;
+            height: auto;              /* intrinsic ratio drives the height */
+            aspect-ratio: 1672 / 940;  /* reserves the box before metadata loads */
+            background: #000;
+        }
+
+        /* Submit control (matches Atmosphere) */
+        .submit-btn-wrap { text-align: center; margin: 30px 0 10px; }
+        .submit-quiz-btn { padding: 16px 50px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: #fff; border: none; border-radius: 30px; cursor: pointer; font-size: 1.25em; font-weight: 700; letter-spacing: 0.03em; transition: all 0.3s ease; box-shadow: 0 4px 18px rgba(76,175,80,0.35); }
+        .submit-quiz-btn:hover:not(:disabled) { background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,175,80,0.45); }
+        .submit-quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .submit-confirm-msg { color: #4dffb8; font-size: 1.1em; font-weight: bold; margin-top: 12px; display: none; }
+
+        /* Student Info Banner (standardized -- matches Atmosphere) */
+        .student-info { background: rgba(20, 20, 35, 0.9); padding: 15px 40px; border-bottom: 2px solid rgba(77, 166, 255, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 20px; }
+        .student-name { color: #4da6ff; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-score { color: #ffa64d; font-size: 1.1em; font-weight: bold; white-space: nowrap; }
+        .student-attempt { color: #b19cd9; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        .student-timer { color: #4dffb8; font-size: 1.1em; font-weight: 600; white-space: nowrap; }
+        #timeWarningMessage { color: #ff4444; margin-right: 10px; font-weight: bold; }
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="student-info" id="studentBanner" style="display: none;">
+            <div class="student-name"><span id="displayName"></span> (<span id="displayID"></span>)</div>
+            <div class="student-score">Score: <span id="displayScore">0 / 6</span></div>
+            <div class="student-attempt" id="attemptDisplay" style="display: none;">Attempt: <span id="attemptNumber">1</span></div>
+            <div class="student-timer" id="timerDisplay" style="display: none;">
+                <span id="timeWarningMessage" style="display: none;"></span>
+                Time Remaining: <span id="timeRemaining"></span>
+            </div>
+        </div>
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Congratulations!</h1>
+                <p class="page-subtitle">You've Completed the Journey Through Planetary Retrograde Motion</p>
+            </div>
+                    <div class="outro-content">
+            <div class="video-container">
+                <video controls preload="auto" width="1672" height="940">
+                    <source src="videos/retro_outro.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="outro-text">
+                You have completed the Planetary Retrograde Motion Quiz
+            </div>
+            
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="color: #4dffb8; font-size: 2em;">Final Score</h2>
+                <div style="font-size: 6em; color: #4da6ff; font-weight: bold; margin: 20px 0;">
+                    <span id="finalScore">0</span> / <span id="finalMaxScore">6</span>
+                </div>
+                <div id="reviewNotice" style="display:none; max-width:640px; margin:0 auto; padding:14px 18px;
+                    background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.5); border-radius:10px;
+                    color:#ffc266; font-size:1.05em; line-height:1.5;"></div>
+            </div>
+            
+            <div class="outro-text" id="savedText">
+                Thank you for participating! Your responses have been saved.
+            </div>
+                <div class="key-fact">
+                    <div class="key-fact-title">🌟 Key Insights You've Mastered:</div>
+                    <ul>
+                        <li>The heliocentric model's triumph over geocentric complexity</li>
+                        <li>How retrograde motion is an illusion of perspective</li>
+                        <li>Mars retrograde occurs when Earth overtakes it at opposition</li>
+                        <li>Venus retrograde occurs when it laps Earth at inferior conjunction</li>
+                        </ul>
+                </div>
+                <div class="outro-text" style="margin-top: 50px;">
+                    <strong style="color: #4dffb8; font-size: 1.2em;">The Copernican Revolution</strong><br><br>
+                    By placing the Sun at the center of the Solar System, Copernicus didn't just solve the puzzle of
+                    retrograde motion—he fundamentally changed humanity's place in the universe. His work paved the way
+                    for Galileo and Newton, ultimately leading to our modern understanding of celestial mechanics.
+                </div>
+                <div class="outro-text" style="margin-top: 40px; font-size: 1.1em; color: #b0b0b0;">
+                    Thank you for exploring this fascinating chapter in the history of astronomy. May you continue to
+                    look up at the night sky with wonder and understanding!
+                </div>
+
+                <div class="outro-text">
+                    <p style="text-align: center;" id="lockNote">You may still <strong style="color:#ffa64d;">navigate back</strong> to any page to answer unanswered questions &mdash; as long as the timer has not expired. When you are satisfied with your answers, click <strong style="color:#ffa64d;">Submit Quiz</strong> below to lock your results permanently.</p>
+                </div>
+
+                <div class="submit-btn-wrap">
+                    <button class="submit-quiz-btn" id="submitBtn" onclick="finalizeQuiz()">✔ Submit Quiz</button>
+                    <div class="submit-confirm-msg" id="submitConfirm">✅ Quiz submitted! Your results have been recorded.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="navigation" style="display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; background: rgba(20, 20, 35, 0.8); border-top: 2px solid rgba(77, 166, 255, 0.3);">
+            <button class="nav-button" onclick="window.location.href='venus.html'" >← Previous</button>
+            <div class="page-counter" style="font-size: 1.2em; color: #4da6ff; font-weight: 600;">
+                <span>5</span> / <span>5</span>
+            </div>
+            <button class="nav-button" style="visibility: hidden;">Next →</button>
+        </div>
+        
+        <div class="timeline-indicator" style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(20, 20, 35, 0.5);">
+            <div class="timeline-dot" onclick="window.location.href='intro.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='copernicus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='mars.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot" onclick="window.location.href='venus.html'" style="width: 14px; height: 14px; border-radius: 50%; background: rgba(77, 166, 255, 0.3); transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent;"></div>
+            <div class="timeline-dot active" style="width: 14px; height: 14px; border-radius: 50%; background: #4da6ff; transition: all 0.3s ease; cursor: pointer; border: 2px solid #fff; transform: scale(1.4); box-shadow: 0 0 15px rgba(77, 166, 255, 0.8);"></div>
+        </div>
+    </div>
+    
+    <!-- Load shared logic (owns the banner + timer, exactly as in Atmosphere) -->
+    <script src="retro-shared.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            // Sync the score display only -- arriving here does NOT complete the quiz.
+            // The quiz locks when the timer expires (handled by retro-shared.js) or
+            // when the student clicks Submit below.
+            const storedScore = parseFloat(sessionStorage.getItem('score') || '0');
+            const storedConfig = sessionStorage.getItem('quizConfig');
+            const cfg = storedConfig ? JSON.parse(storedConfig) : {};
+            const ptsPerQ = parseFloat((cfg.restrictions && cfg.restrictions.pointsPerQuestion) || 1.0);
+            const maxScore = TOTAL_QUESTIONS * ptsPerQ;
+            // Same rule as updateBanner() in retro-shared.js so the banner text is
+            // identical on every page of the quiz.
+            const scoreText = ptsPerQ === 0.5 ? storedScore.toFixed(1) : (storedScore % 1 === 0 ? storedScore : storedScore.toFixed(1));
+            const maxText = ptsPerQ === 0.5 ? maxScore.toFixed(1) : maxScore;
+
+            const finalScoreEl = document.getElementById('finalScore');
+            const finalMaxEl = document.getElementById('finalMaxScore');
+            if (finalScoreEl) finalScoreEl.textContent = scoreText;
+            if (finalMaxEl) finalMaxEl.textContent = maxText;
+
+            const bannerScore = document.getElementById('displayScore');
+            if (bannerScore) bannerScore.textContent = scoreText + ' / ' + maxText;
+
+            // Review sessions still show the score -- it just doesn't count.
+            // This runs BEFORE the submitted-state check so the review wording is
+            // applied even when the timer expired before the student got here.
+            const reviewMode = sessionStorage.getItem('reviewMode');
+            if (reviewMode) {
+                const closedOn = sessionStorage.getItem('creditCloseLabel');
+                const notice = document.getElementById('reviewNotice');
+                const why = reviewMode === 'closed'
+                    ? (closedOn
+                        ? `The graded window for this assignment closed ${closedOn}.`
+                        : 'The graded window for this assignment has closed.')
+                    : 'You had already used all of your attempts.';
+                if (notice) {
+                    notice.innerHTML = `<strong>Review only &mdash; this score was not graded.</strong><br>${why} `
+                        + `The score above is just so you can see how you did; it was not recorded and your grade is unchanged.`;
+                    notice.style.display = 'block';
+                }
+                const btn = document.getElementById('submitBtn');
+                if (btn) btn.textContent = '\u2714 Finish Review';
+                const confirmEl = document.getElementById('submitConfirm');
+                if (confirmEl) confirmEl.textContent = '\u2705 Review finished. Nothing was graded.';
+                const lockNote = document.getElementById('lockNote');
+                if (lockNote) lockNote.innerHTML = 'This was a <strong style="color:#ffa64d;">review session</strong> &mdash; nothing will be graded. Click <strong style="color:#ffa64d;">Finish Review</strong> below when you are done.';
+                const saved = document.getElementById('savedText');
+                if (saved) saved.textContent = 'This was a review session. It was saved as practice only and was not graded.';
+            }
+
+            // If the timer already expired, arrive in the submitted state.
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                showSubmittedState();
+            }
+        });
+
+        function finalizeQuiz() {
+            if (sessionStorage.getItem('quizCompleted') === 'true') {
+                showSubmittedState();
+                return;
+            }
+            sessionStorage.setItem('quizCompleted', 'true');
+            if (!sessionStorage.getItem('completionTime')) {
+                sessionStorage.setItem('completionTime', Date.now().toString());
+            }
+            if (db && studentData && studentData.sessionId) {
+                db.collection('students').doc(studentData.sessionId).update({
+                    completed: true,
+                    completedTime: firebase.firestore.Timestamp.now()
+                }).catch(e => console.error(e));
+            }
+            showSubmittedState();
+        }
+
+        function showSubmittedState() {
+            const btn = document.getElementById('submitBtn');
+            const confirmEl = document.getElementById('submitConfirm');
+            if (btn) btn.disabled = true;
+            if (confirmEl) confirmEl.style.display = 'block';
+
+            // Answering is closed, but reading is not: navigation stays live so the
+            // student can page back through the content.
+            const lockNote = document.getElementById('lockNote');
+            if (lockNote && !sessionStorage.getItem('reviewMode')) {
+                lockNote.innerHTML = 'Your quiz has been submitted and no further answers can be recorded. '
+                    + 'You may still <strong style="color:#ffa64d;">navigate back</strong> through the pages to review the material.';
+            }
+        }
+    </script>
+</body>
+</html>

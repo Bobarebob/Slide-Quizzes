@@ -1,0 +1,56 @@
+RETRO — OUTRO AVATAR SCRIPT
+Planetary Retrograde Motion (QUIZ_ID: RETRO01)
+Target length: about 2 to 2.5 minutes.
+
+----------------------------------------------------------------------
+
+Congratulations. You have finished Planetary Retrograde Motion.
+
+Let's summarize what you learned.
+
+You started with a problem. Planets sometimes appear to reverse
+direction against the background stars. The Earth-centered model could
+reproduce that motion, but only by stacking circles within circles,
+called epicycles and deferents, one set for every planet. It worked, and it was
+enormously complicated.
+
+Copernicus moved the Sun to the center and the problem dissolved.
+Retrograde motion is not something the planets do. It is something we
+see, because we are observing from a moving platform. No epicycles
+required. The simpler explanation turned out to be the correct one, and
+that is Occam's Principle at work.
+
+Then you watched the geometry in two different cases.
+
+Mars is an outer planet, and it moves more slowly than Earth. Earth
+takes one year to orbit the Sun; Mars takes one point eight eight
+years. Because Earth travels the inside track, it periodically catches
+up to Mars and passes it. During that pass, Mars appears to slide
+backward against the faraway stars. That happens at opposition, when Earth sits
+directly between Mars and the Sun.
+
+Venus is an inner planet, and the situation reverses. Venus completes an
+orbit in zero point six two years, so Venus laps us. Its retrograde
+motion occurs at inferior conjunction, when Venus passes between Earth
+and the Sun.
+
+Same illusion, opposite geometry. In both cases the planet never stops
+moving forward around the Sun. Only our line of sight changes.
+
+Now, about your quiz.
+
+If your time has not expired, you are not finished until you decide you
+are. You may go back to any page and answer any question you left
+blank. Use the Previous button or the dots at the bottom of the screen.
+When you are satisfied, or all questions are answered, return here and click Submit Quiz. That locks your score permanently, so click it only when you are done.
+
+If your time runs out first, the quiz submits itself automatically. At
+that point no further answers can be recorded, and any question you left
+blank stays blank. But you are not locked out of the material. You may
+still page back through the entire exercise and review everything: the
+explanations, the animations, and the questions with their answers. That
+stays available until you close the quiz window.
+
+So take one more pass through it, if time has not expired, and if that would help. Once you close the window, the session is over.
+
+Thank you for your work, and keep looking up.

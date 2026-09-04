@@ -1,0 +1,46 @@
+RETRO — INTRO AVATAR SCRIPT
+Planetary Retrograde Motion (QUIZ_ID: RETRO01)
+Target length: about 1 minute 45 seconds.
+
+----------------------------------------------------------------------
+
+Welcome to Planetary Retrograde Motion.
+
+Every so often, a planet appears to stop its normal drift against the
+stars, back up for a few weeks, then move forward again. For centuries
+that backward loop was the hardest problem in astronomy. By the end of
+this exercise, you will be able to explain it in one sentence.
+
+You have three objectives. 
+
+First, you’ll learn why the Earth-centered model needed circles within 
+circles, called epicycles and deferents, and why Copernicus’ Sun-centered 
+model did not. 
+
+Second, you’ll be able to explain the retrograde motion of Mars, an outer 
+planet that Earth overtakes on the inside track. 
+
+Third, you’ll be able to explain the retrograde motion of Venus, a planet that laps Earth from the inside. The geometry differs in the two cases, and that difference matters.
+
+Now, the controls.
+
+Every page has a voiceover panel with Start, Stop and Resume. Use it.
+
+The Mars and Venus pages carry the retrograde animation, with four
+buttons beside it. Pause and Resume freezes the motion so you can study
+a single moment. Slow Down reduces the orbital speeds, and it is probably 
+the most useful button on the two page. Reset returns both planets to their starting positions. Fullscreen enlarges the animation; Escape brings you back.
+
+While the animation runs, watch three things. A yellow sight line extends from
+Earth, through the planet, out to the star field. A colored dot on the outer 
+star ring marks where that planet appears in your night sky. And
+that dot changes color: green, when the planet appears to move forward, or
+prograde, and red, when the planet appears to move backward, or retrograde.
+
+Six questions, two per content page. Each answer locks the moment you
+click it and tells you immediately whether you were right or wrong, so read every
+option before choosing.
+
+Move between pages with the Next and Previous buttons, or jump between pages using the dots at the bottom.
+
+Click Next below, to begin this exercise.

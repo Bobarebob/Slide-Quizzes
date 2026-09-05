@@ -368,12 +368,12 @@ button{font-family:inherit;}
    set in TeacherRead_v1_0.html on your desktop.
    =========================================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyApECjlGt_AgK9853JGWsyPuWuXIRyRQOA",
-    authDomain: "astronomy-course.firebaseapp.com",
-    projectId: "astronomy-course",
-    storageBucket: "astronomy-course.firebasestorage.app",
-    messagingSenderId: "84123424550",
-    appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
+  apiKey:            "PASTE_FROM_TeacherVideo",
+  authDomain:        "PASTE_FROM_TeacherVideo",
+  projectId:         "PASTE_FROM_TeacherVideo",
+  storageBucket:     "PASTE_FROM_TeacherVideo",
+  messagingSenderId: "PASTE_FROM_TeacherVideo",
+  appId:             "PASTE_FROM_TeacherVideo"
 };
 const useFirestore = () => !String(firebaseConfig.apiKey).startsWith("PASTE_FROM");
 
@@ -479,7 +479,7 @@ async function openReading(){
     console.error(err);
     $("shell").classList.remove("on");
     $("gate").style.display = "flex";
-    reset("Couldn't open the reading file. It may have moved, or its host may not allow this page to fetch it.");
+    reset(pdfProblem(err, record && record.pdfUrl));
   }
 
   function reset(msg){
@@ -496,6 +496,7 @@ async function resolveModule(){
     pdfData: localPdf.data
   };
 
+  if (preloaded) return preloaded;
   if (MODULES[docId]) return MODULES[docId];
 
   if (!useFirestore()) return null;
@@ -517,6 +518,33 @@ function windowState(av){
 /* ===========================================================================
    4. PDF LOADING AND LAYOUT
    =========================================================================== */
+/* pdf.js failures all look alike from the outside. Pull them apart so the
+   message says which one it is. */
+function pdfProblem(err, url){
+  const name   = (err && err.name) || "";
+  const status = err && err.status;
+  const where  = url ? " (" + url + ")" : "";
+
+  if (name === "MissingPDFException" || status === 404)
+    return "The PDF isn't at that address" + where + ". Open it in a browser "
+         + "tab yourself \u2014 if it 404s, the file wasn't pushed, or the "
+         + "folder name is capitalized differently.";
+
+  if (name === "UnexpectedResponseException")
+    return "The server answered with an error" + (status ? " (" + status + ")" : "")
+         + " instead of the PDF.";
+
+  if (name === "InvalidPDFException")
+    return "That file downloaded, but it isn't a readable PDF.";
+
+  if (name === "PasswordException")
+    return "That PDF is password-protected. Save an unprotected copy and use that.";
+
+  return "Couldn't fetch the PDF" + where + ". Most often that means the "
+       + "address is wrong, or the site hosting it won't let this page read it. "
+       + (err && err.message ? "(" + err.message + ")" : "");
+}
+
 async function loadPdf(src){
   pdfDoc = await pdfjsLib.getDocument(
     Object.assign({ isEvalSupported:false }, src)
@@ -778,15 +806,19 @@ $("pages").addEventListener("dragstart", e => {
    6. START
    =========================================================================== */
 const known = docId ? MODULES[docId] : null;
+let preloaded = null;
+
+function dressGate(rec){
+  $("gateTitle").textContent = rec.title || "Reading module";
+  $("gateSub").textContent   = rec.course
+    ? rec.course + ". Enter your name to open the reading."
+    : "Enter your name to open the reading.";
+  if (!rec.password) $("fPw").closest(".field").style.display = "none";
+}
 
 if (known){
-  $("gateTitle").textContent = known.title;
-  $("gateSub").textContent   = known.course
-    ? known.course + ". Enter your name to open the reading."
-    : "Enter your name to open the reading.";
-  if (!known.password){
-    $("fPw").closest(".field").style.display = "none";
-  }
+  preloaded = known;
+  dressGate(known);
 } else if (!docId){
   /* Opened with no ?doc= code. On your own machine that's the preview mode;
      for a student it means the Canvas link was incomplete. */
@@ -799,6 +831,28 @@ if (known){
     $("gateTitle").textContent = "Link incomplete";
     $("gateSub").textContent   = "This link is missing its module code. Open the reading from the link posted in Canvas.";
   }
+} else if (useFirestore()){
+  /* Fetch the record now so the login card can show the real title and only
+     ask for a password when the module actually has one. */
+  $("gateSub").textContent = "Loading\u2026";
+  (async () => {
+    try {
+      if (!db){ firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+      const snap = await db.collection(COLLECTION).doc(docId).get();
+      if (!snap.exists){
+        $("gateTitle").textContent = "Reading not found";
+        $("gateSub").textContent   = "No module matches the code " + docId + ".";
+        $("gateGo").disabled = true;
+        return;
+      }
+      preloaded = snap.data();
+      dressGate(preloaded);
+    } catch (e){
+      console.error(e);
+      $("gateSub").textContent =
+        "Couldn't reach the database. Check your connection and reload.";
+    }
+  })();
 }
 
 $("fFile").addEventListener("change", async e => {

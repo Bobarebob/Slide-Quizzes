@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reading Module</title>
+
+<!--
+  ============================================================================
+  read.html  —  Student reading-module viewer
+  Copyright © Magellica Press - R. Mahoney - 2026, All Rights Reserved.
+
+  Companion to video.html. Renders a PDF inside your own chrome using pdf.js,
+  so there is no browser PDF toolbar, no download button, no print button and
+  no "open in new tab" popout to mask.
+
+  URL:  read.html?doc=CH01
+
+  FIRESTORE  — collection: documents,  document id = the ?doc= value
+  ---------------------------------------------------------------------------
+  {
+    title:            "Chapter 1 — The Celestial Sphere",   // required
+    course:           "PHSCI-102-01 Astronomy",             // required
+    pdfUrl:           "https://.../ch01.pdf",               // required
+    password:         "orion",                              // required
+    copyrightNotice:  "",        // optional, blank = default constant below
+    watermark:        true,      // optional, absent = true
+    availability: {              // optional, both blank = always open
+      start: "2026-09-01T00:00",
+      stop:  "2026-12-20T23:59"
+    }
+  }
+
+  NOTE ON THE DATA MODEL: video.html splits videos / videoSettings because the
+  teacher dashboard edits attempts and dates separately. There is no reading
+  dashboard yet and no grading here, so this uses ONE collection. Splitting it
+  later is a rename, not a rewrite.
+
+  CORS: pdf.js fetches the PDF with XHR, so the host must send
+  Access-Control-Allow-Origin. GitHub Pages already does. A Google Cloud
+  Storage bucket does NOT until you set a CORS config on it.
+  ============================================================================
+-->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<style>
+:root{
+  --ink:      #161A2B;
+  --ink-2:    #212741;
+  --line:     #2E3654;
+  --paper:    #F7F5F0;
+  --type:     #DDE2F0;
+  --muted:    #8C97B4;
+  --brass:    #C9A227;
+  --danger:   #E0736A;
+  --band:     58px;   /* banner height */
+  --rail:     44px;   /* toolbar height */
+  --foot:     34px;   /* copyright rail height */
+  --serif:    Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  --sans:     system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--ink);
+  color:var(--type);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button{font-family:inherit;}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+
+/* ---------------------------------------------------------------- login -- */
+#gate{
+  position:fixed;inset:0;z-index:60;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #2A3153 0%, transparent 60%),
+    var(--ink);
+}
+.gate-card{
+  width:100%;max-width:420px;
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:30px 30px 26px;
+}
+.gate-mark{
+  font-family:var(--serif);
+  font-size:13px;letter-spacing:.02em;
+  color:var(--brass);
+  margin:0 0 22px;
+}
+.gate-card h1{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:25px;line-height:1.25;
+  margin:0 0 6px;
+}
+.gate-sub{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 24px;}
+.field{margin-bottom:15px;}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+.field input{
+  width:100%;padding:10px 12px;
+  background:#151A2E;
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--type);font-size:15px;
+}
+.field input::placeholder{color:#5A6382;}
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:44px;}
+.pw-eye{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:36px;height:32px;
+  background:none;border:0;cursor:pointer;
+  color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:5px;
+}
+.pw-eye:hover{color:var(--type);}
+.gate-btn{
+  width:100%;margin-top:10px;padding:11px;
+  background:var(--brass);color:#1A1608;
+  border:0;border-radius:6px;
+  font-size:15px;font-weight:600;cursor:pointer;
+}
+.gate-btn:hover{background:#DBB334;}
+.gate-btn:disabled{opacity:.5;cursor:default;}
+.gate-msg{
+  min-height:18px;margin-top:14px;
+  font-size:13px;line-height:1.45;color:var(--danger);
+}
+.gate-note{
+  margin-top:22px;padding-top:16px;
+  border-top:1px solid var(--line);
+  font-size:11.5px;line-height:1.55;color:#6E789A;
+}
+
+/* ---------------------------------------------------------------- shell -- */
+#shell{
+  position:fixed;inset:0;z-index:1;
+  display:none;
+  grid-template-rows:var(--band) var(--rail) 1fr var(--foot);
+}
+#shell.on{display:grid;}
+
+.banner{
+  display:flex;align-items:center;gap:16px;
+  padding:0 18px;
+  background:var(--ink-2);
+  border-bottom:1px solid var(--line);
+  min-width:0;
+}
+.banner-title{
+  font-family:var(--serif);
+  font-size:17px;font-weight:400;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-width:0;flex:1;
+}
+.banner-who{
+  font-size:12.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:46%;text-align:right;
+}
+@media (max-width:640px){ .banner-who{display:none;} }
+
+.rail{
+  display:flex;align-items:center;gap:6px;
+  padding:0 12px;
+  background:#1A2036;
+  border-bottom:1px solid var(--line);
+}
+.rail-gap{flex:1;}
+.tbtn{
+  height:28px;min-width:30px;padding:0 9px;
+  background:transparent;border:1px solid var(--line);
+  border-radius:5px;color:var(--type);
+  font-size:13px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.tbtn:hover:not(:disabled){background:#252C48;border-color:#3D466B;}
+.tbtn:disabled{opacity:.35;cursor:default;}
+.pager{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);}
+.pager input{
+  width:46px;height:28px;padding:0 6px;text-align:center;
+  background:#151A2E;border:1px solid var(--line);border-radius:5px;
+  color:var(--type);font-size:13px;font-variant-numeric:tabular-nums;
+}
+.zoomval{
+  font-size:12.5px;color:var(--muted);
+  min-width:44px;text-align:center;font-variant-numeric:tabular-nums;
+}
+
+/* --------------------------------------------------------------- pages --- */
+#scroll{
+  overflow:auto;
+  background:#0F1322;
+  padding:20px 16px 40px;
+  scroll-behavior:auto;
+}
+#pages{
+  margin:0 auto;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+}
+.page{
+  position:relative;
+  background:var(--paper);
+  border-radius:2px;
+  box-shadow:0 2px 14px rgba(0,0,0,.45);
+  overflow:hidden;
+}
+.page canvas{display:block;width:100%;height:100%;}
+
+/* Live hyperlinks laid over the rendered page */
+.linklayer{
+  position:absolute;left:0;top:0;width:100%;
+  pointer-events:none;
+}
+.pdflink{
+  position:absolute;display:block;
+  pointer-events:auto;
+  background:rgba(58,110,214,0);
+  border-radius:2px;
+  transition:background .12s ease;
+}
+.pdflink:hover{background:rgba(58,110,214,.16);}
+.pdflink:focus-visible{
+  background:rgba(201,162,39,.22);
+  outline:2px solid var(--brass);outline-offset:1px;
+}
+.page.pending::after{
+  content:attr(data-n);
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:34px;color:#D3CFC5;
+}
+
+/* ---------------------------------------------------------------- foot --- */
+.foot{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 14px;
+  background:linear-gradient(to top,#191E33,#212741);
+  border-top:1px solid #3A4468;
+  font-family:var(--serif);
+  font-size:12px;letter-spacing:.02em;
+  color:#F4E2A4;
+  text-shadow:
+    0 0 4px rgba(201,162,39,.75),
+    0 0 12px rgba(201,162,39,.42),
+    0 0 26px rgba(201,162,39,.18);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ------------------------------------------------------------ fullscreen -- */
+/* Percentage heights collapse in Firefox inside :fullscreen. Pin to vh. */
+#shell:fullscreen,
+#shell:-webkit-full-screen{
+  width:100vw !important;
+  height:100vh !important;
+  grid-template-rows:var(--band) var(--rail) 1fr var(--foot) !important;
+  background:var(--ink) !important;
+}
+#shell:fullscreen #scroll,
+#shell:-webkit-full-screen #scroll{
+  height:calc(100vh - var(--band) - var(--rail) - var(--foot)) !important;
+}
+
+/* --------------------------------------------------------------- print --- */
+@media print{
+  body *{display:none !important;}
+  body::after{
+    content:"This reading module is licensed for on-screen course use and cannot be printed.";
+    display:block !important;
+    font:15px/1.6 Georgia, serif;color:#000;padding:60px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================== LOGIN ============================== -->
+<div id="gate">
+  <div class="gate-card">
+    <p class="gate-mark">Magellica Press</p>
+    <h1 id="gateTitle">Reading module</h1>
+    <p class="gate-sub" id="gateSub">Enter your name and the module password to open the reading.</p>
+
+    <div class="field">
+      <label for="fName">Your name</label>
+      <input id="fName" type="text" autocomplete="name" placeholder="First and last name">
+    </div>
+    <div class="field">
+      <label for="fId">Student ID</label>
+      <input id="fId" type="text" inputmode="numeric" autocomplete="off" placeholder="7 digits">
+    </div>
+    <div class="field">
+      <label for="fPw">Module password</label>
+      <div class="pw-wrap">
+        <input id="fPw" type="password" autocomplete="off">
+        <button class="pw-eye" id="pwEye" type="button" aria-label="Show password">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12Z"/>
+            <circle cx="12" cy="12" r="3.1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="field" id="localRow" style="display:none">
+      <label for="fFile">Preview a PDF from this computer</label>
+      <input id="fFile" type="file" accept="application/pdf"
+             style="padding:8px;font-size:13px;color:var(--muted)">
+    </div>
+
+    <button class="gate-btn" id="gateGo">Open reading</button>
+    <p class="gate-msg" id="gateMsg" role="status"></p>
+
+    <p class="gate-note">
+      Your name and ID appear in the footer of each page of your copy. This
+      module is licensed to you for this course and is not for redistribution.
+    </p>
+  </div>
+</div>
+
+<!-- ============================== READER ============================= -->
+<div id="shell">
+
+  <div class="banner">
+    <div class="banner-title" id="bTitle"></div>
+    <div class="banner-who" id="bWho"></div>
+  </div>
+
+  <div class="rail">
+    <button class="tbtn" id="bPrev" title="Previous page (←)" aria-label="Previous page">‹</button>
+    <div class="pager">
+      <input id="bNum" type="text" inputmode="numeric" aria-label="Page number" value="1">
+      <span>of <span id="bTot">–</span></span>
+    </div>
+    <button class="tbtn" id="bNext" title="Next page (→)" aria-label="Next page">›</button>
+
+    <div class="rail-gap"></div>
+
+    <button class="tbtn" id="bOut" title="Zoom out" aria-label="Zoom out">−</button>
+    <span class="zoomval" id="bZoom">100%</span>
+    <button class="tbtn" id="bIn" title="Zoom in" aria-label="Zoom in">+</button>
+    <button class="tbtn" id="bFit" title="Fit page width">Fit width</button>
+    <button class="tbtn" id="bFull" title="Full screen (F)" aria-label="Full screen">⛶</button>
+  </div>
+
+  <div id="scroll" tabindex="0">
+    <div id="pages"></div>
+  </div>
+
+  <div class="foot" id="bFoot"></div>
+</div>
+
+<script>
+/* ===========================================================================
+   1. CONFIG  —  paste the same firebaseConfig object you use in TeacherVideo.
+   That is the only edit this file needs. Everything else about a reading is
+   set in TeacherRead_v1_0.html on your desktop.
+   =========================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyApECjlGt_AgK9853JGWsyPuWuXIRyRQOA",
+    authDomain: "astronomy-course.firebaseapp.com",
+    projectId: "astronomy-course",
+    storageBucket: "astronomy-course.firebasestorage.app",
+    messagingSenderId: "84123424550",
+    appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
+};
+const useFirestore = () => !String(firebaseConfig.apiKey).startsWith("PASTE_FROM");
+
+/* Optional hand-written modules, for testing without the database.
+   TeacherRead is the normal way to add a reading; leave this empty. */
+const MODULES = {};
+
+const DEFAULT_COPYRIGHT =
+  "Copyright \u00A9 Magellica Press - R. Mahoney - 2026, All Rights Reserved.";
+
+const COLLECTION = "readings";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ===========================================================================
+   2. STATE
+   =========================================================================== */
+const $ = id => document.getElementById(id);
+
+let db = null;
+let record = null;         // the Firestore document record
+let pdfDoc = null;
+let pageBoxes = [];        // one wrapper div per page
+let baseSizes = [];        // unscaled {w,h} per page
+let renderTasks = [];      // in-flight pdf.js render tasks
+let scale = 1;
+let fitWidth = true;
+let watermarkText = "";
+let copyrightLine = "";
+let observer = null;
+let localPdf = null;       // {name, data} when previewing a file from disk
+
+const DPR   = Math.min(window.devicePixelRatio || 1, 2);
+const BAND  = 36;          // CSS px of footer band added under each page
+const docId = new URLSearchParams(location.search).get("doc");
+
+/* ===========================================================================
+   3. LOGIN
+   =========================================================================== */
+$("pwEye").addEventListener("click", () => {
+  const f = $("fPw");
+  const show = f.type === "password";
+  f.type = show ? "text" : "password";
+  $("pwEye").setAttribute("aria-label", show ? "Hide password" : "Show password");
+  f.focus();
+});
+
+["fName","fId","fPw"].forEach(id =>
+  $(id).addEventListener("keydown", e => { if (e.key === "Enter") openReading(); })
+);
+$("gateGo").addEventListener("click", openReading);
+
+function fail(msg){ $("gateMsg").textContent = msg; $("gateGo").disabled = false; }
+
+async function openReading(){
+  const name = $("fName").value.trim();
+  const sid  = $("fId").value.trim();
+  const pw   = $("fPw").value;
+
+  $("gateMsg").textContent = "";
+
+  if (!docId && !localPdf) return fail("This link is missing its module code. Use the link posted in Canvas.");
+  if (name.length < 2) return fail("Enter your full name as it appears in the course roster.");
+  if (!/^\d{5,9}$/.test(sid)) return fail("Enter your student ID — digits only, including any leading zero.");
+
+  $("gateGo").disabled = true;
+  $("gateGo").textContent = "Opening\u2026";
+
+  try {
+    record = await resolveModule();
+
+    if (!record) return reset("No reading module matches this link. Check the link posted in Canvas.");
+    if (record.password && String(record.password) !== pw)
+      return reset(pw ? "That password doesn't match this module."
+                      : "This module needs a password.");
+
+    const win = windowState(record.availability);
+    if (win) return reset(win);
+    if (!record.pdfUrl && !record.pdfData)
+      return reset("This module has no file attached yet. Let your instructor know.");
+
+    copyrightLine = record.copyrightNotice || DEFAULT_COPYRIGHT;
+    watermarkText =
+      `Licensed to ${name} (${sid})` +
+      (record.course ? `  \u00B7  ${record.course}` : "") +
+      `  \u00B7  Not for redistribution`;
+
+    $("bTitle").textContent = record.title || "Reading module";
+    $("bWho").textContent   = [record.course, name, sid].filter(Boolean).join("  \u00B7  ");
+    $("bFoot").textContent  = copyrightLine;
+    document.title          = record.title || "Reading module";
+
+    /* The shell must be on screen before layout runs — fit-width measures the
+       scroll container, and a display:none container measures zero. */
+    $("gate").style.display = "none";
+    $("shell").classList.add("on");
+
+    await loadPdf(record.pdfData ? { data: record.pdfData } : { url: record.pdfUrl });
+    $("scroll").focus();
+
+  } catch (err){
+    console.error(err);
+    $("shell").classList.remove("on");
+    $("gate").style.display = "flex";
+    reset("Couldn't open the reading file. It may have moved, or its host may not allow this page to fetch it.");
+  }
+
+  function reset(msg){
+    $("gateGo").textContent = "Open reading";
+    fail(msg);
+  }
+}
+
+/* Lookup order: local file preview -> MODULES table -> Firestore (if set up) */
+async function resolveModule(){
+  if (localPdf) return {
+    title:   localPdf.name.replace(/\.pdf$/i, ""),
+    course:  "Local preview",
+    pdfData: localPdf.data
+  };
+
+  if (MODULES[docId]) return MODULES[docId];
+
+  if (!useFirestore()) return null;
+  if (!db){ firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+  const snap = await db.collection(COLLECTION).doc(docId).get();
+  return snap.exists ? snap.data() : null;
+}
+
+function windowState(av){
+  if (!av) return null;
+  const now = new Date();
+  if (av.start && now < new Date(av.start))
+    return "This reading opens " + new Date(av.start).toLocaleString() + ".";
+  if (av.stop && now > new Date(av.stop))
+    return "This reading closed " + new Date(av.stop).toLocaleString() + ".";
+  return null;
+}
+
+/* ===========================================================================
+   4. PDF LOADING AND LAYOUT
+   =========================================================================== */
+async function loadPdf(src){
+  pdfDoc = await pdfjsLib.getDocument(
+    Object.assign({ isEvalSupported:false }, src)
+  ).promise;
+  $("bTot").textContent = pdfDoc.numPages;
+
+  baseSizes = [];
+  for (let n = 1; n <= pdfDoc.numPages; n++){
+    const vp = (await pdfDoc.getPage(n)).getViewport({ scale: 1 });
+    baseSizes.push({ w: vp.width, h: vp.height });
+  }
+  layout();
+}
+
+function fitScale(){
+  const avail = $("scroll").clientWidth - 32;
+  const widest = Math.max(...baseSizes.map(s => s.w));
+  return Math.max(0.35, Math.min(3, avail / widest));
+}
+
+function layout(){
+  renderTasks.forEach(t => { try { t.cancel(); } catch(e){} });
+  renderTasks = [];
+  if (observer) observer.disconnect();
+
+  if (fitWidth) scale = fitScale();
+  $("bZoom").textContent = Math.round(scale * 100) + "%";
+
+  const host = $("pages");
+  host.innerHTML = "";
+  pageBoxes = [];
+
+  baseSizes.forEach((s, i) => {
+    const box = document.createElement("div");
+    box.className = "page pending";
+    box.dataset.n = i + 1;
+    box.style.width  = Math.round(s.w * scale) + "px";
+    box.style.height = Math.round(s.h * scale + BAND) + "px";
+    host.appendChild(box);
+    pageBoxes.push(box);
+  });
+
+  observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) renderPage(Number(e.target.dataset.n));
+    });
+  }, { root: $("scroll"), rootMargin: "600px 0px" });
+
+  pageBoxes.forEach(b => observer.observe(b));
+}
+
+async function renderPage(n){
+  const box = pageBoxes[n - 1];
+  if (!box || box.dataset.done === "1" || box.dataset.busy === "1") return;
+  box.dataset.busy = "1";
+
+  try {
+    const page = await pdfDoc.getPage(n);
+    const vp   = page.getViewport({ scale: scale * DPR });
+
+    const canvas = document.createElement("canvas");
+    canvas.width  = Math.round(vp.width);
+    canvas.height = Math.round(vp.height + BAND * DPR);
+    const ctx = canvas.getContext("2d", { alpha:false });
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const task = page.render({ canvasContext: ctx, viewport: vp });
+    renderTasks.push(task);
+    await task.promise;
+
+    if (record.watermark !== false) stampFooter(ctx, canvas.width, vp.height, canvas.height);
+
+    box.innerHTML = "";
+    box.appendChild(canvas);
+    await addLinkLayer(box, page, n);
+    box.classList.remove("pending");
+    box.dataset.done = "1";
+  } catch (err){
+    if (err && err.name !== "RenderingCancelledException") console.error("page " + n, err);
+  } finally {
+    box.dataset.busy = "0";
+  }
+}
+
+/* The band sits BELOW the rendered page, so nothing in the reading is ever
+   covered — the same convention a licensed publisher copy uses. */
+function stampFooter(ctx, w, pageH, totalH){
+  const h  = totalH - pageH;
+  const fs = Math.max(8.5 * DPR, Math.min(11 * DPR, w * 0.0105));
+
+  ctx.save();
+  ctx.fillStyle = "#F1EEE8";
+  ctx.fillRect(0, pageH, w, h);
+  ctx.fillStyle = "#DAD5CA";
+  ctx.fillRect(0, pageH, w, Math.max(1, DPR));
+
+  ctx.font = fs + "px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#5C5648";
+  ctx.fillText(copyrightLine, w / 2, pageH + h * 0.34, w - 24 * DPR);
+  ctx.fillStyle = "#8A8478";
+  ctx.fillText(watermarkText, w / 2, pageH + h * 0.70, w - 24 * DPR);
+  ctx.restore();
+}
+
+/* ---------------------------------------------------------------------------
+   Canvas rendering is only pixels, so a PDF's own hyperlinks stop working.
+   pdf.js still hands us the link annotations, so we lay real <a> elements over
+   the page at the right coordinates. Internal jumps scroll this viewer;
+   external links open in a new tab.
+   --------------------------------------------------------------------------- */
+async function addLinkLayer(box, page, n){
+  let annots;
+  try { annots = await page.getAnnotations({ intent: "display" }); }
+  catch (e){ return; }
+  if (!annots || !annots.length) return;
+
+  const vp    = page.getViewport({ scale });   // CSS pixels, not device pixels
+  const layer = document.createElement("div");
+  layer.className = "linklayer";
+  layer.style.height = vp.height + "px";
+
+  let count = 0;
+
+  for (const a of annots){
+    if (a.subtype !== "Link") continue;
+    if (!a.url && !a.dest) continue;
+
+    const r    = vp.convertToViewportRectangle(a.rect);
+    const left = Math.min(r[0], r[2]);
+    const top  = Math.min(r[1], r[3]);
+    const w    = Math.abs(r[2] - r[0]);
+    const h    = Math.abs(r[3] - r[1]);
+    if (w < 2 || h < 2) continue;
+
+    const el = document.createElement("a");
+    el.className = "pdflink";
+    el.style.cssText = `left:${left}px;top:${top}px;width:${w}px;height:${h}px;`;
+
+    if (a.url){
+      el.href   = a.url;
+      el.target = "_blank";
+      el.rel    = "noopener noreferrer";
+      el.title  = a.url;
+    } else {
+      el.href  = "#";
+      el.title = "Go to another page in this reading";
+      el.addEventListener("click", async ev => {
+        ev.preventDefault();
+        const p = await resolveDest(a.dest);
+        if (p) goToPage(p);
+      });
+    }
+
+    layer.appendChild(el);
+    count++;
+  }
+
+  if (count) box.appendChild(layer);
+}
+
+async function resolveDest(dest){
+  try {
+    const d = typeof dest === "string" ? await pdfDoc.getDestination(dest) : dest;
+    if (!Array.isArray(d) || !d.length) return null;
+    return (await pdfDoc.getPageIndex(d[0])) + 1;
+  } catch (e){ return null; }
+}
+
+/* ===========================================================================
+   5. NAVIGATION AND CONTROLS
+   =========================================================================== */
+function goToPage(n){
+  n = Math.max(1, Math.min(pdfDoc ? pdfDoc.numPages : 1, n));
+  const box = pageBoxes[n - 1];
+  if (!box) return;
+  $("scroll").scrollTop = box.offsetTop - 20;
+  $("bNum").value = n;
+}
+function currentPage(){
+  const top = $("scroll").scrollTop + 60;
+  for (let i = pageBoxes.length - 1; i >= 0; i--)
+    if (pageBoxes[i].offsetTop <= top) return i + 1;
+  return 1;
+}
+
+$("bPrev").addEventListener("click", () => goToPage(currentPage() - 1));
+$("bNext").addEventListener("click", () => goToPage(currentPage() + 1));
+$("bNum").addEventListener("change", e => {
+  const n = parseInt(e.target.value, 10);
+  if (!isNaN(n)) goToPage(n); else e.target.value = currentPage();
+});
+
+function setZoom(next){
+  const keep = currentPage();
+  fitWidth = false;
+  scale = Math.max(0.35, Math.min(3, next));
+  layout();
+  requestAnimationFrame(() => goToPage(keep));
+}
+$("bIn").addEventListener("click",  () => setZoom(scale * 1.15));
+$("bOut").addEventListener("click", () => setZoom(scale / 1.15));
+$("bFit").addEventListener("click", () => {
+  const keep = currentPage();
+  fitWidth = true;
+  layout();
+  requestAnimationFrame(() => goToPage(keep));
+});
+
+$("bFull").addEventListener("click", () => {
+  const el = $("shell");
+  if (document.fullscreenElement || document.webkitFullscreenElement){
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } else {
+    (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  if (fitWidth) setTimeout(() => { const k = currentPage(); layout(); goToPage(k); }, 120);
+});
+
+let scrollTick = null;
+$("scroll").addEventListener("scroll", () => {
+  clearTimeout(scrollTick);
+  scrollTick = setTimeout(() => { $("bNum").value = currentPage(); }, 90);
+});
+
+let resizeTick = null;
+window.addEventListener("resize", () => {
+  if (!pdfDoc || !fitWidth) return;
+  clearTimeout(resizeTick);
+  resizeTick = setTimeout(() => { const k = currentPage(); layout(); goToPage(k); }, 200);
+});
+
+document.addEventListener("keydown", e => {
+  if (!$("shell").classList.contains("on")) return;
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.key === "ArrowRight" || e.key === "PageDown"){ e.preventDefault(); goToPage(currentPage() + 1); }
+  if (e.key === "ArrowLeft"  || e.key === "PageUp"){   e.preventDefault(); goToPage(currentPage() - 1); }
+  if (e.key === "Home"){ e.preventDefault(); goToPage(1); }
+  if (e.key === "End"){  e.preventDefault(); goToPage(pdfDoc.numPages); }
+  if (e.key === "f" || e.key === "F") $("bFull").click();
+});
+
+/* Speed bumps, not DRM — same posture as the video masking.
+   Links are exempt so "open in new tab" still works on them. */
+$("pages").addEventListener("contextmenu", e => {
+  if (!e.target.closest(".pdflink")) e.preventDefault();
+});
+$("pages").addEventListener("dragstart", e => {
+  if (!e.target.closest(".pdflink")) e.preventDefault();
+});
+
+/* ===========================================================================
+   6. START
+   =========================================================================== */
+const known = docId ? MODULES[docId] : null;
+
+if (known){
+  $("gateTitle").textContent = known.title;
+  $("gateSub").textContent   = known.course
+    ? known.course + ". Enter your name to open the reading."
+    : "Enter your name to open the reading.";
+  if (!known.password){
+    $("fPw").closest(".field").style.display = "none";
+  }
+} else if (!docId){
+  /* Opened with no ?doc= code. On your own machine that's the preview mode;
+     for a student it means the Canvas link was incomplete. */
+  if (location.protocol === "file:"){
+    $("gateTitle").textContent = "Preview";
+    $("gateSub").textContent   = "Pick a PDF below to see how a module will look. Name and ID show up in the page footer.";
+    $("localRow").style.display = "block";
+    $("fPw").closest(".field").style.display = "none";
+  } else {
+    $("gateTitle").textContent = "Link incomplete";
+    $("gateSub").textContent   = "This link is missing its module code. Open the reading from the link posted in Canvas.";
+  }
+}
+
+$("fFile").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  if (!f) { localPdf = null; return; }
+  localPdf = { name: f.name, data: new Uint8Array(await f.arrayBuffer()) };
+  $("gateMsg").textContent = "";
+});
+
+$("fName").focus();
+</script>
+</body>
+</html>

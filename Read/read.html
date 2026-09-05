@@ -206,6 +206,7 @@ button{font-family:inherit;}
   scroll-behavior:auto;
 }
 #pages{
+  overflow-anchor:none;
   margin:0 auto;
   display:flex;flex-direction:column;align-items:center;gap:18px;
 }
@@ -408,6 +409,7 @@ let observer = null;
 let localPdf = null;       // {name, data} when previewing a file from disk
 
 const DPR   = Math.min(window.devicePixelRatio || 1, 2);
+const MINZOOM = 0.67;     // floor, so a page never shrinks away from its footer
 const BAND  = 36;          // CSS px of footer band added under each page
 const docId = new URLSearchParams(location.search).get("doc");
 
@@ -473,7 +475,13 @@ async function openReading(){
     $("shell").classList.add("on");
 
     await loadPdf(record.pdfData ? { data: record.pdfData } : { url: record.pdfUrl });
-    $("scroll").focus();
+    /* Lazy rendering swaps placeholders for canvases, which lets the browser's
+       scroll anchoring drift. Pin it back to the first page. */
+    $("scroll").scrollTop = 0;
+    $("bNum").value = 1;
+    requestAnimationFrame(() => { $("scroll").scrollTop = 0; });
+    setTimeout(() => { $("scroll").scrollTop = 0; }, 250);
+    $("scroll").focus({ preventScroll: true });
 
   } catch (err){
     console.error(err);
@@ -562,7 +570,7 @@ async function loadPdf(src){
 function fitScale(){
   const avail = $("scroll").clientWidth - 32;
   const widest = Math.max(...baseSizes.map(s => s.w));
-  return Math.max(0.35, Math.min(3, avail / widest));
+  return Math.max(MINZOOM, Math.min(3, avail / widest));
 }
 
 function layout(){
@@ -572,6 +580,7 @@ function layout(){
 
   if (fitWidth) scale = fitScale();
   $("bZoom").textContent = Math.round(scale * 100) + "%";
+  syncZoomButtons();
 
   const host = $("pages");
   host.innerHTML = "";
@@ -745,12 +754,17 @@ $("bNum").addEventListener("change", e => {
 function setZoom(next){
   const keep = currentPage();
   fitWidth = false;
-  scale = Math.max(0.35, Math.min(3, next));
+  scale = Math.max(MINZOOM, Math.min(3, next));
   layout();
   requestAnimationFrame(() => goToPage(keep));
 }
 $("bIn").addEventListener("click",  () => setZoom(scale * 1.15));
 $("bOut").addEventListener("click", () => setZoom(scale / 1.15));
+
+function syncZoomButtons(){
+  $("bOut").disabled = scale <= MINZOOM + 0.001;
+  $("bIn").disabled  = scale >= 3 - 0.001;
+}
 $("bFit").addEventListener("click", () => {
   const keep = currentPage();
   fitWidth = true;

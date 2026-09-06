@@ -216,8 +216,16 @@ button{font-family:inherit;}
   border-radius:2px;
   box-shadow:0 2px 14px rgba(0,0,0,.45);
   overflow:hidden;
+  /* iOS long-press otherwise offers Copy Image / Save Image */
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
 }
-.page canvas{display:block;width:100%;height:100%;}
+.page canvas{
+  display:block;width:100%;height:100%;
+  -webkit-touch-callout:none;
+  pointer-events:none;
+}
 
 /* Live hyperlinks laid over the rendered page */
 .linklayer{
@@ -227,6 +235,8 @@ button{font-family:inherit;}
 .pdflink{
   position:absolute;display:block;
   pointer-events:auto;
+  -webkit-touch-callout:default;
+  -webkit-user-select:none;
   background:rgba(58,110,214,0);
   border-radius:2px;
   transition:background .12s ease;

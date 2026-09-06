@@ -408,6 +408,17 @@ let copyrightLine = "";
 let observer = null;
 let localPdf = null;       // {name, data} when previewing a file from disk
 
+/* Viewing record (not a grade) */
+const VIEWS      = "readingViews";
+const BEAT_MS    = 30000;   // how often the session doc is updated
+const IDLE_MS    = 120000;  // no interaction this long and the clock pauses
+let viewRef      = null;
+let activeSec    = 0;
+let lastTouch    = Date.now();
+let furthestPage = 1;
+let beatTimer    = null;
+let tickTimer    = null;
+
 const DPR   = Math.min(window.devicePixelRatio || 1, 2);
 const MINZOOM = 0.67;     // floor, so a page never shrinks away from its footer
 const BAND  = 36;          // CSS px of footer band added under each page
@@ -482,6 +493,8 @@ async function openReading(){
     requestAnimationFrame(() => { $("scroll").scrollTop = 0; });
     setTimeout(() => { $("scroll").scrollTop = 0; }, 250);
     $("scroll").focus({ preventScroll: true });
+
+    startViewRecord(name, sid);
 
   } catch (err){
     console.error(err);
@@ -725,6 +738,70 @@ async function resolveDest(dest){
     if (!Array.isArray(d) || !d.length) return null;
     return (await pdfDoc.getPageIndex(d[0])) + 1;
   } catch (e){ return null; }
+}
+
+/* ---------------------------------------------------------------------------
+   Viewing record. One document per session. The clock only runs while the tab
+   is visible AND the reader has been touched in the last couple of minutes, so
+   a tab left open overnight doesn't bank hours. This is attendance, not proof
+   of reading, and the name is whatever the student typed.
+   --------------------------------------------------------------------------- */
+async function startViewRecord(name, sid){
+  if (localPdf || !useFirestore()) return;
+  if (record.trackViews === false) return;
+
+  try {
+    if (!db){ firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+    viewRef = db.collection(VIEWS).doc();
+    await viewRef.set({
+      code:         docId,
+      title:        record.title || "",
+      course:       record.course || "",
+      name:         name,
+      studentId:    sid,
+      opened:       new Date().toISOString(),
+      lastSeen:     new Date().toISOString(),
+      activeSeconds: 0,
+      furthestPage: 1,
+      totalPages:   pdfDoc ? pdfDoc.numPages : 0
+    });
+  } catch (e){
+    console.warn("view record not started", e);
+    viewRef = null;
+    return;
+  }
+
+  ["pointerdown","keydown","wheel","touchstart"].forEach(ev =>
+    document.addEventListener(ev, () => { lastTouch = Date.now(); }, { passive:true }));
+  $("scroll").addEventListener("scroll", () => { lastTouch = Date.now(); }, { passive:true });
+
+  tickTimer = setInterval(() => {
+    if (document.visibilityState !== "visible") return;
+    if (Date.now() - lastTouch > IDLE_MS) return;
+    activeSec++;
+    const p = currentPage();
+    if (p > furthestPage) furthestPage = p;
+  }, 1000);
+
+  beatTimer = setInterval(saveBeat, BEAT_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveBeat();
+  });
+  window.addEventListener("pagehide", saveBeat);
+}
+
+let beatBusy = false;
+async function saveBeat(){
+  if (!viewRef || beatBusy) return;
+  beatBusy = true;
+  try {
+    await viewRef.update({
+      lastSeen:      new Date().toISOString(),
+      activeSeconds: activeSec,
+      furthestPage:  furthestPage
+    });
+  } catch (e){ /* best effort */ }
+  beatBusy = false;
 }
 
 /* ===========================================================================

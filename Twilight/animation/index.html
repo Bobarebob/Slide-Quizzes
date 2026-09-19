@@ -818,11 +818,11 @@ function updTimers(eM){
   let dE=eM;
   document.getElementById('elapsed-clock').textContent=(S.haSunset&&S.currentHA>=S.haSunset)?fmtT(dE):(S.haSunset===null&&(S.playing||S.finished))?fmtT(dE):'00:00';
   const{segDur:sd,haPhases:hp}=S;
-  const up=(id,ph,v)=>{const e=document.getElementById(id);if(v===null){e.textContent='N/A';e.classList.remove('filled');}else if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent=hp[ph]===null?'N/A':'──:──';e.classList.remove('filled');}};
+  const up=(id,ph,v)=>{const e=document.getElementById(id);if(v===null){e.textContent='──:──';e.classList.remove('filled');}else if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent='──:──';e.classList.remove('filled');}};
   up('t-civil','civil',sd.civil);up('t-nautical','nautical',sd.nautical);up('t-astro','astro',sd.astro);
   const tt=document.getElementById('t-total');
-  if(sd.total===null){tt.textContent='N/A';}
-  else if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=fmtT(sd.total);else tt.textContent=hp.astro===null?'N/A':'──:──';
+  if(sd.total===null){tt.textContent='──:──';}
+  else if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=fmtT(sd.total);else tt.textContent='──:──';
   const al=curAlt(),pe=document.getElementById('phase-label');
   if(al>0){pe.textContent='DAYLIGHT';pe.style.color='#ffdd44';}
   else if(al>-6){pe.textContent='CIVIL TWILIGHT';pe.style.color='#ff6b35';}

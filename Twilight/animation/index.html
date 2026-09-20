@@ -402,6 +402,7 @@ body.maxed #canvas-wrap{margin-bottom:0;}
       <div class="segment-row"><span class="seg-label"><span class="seg-dot" style="background:var(--nautical)"></span>Nautical (−6°→−12°)</span><span class="seg-time" id="t-nautical">──:──</span></div>
       <div class="segment-row"><span class="seg-label"><span class="seg-dot" style="background:var(--astro)"></span>Astro (−12°→−18°)</span><span class="seg-time" id="t-astro">──:──</span></div>
       <div class="segment-row" style="border-top:1px solid var(--border);margin-top:2px;padding-top:4px;"><span class="seg-label" style="font-weight:700;">Total (0°→−18°)</span><span class="seg-time" id="t-total" style="color:var(--accent);">──:──</span></div>
+      <div id="timer-note" style="display:none;font-size:.52rem;color:var(--text-dim);line-height:1.3;margin-top:3px;"></div>
     </div>
     <div class="fcard" id="card-azimuth">
       <h3>Sunset Azimuth Diagram</h3>
@@ -763,12 +764,30 @@ function recalc(){
     // Normal case: sun sets
     S.segDur={civil:ct,nautical:nt!==null?nt-ct:null,astro:at2!==null&&nt!==null?at2-nt:null,total:at2};
   }else{
-    // Sun never truly sets — compute segment durations between altitude thresholds directly
+    // The Sun never reaches 0 degrees, so no stage can be timed from sunset. It still
+    // descends through the bands below its highest point, though — at Fort Yukon on the
+    // winter solstice it peaks near -0.4 and falls away from there. Timing the band it
+    // enters partway from that peak is why nautical can have a figure while civil does
+    // not: without this, a stage the Sun demonstrably crossed showed nothing at all.
+    // Partial figures are marked with an asterisk and explained under the total.
     const h6=haAt(lR,dR,-6),h12=haAt(lR,dR,-12),h18=haAt(lR,dR,-18);
-    const nautDur=(h6!==null&&h12!==null)?((h12-h6)*RD/(15/ovf(DOY[day]))*60):null;
-    const astrDur=(h12!==null&&h18!==null)?((h18-h12)*RD/(15/ovf(DOY[day]))*60):null;
-    S.segDur={civil:null,nautical:nautDur,astro:astrDur,total:null};
+    const mins=ha=>(ha===null)?null:(ha*RD/(15/ovf(DOY[day]))*60);   // from the peak (ha=0) to that altitude
+    const peak=sAlt(lR,dR,0)*RD;
+    // One band at a time. If the Sun starts above the band's top it crosses the whole
+    // band; if it starts inside the band it is timed from its own peak instead, which
+    // is the partial case; if it starts below the band it never enters it at all.
+    const band=(hiAlt,loAlt,hi,lo)=>{
+      if(lo===null)return{v:null,part:false};
+      if(peak>hiAlt)return{v:mins(lo)-mins(hi),part:false};
+      if(peak>loAlt)return{v:mins(lo),part:true};
+      return{v:null,part:false};
+    };
+    const c=band(0,-6,h6===null?null:0,h6),n=band(-6,-12,h6,h12),t=band(-12,-18,h12,h18);
+    S.segDur={civil:c.v,nautical:n.v,astro:t.v,total:(h18!==null&&peak>-18)?mins(h18):null};
+    S.peakAlt=peak;
+    S.partial={civil:c.part,nautical:n.part,astro:t.part,total:S.segDur.total!==null};
   }
+  if(S.haSunset!==null){S.partial=null;S.peakAlt=null;}
   S.maxElapsed=null;
   // For no-sunset cases, set haEnd to π (due N) — animate() due-N stop will handle early termination
   if(S.haSunset===null){
@@ -818,11 +837,18 @@ function updTimers(eM){
   let dE=eM;
   document.getElementById('elapsed-clock').textContent=(S.haSunset&&S.currentHA>=S.haSunset)?fmtT(dE):(S.haSunset===null&&(S.playing||S.finished))?fmtT(dE):'00:00';
   const{segDur:sd,haPhases:hp}=S;
-  const up=(id,ph,v)=>{const e=document.getElementById(id);if(v===null){e.textContent='──:──';e.classList.remove('filled');}else if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=fmtT(v);e.classList.add('filled');}else{e.textContent='──:──';e.classList.remove('filled');}};
+  const pt=S.partial||{};
+  const mark=(ph,t)=>pt[ph]?t+'*':t;
+  const up=(id,ph,v)=>{const e=document.getElementById(id);if(v===null){e.textContent='──:──';e.classList.remove('filled');}else if(hp[ph]!==null&&S.currentHA>=hp[ph]){e.textContent=mark(ph,fmtT(v));e.classList.add('filled');}else{e.textContent='──:──';e.classList.remove('filled');}};
   up('t-civil','civil',sd.civil);up('t-nautical','nautical',sd.nautical);up('t-astro','astro',sd.astro);
   const tt=document.getElementById('t-total');
   if(sd.total===null){tt.textContent='──:──';}
-  else if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=fmtT(sd.total);else tt.textContent='──:──';
+  else if(hp.astro!==null&&S.currentHA>=hp.astro)tt.textContent=mark('total',fmtT(sd.total));else tt.textContent='──:──';
+  const note=document.getElementById('timer-note');
+  if(S.partial&&S.peakAlt!==null&&(pt.civil||pt.nautical||pt.astro||pt.total)){
+    note.textContent='* Sun never rose — timed from its highest point, '+S.peakAlt.toFixed(1)+'°.';
+    note.style.display='block';
+  }else note.style.display='none';
   const al=curAlt(),pe=document.getElementById('phase-label');
   if(al>0){pe.textContent='DAYLIGHT';pe.style.color='#ffdd44';}
   else if(al>-6){pe.textContent='CIVIL TWILIGHT';pe.style.color='#ff6b35';}
@@ -1094,7 +1120,7 @@ function recComposite(){
   // cards, top right
   const cw=470,cx=RW-cw-26;let cy=26;
   rx.globalAlpha=rOpacity('card-timer');
-  const th=300;
+  const th=document.getElementById('timer-note')&&document.getElementById('timer-note').style.display!=='none'?330:300;
   rCard(cx,cy,cw,th);
   const px0=cx+22,iw=cw-44;
   rx.fillStyle='#6868a0';rx.textAlign='left';rx.textBaseline='middle';
@@ -1113,6 +1139,11 @@ function recComposite(){
   rx.fillText('Total (0°→−18°)',px0,ry+12);
   rx.font='600 26px "Orbitron","Courier New",monospace';rx.fillStyle='#ff8c42';rx.textAlign='right';
   rx.fillText(rText('t-total'),px0+iw,ry+12);rx.textAlign='left';
+  const tnote=document.getElementById('timer-note');
+  if(tnote&&tnote.style.display!=='none'&&tnote.textContent){
+    rx.font='19px "Nunito","Segoe UI",sans-serif';rx.fillStyle='#6868a0';
+    rx.fillText(tnote.textContent,px0,ry+44);
+  }
 
   cy+=th+14;
   rx.globalAlpha=rOpacity('card-azimuth');

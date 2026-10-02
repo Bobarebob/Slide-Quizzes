@@ -89,6 +89,43 @@
             50% { transform: translateY(-20px); }
         }
         
+
+        /* Avatar video box — sized for a 16:9 1080p MP4 */
+        .avatar-video-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 820px;
+            aspect-ratio: 16 / 9;
+            margin: 10px auto 30px;
+            background: #000;
+            border: 2px solid rgba(77, 166, 255, 0.4);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-video-wrap video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .avatar-video-missing {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            color: #8fa3bf;
+            font-size: 1.15em;
+            font-style: italic;
+            background: radial-gradient(circle at center, rgba(77, 166, 255, 0.12) 0%, #05050d 75%);
+        }
+
         .intro-text {
             font-size: 1.3em;
             line-height: 1.8;
@@ -283,7 +320,14 @@
             </div>
 
             <div class="intro-content">
-                <div class="intro-icon">🪐</div>
+                <div class="avatar-video-wrap">
+                    <video id="avatarVideo" controls playsinline preload="metadata"
+                           src="kepler_intro.mp4#t=0.1"
+                           onerror="this.style.display='none'; document.getElementById('avatarVideoMissing').style.display='flex';">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="avatar-video-missing" id="avatarVideoMissing">Introduction video coming soon</div>
+                </div>
 
                 <div class="intro-text">
                     <p>Welcome to an interactive exploration of <strong class="highlight">Johannes Kepler's revolutionary laws of planetary motion</strong>. These three fundamental principles transformed our understanding of how planets move through space and laid the foundation for modern astronomy.</p>

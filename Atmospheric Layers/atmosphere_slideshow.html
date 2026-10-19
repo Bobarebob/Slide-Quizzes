@@ -44,6 +44,7 @@
   .top-bar {
     display: flex;
     justify-content: flex-end;
+    gap: 10px;
     align-items: center;
     padding: 10px 32px 6px;
     flex-shrink: 0;
@@ -259,7 +260,7 @@
 
   .atm-row {
     display: grid;
-    grid-template-columns: 160px 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 160px 1.3fr 1fr 1fr 1.1fr;
     align-items: center;
     padding: 8px 14px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -463,7 +464,7 @@
   }
   .magnify-content {
     display: grid;
-    grid-template-columns: 200px 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 200px 1.3fr 1fr 1fr 1.1fr;
     align-items: center;
     gap: 20px;
     padding: 30px 40px;
@@ -503,13 +504,47 @@
     opacity: 0.6;
   }
 
+
+  /* VIEW SWITCHES: latitude + units */
+  .toggle {
+    display: inline-flex;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .toggle button {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.04);
+    color: var(--dim);
+    border: 0;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .toggle button + button { border-left: 1px solid rgba(255,255,255,0.2); }
+  .toggle button:hover { background: rgba(255,255,255,0.12); }
+  .toggle button[aria-pressed="true"] { background: rgba(255,255,255,0.25); color: #fff; }
+  .toggle button:focus-visible, .fs-btn:focus-visible, .nav-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  body:not(.units-us) .us-only { display: none; }
+  body.units-us .metric-only { display: none; }
+  body:not(.lat-trop) .trop-only { display: none; }
+  body.lat-trop .mid-only { display: none; }
 </style>
 </head>
 <body>
 
-
 <div class="slideshow">
   <div class="top-bar">
+    <div class="toggle" role="group" aria-label="Latitude">
+      <button type="button" data-set-lat="mid">Mid-latitude</button><button type="button" data-set-lat="trop">Tropics</button>
+    </div>
+    <div class="toggle" role="group" aria-label="Units">
+      <button type="button" data-set-units="metric">Metric</button><button type="button" data-set-units="us">US</button>
+    </div>
     <button class="fs-btn" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
   </div>
 
@@ -519,7 +554,7 @@
       <div class="slide-header">
         <div class="layer-badge c-tro" style="border-color:var(--tro)">Layer 1</div>
         <div class="slide-title c-tro">Troposphere</div>
-        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+        <div class="slide-subtitle"><span data-lat="42°N Mid-Latitude Reference|Tropical Reference (Equator to ~20°)"></span></div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,var(--tro),transparent)"></div>
 
@@ -527,64 +562,59 @@
         <div class="card bg-tro glow-tro">
           <div class="card-label">Bottom</div>
           <div class="card-value c-tro">Sea Level</div>
-          <div class="card-sub">0 km · 0 ft · 0 mi</div>
+          <div class="card-sub"><span class="h" data-km="0" data-us="ft"></span></div>
         </div>
         <div class="card bg-tro glow-tro">
           <div class="card-label">Top / Tropopause</div>
-          <div class="card-value c-tro">~11 km</div>
-          <div class="card-sub">~36,000 ft · ~6.8 mi</div>
+          <div class="card-value c-tro"><span class="h" data-km="11|17" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="11|17" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-tro glow-tro">
-          <div class="card-label">Thickness Range (Seasonal)</div>
-          <div class="card-value c-tro">9 – 12 km</div>
-          <div class="card-sub">Summer higher · Winter lower</div>
+          <div class="card-label"><span data-lat="Thickness Range (Seasonal)|Thickness Range"></span></div>
+          <div class="card-value c-tro"><span class="h" data-km="9-12|16-18" data-us="mi"></span></div>
+          <div class="card-sub"><span data-lat="Summer higher · Winter lower|Little seasonal change"></span></div>
         </div>
       </div>
 
-      <div class="temp-section glow-tro" style="border-color:rgba(0,201,167,0.25)">
-        <div class="temp-section-title">⟶ Temperature Gradient (Lapse Rate: 6.5°C per 1,000 m)</div>
+      <div class="temp-section glow-tro" data-scale="-90,30" style="border-color:rgba(0,201,167,0.25)">
+        <div class="temp-section-title">⟶ Temperature Gradient (Lapse Rate: <span class="lr" data-v="6.5|6.2"></span>)</div>
         <div class="temp-row">
-          <div class="temp-label">Sea Level</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:65%"></div></div>
-          <div class="temp-val c-tro">+15°C / +59°F</div>
+          <div class="temp-label"><span class="h" data-km="3.048" data-us="ft"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro"></div></div>
+          <div class="temp-val c-tro"><span class="t" data-c="-4.8|10.3"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">10,000 ft</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:48%"></div></div>
-          <div class="temp-val c-tro">-5°C / +23°F</div>
+          <div class="temp-label"><span class="h" data-km="5.4864" data-us="ft"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro"></div></div>
+          <div class="temp-val c-tro"><span class="t" data-c="-20.7|-6.1"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">18,000 ft</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:34%"></div></div>
-          <div class="temp-val c-tro">-21°C / -6°F</div>
-        </div>
-        <div class="temp-row">
-          <div class="temp-label">30,000 ft</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:18%"></div></div>
-          <div class="temp-val c-tro">-44°C / -47°F</div>
+          <div class="temp-label"><span class="h" data-km="9.144" data-us="ft"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro"></div></div>
+          <div class="temp-val c-tro"><span class="t" data-c="-44.4|-30.5"></span></div>
         </div>
         <div class="temp-row">
           <div class="temp-label">Tropopause</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-tro" style="width:6%"></div></div>
-          <div class="temp-val c-tro">-56°C / -69°F</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-tro"></div></div>
+          <div class="temp-val c-tro"><span class="t" data-c="-56.5|-78.4"></span></div>
         </div>
       </div>
 
       <div class="card-grid cols-3">
         <div class="card bg-tro">
           <div class="card-label">Pressure at Sea Level</div>
-          <div class="card-value c-tro">1,013 mb</div>
+          <div class="card-value c-tro"><span class="p" data-mb="1013.25"></span></div>
           <div class="card-sub">Standard atmosphere</div>
         </div>
         <div class="card bg-tro">
           <div class="card-label">Pressure at Tropopause</div>
-          <div class="card-value c-tro">~226 mb</div>
-          <div class="card-sub">~22% of sea level</div>
+          <div class="card-value c-tro"><span class="p" data-mb="226|100" data-pre="~"></span></div>
+          <div class="card-sub">~<span data-lat="22%|10%"></span> of sea level</div>
         </div>
         <div class="card bg-tro">
           <div class="card-label">Pressure Halves Every</div>
-          <div class="card-value c-tro">~18,000 ft</div>
-          <div class="card-sub">~5.5 km</div>
+          <div class="card-value c-tro"><span class="h" data-km="5.5" data-us="ft" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="5.5" data-us="mi" data-pre="~"></span></div>
         </div>
       </div>
 
@@ -594,7 +624,7 @@
           <div class="pct-row">
             <div class="pct-label">Air Mass</div>
             <div class="pct-bar-wrap">
-              <div class="pct-bar bar-tro" style="width:78%">78%</div>
+              <div class="pct-bar bar-tro" data-w="78|90"><span data-lat="78%|90%"></span></div>
             </div>
           </div>
           <div class="pct-row">
@@ -605,7 +635,7 @@
           </div>
         </div>
         <div class="note-box c-tro" style="font-size:11px">
-          <strong>All weather occurs here.</strong> Contains ~78% of total atmospheric mass and ~99% of all water vapor. Lapse rate: temp falls 6.5°C per 1,000 m. Pressure halves every 18,000 ft.
+          <strong>All weather occurs here.</strong> Contains ~<span data-lat="78%|90%"></span> of total atmospheric mass and ~99% of all water vapor. Temperature falls about <span class="lr" data-v="6.5|6.2"></span>. Pressure halves every <span class="h" data-km="5.5" data-us="ft" data-pre="~"></span>.
         </div>
       </div>
     </div>
@@ -614,79 +644,79 @@
       <div class="slide-header">
         <div class="layer-badge c-str" style="border-color:var(--str)">Layer 2</div>
         <div class="slide-title c-str">Stratosphere</div>
-        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+        <div class="slide-subtitle"><span data-lat="42°N Mid-Latitude Reference|Tropical Reference (Equator to ~20°)"></span></div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,var(--str),transparent)"></div>
 
       <div class="card-grid cols-3">
         <div class="card bg-str glow-str">
           <div class="card-label">Bottom / Tropopause</div>
-          <div class="card-value c-str">~11 km</div>
-          <div class="card-sub">~36,000 ft · ~6.8 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="11|17" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="11|17" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-str glow-str">
           <div class="card-label">Top / Stratopause</div>
-          <div class="card-value c-str">~50 km</div>
-          <div class="card-sub">~164,000 ft · ~31 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="50" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="50" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-str glow-str">
           <div class="card-label">Thickness</div>
-          <div class="card-value c-str">~39 km</div>
-          <div class="card-sub">~128,000 ft · ~24 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="39|33" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="39|33" data-us="ft" data-pre="~"></span></div>
         </div>
       </div>
 
-      <div class="temp-section glow-str" style="border-color:rgba(78,205,196,0.25)">
+      <div class="temp-section glow-str" data-scale="-90,30" style="border-color:rgba(78,205,196,0.25)">
         <div class="temp-section-title">⟶ Temperature Gradient — INVERTED (warms with altitude due to ozone UV absorption)</div>
         <div class="temp-row">
           <div class="temp-label">Tropopause</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:6%"></div></div>
-          <div class="temp-val c-str">-56°C / -69°F</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str"></div></div>
+          <div class="temp-val c-str"><span class="t" data-c="-56.5|-78.4"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">~25 km (ozone peak)</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:35%"></div></div>
-          <div class="temp-val c-str">-30°C / -22°F</div>
+          <div class="temp-label"><span class="h" data-km="25|26" data-us="mi" data-pre="~"></span> (ozone peak)</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str"></div></div>
+          <div class="temp-val c-str"><span class="t" data-c="-51.6|-50"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">Stratopause ~50 km</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-str" style="width:62%"></div></div>
-          <div class="temp-val c-str">0 to +10°C / +32 to +50°F</div>
+          <div class="temp-label">Stratopause <span class="h" data-km="50" data-us="mi" data-pre="~"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-str"></div></div>
+          <div class="temp-val c-str"><span class="t" data-c="-2.5|-3" data-pre="~"></span></div>
         </div>
       </div>
 
       <div class="card-grid cols-3">
         <div class="card bg-str glow-str">
           <div class="card-label">Ozone Layer Base</div>
-          <div class="card-value c-str">~15 km</div>
-          <div class="card-sub">~49,000 ft · ~9.3 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="15|18" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="15|18" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-str glow-str">
           <div class="card-label">Ozone Peak Concentration</div>
-          <div class="card-value c-str">~25 km</div>
-          <div class="card-sub">~82,000 ft · ~15.5 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="25|26" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="25|26" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-str glow-str">
           <div class="card-label">Ozone Top = Stratopause</div>
-          <div class="card-value c-str">~50 km</div>
-          <div class="card-sub">~164,000 ft · ~31 mi</div>
+          <div class="card-value c-str"><span class="h" data-km="50" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="50" data-us="ft" data-pre="~"></span></div>
         </div>
       </div>
 
       <div class="card-grid cols-3">
         <div class="card bg-str">
           <div class="card-label">Pressure at Tropopause</div>
-          <div class="card-value c-str">~226 mb</div>
-          <div class="card-sub">22% of sea level</div>
+          <div class="card-value c-str"><span class="p" data-mb="226|100" data-pre="~"></span></div>
+          <div class="card-sub"><span data-lat="22%|10%"></span> of sea level</div>
         </div>
         <div class="card bg-str">
           <div class="card-label">Pressure at Stratopause</div>
-          <div class="card-value c-str">~1 mb</div>
+          <div class="card-value c-str"><span class="p" data-mb="1" data-pre="~"></span></div>
           <div class="card-sub">0.1% of sea level</div>
         </div>
         <div class="card bg-str">
           <div class="card-label">Air Mass Content</div>
-          <div class="card-value c-str">21.9%</div>
+          <div class="card-value c-str"><span data-lat="21.9%|~10%"></span></div>
           <div class="card-sub">Water vapor: ~0.99%</div>
         </div>
       </div>
@@ -695,7 +725,7 @@
         <div class="temp-section-title">⟶ Atmospheric Content (In Layer)</div>
         <div class="pct-row">
           <div class="pct-label">Air Mass</div>
-          <div class="pct-bar-wrap"><div class="pct-bar bar-str" style="width:21.9%">21.9%</div></div>
+          <div class="pct-bar-wrap"><div class="pct-bar bar-str" data-w="21.9|10"><span data-lat="21.9%|~10%"></span></div></div>
         </div>
         <div class="pct-row">
           <div class="pct-label">Water Vapor</div>
@@ -711,7 +741,7 @@
         </div>
 
         <div class="note-box c-str" style="margin-top:8px;font-size:11px">
-          <strong>Concorde cruised here</strong> at ~60,000 ft (~18 km), entering the ozone layer base. No weather, near-zero water vapor. Nacreous (polar stratospheric) clouds form at 15–30 km in polar winter at temps below -78°C (-108°F).
+          <span class="mid-only"><strong>Concorde cruised here</strong> at <span class="h" data-km="18.3" data-us="ft" data-pre="~"></span>, entering the ozone layer base.</span><span class="trop-only"><strong>Concorde cruised at <span class="h" data-km="18.3" data-us="ft" data-pre="~"></span></strong>, which over the tropics is only just above the tropopause.</span> No weather, near-zero water vapor. Nacreous (polar stratospheric) clouds form at <span class="h" data-km="15-30" data-us="mi"></span> in polar winter at temperatures below <span class="t" data-c="-78"></span>.
         </div>
       </div>
     </div>
@@ -720,60 +750,60 @@
       <div class="slide-header">
         <div class="layer-badge c-mes" style="border-color:var(--mes)">Layer 3</div>
         <div class="slide-title c-mes">Mesosphere</div>
-        <div class="slide-subtitle">42°N Mid-Latitude Reference</div>
+        <div class="slide-subtitle"><span data-lat="42°N Mid-Latitude Reference|Tropical Reference (Equator to ~20°)"></span></div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,var(--mes),transparent)"></div>
 
       <div class="card-grid cols-3">
         <div class="card bg-mes glow-mes">
           <div class="card-label">Bottom / Stratopause</div>
-          <div class="card-value c-mes">~50 km</div>
-          <div class="card-sub">~164,000 ft · ~31 mi</div>
+          <div class="card-value c-mes"><span class="h" data-km="50" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="50" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-mes glow-mes">
           <div class="card-label">Top / Mesopause</div>
-          <div class="card-value c-mes">~85 km</div>
-          <div class="card-sub">~279,000 ft · ~53 mi</div>
+          <div class="card-value c-mes"><span class="h" data-km="85" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="85" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-mes glow-mes">
           <div class="card-label">Thickness</div>
-          <div class="card-value c-mes">~35 km</div>
-          <div class="card-sub">~115,000 ft · ~22 mi</div>
+          <div class="card-value c-mes"><span class="h" data-km="35" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="35" data-us="ft" data-pre="~"></span></div>
         </div>
       </div>
 
-      <div class="temp-section glow-mes" style="border-color:rgba(167,139,250,0.25)">
+      <div class="temp-section glow-mes" data-scale="-110,10" style="border-color:rgba(167,139,250,0.25)">
         <div class="temp-section-title">⟶ Temperature Gradient — FALLS AGAIN (no ozone, rapid radiative cooling)</div>
         <div class="temp-row">
-          <div class="temp-label">Stratopause 50 km</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:62%"></div></div>
-          <div class="temp-val c-mes">+10°C / +50°F</div>
+          <div class="temp-label">Stratopause <span class="h" data-km="50" data-us="mi"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes"></div></div>
+          <div class="temp-val c-mes"><span class="t" data-c="-2.5|-3" data-pre="~"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">~65 km (mid)</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:30%"></div></div>
-          <div class="temp-val c-mes">-50 to -60°C / -58 to -76°F</div>
+          <div class="temp-label"><span class="h" data-km="65" data-us="mi" data-pre="~"></span> (mid)</div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes"></div></div>
+          <div class="temp-val c-mes"><span class="t" data-c="-42|-37" data-pre="~"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">Mesopause 85 km</div>
-          <div class="temp-bar-wrap"><div class="temp-bar bar-mes" style="width:4%"></div></div>
-          <div class="temp-val c-mes">-100°C / -148°F</div>
+          <div class="temp-label">Mesopause <span class="h" data-km="85" data-us="mi"></span></div>
+          <div class="temp-bar-wrap"><div class="temp-bar bar-mes"></div></div>
+          <div class="temp-val c-mes"><span class="t" data-c="-100|-96" data-pre="~"></span></div>
         </div>
         <div style="padding:6px 0 0">
-          <div class="note-box c-mes" style="font-size:10px"><strong>Note:</strong> Polar summer mesopause can reach -137°C / -215°F — coldest natural place on Earth.</div>
+          <div class="note-box c-mes" style="font-size:10px"><strong>Note:</strong> Polar summer mesopause can reach <span class="t" data-c="-137"></span> — coldest natural place on Earth.</div>
         </div>
       </div>
 
       <div class="card-grid cols-3">
         <div class="card bg-mes glow-mes">
           <div class="card-label">Pressure at Stratopause</div>
-          <div class="card-value c-mes">~1 mb</div>
+          <div class="card-value c-mes"><span class="p" data-mb="1" data-pre="~"></span></div>
           <div class="card-sub">Bottom of mesosphere</div>
         </div>
         <div class="card bg-mes glow-mes">
           <div class="card-label">Pressure at Mesopause</div>
-          <div class="card-value c-mes">~0.004 mb</div>
-          <div class="card-sub">4 × 10⁻³ mb</div>
+          <div class="card-value c-mes"><span class="p" data-mb="0.004" data-pre="~"></span></div>
+          <div class="card-sub">About 1/250,000 of sea level</div>
         </div>
         <div class="card bg-mes glow-mes">
           <div class="card-label">Air Mass Content</div>
@@ -785,7 +815,7 @@
       <div class="card-grid cols-2">
         <div class="card bg-mes glow-mes">
           <div class="card-label">Noctilucent Clouds (NLCs)</div>
-          <div class="card-value c-mes" style="font-size:18px">~80–85 km</div>
+          <div class="card-value c-mes" style="font-size:18px"><span class="h" data-km="80-85" data-us="mi" data-pre="~"></span></div>
           <div class="card-sub">Highest clouds on Earth · Pure water ice on meteor dust · Water vapor from methane oxidation · Visible from 50–65°N/S in summer at twilight</div>
         </div>
         <div class="card bg-mes glow-mes">
@@ -801,16 +831,16 @@
       <div class="card-grid cols-3">
         <div class="card bg-mes">
           <div class="card-label">Ionosphere D Layer</div>
-          <div class="card-value c-mes" style="font-size:16px">60–90 km</div>
+          <div class="card-value c-mes" style="font-size:16px"><span class="h" data-km="60-90" data-us="mi"></span></div>
           <div class="card-sub">Absorbs AM radio daytime · Disappears at night · No skywave</div>
         </div>
         <div class="card bg-mes">
           <div class="card-label">Airglow Range</div>
-          <div class="card-value c-mes" style="font-size:16px">80 – 100 km</div>
+          <div class="card-value c-mes" style="font-size:16px"><span class="h" data-km="80-100" data-us="mi"></span></div>
         </div>
         <div class="card bg-mes">
           <div class="card-label">Sodium Guide Star Height</div>
-          <div class="card-value c-mes" style="font-size:16px">~90 km</div>
+          <div class="card-value c-mes" style="font-size:16px"><span class="h" data-km="90" data-us="mi" data-pre="~"></span></div>
         </div>
       </div>
     </div>
@@ -819,76 +849,76 @@
       <div class="slide-header">
         <div class="layer-badge c-therm" style="border-color:var(--therm)">Layer 4</div>
         <div class="slide-title c-therm">Thermosphere</div>
-        <div class="slide-subtitle">42°N · Moderate Solar Activity</div>
+        <div class="slide-subtitle"><span data-lat="42°N · Moderate Solar Activity|Tropics · Moderate Solar Activity"></span></div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,var(--therm),transparent)"></div>
 
       <div class="card-grid cols-3">
         <div class="card bg-therm glow-therm">
           <div class="card-label">Bottom / Mesopause</div>
-          <div class="card-value c-therm">~85 km</div>
-          <div class="card-sub">~279,000 ft · ~53 mi</div>
+          <div class="card-value c-therm"><span class="h" data-km="85" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="85" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-therm glow-therm">
           <div class="card-label">Top / Thermopause</div>
-          <div class="card-value c-therm">~600 km</div>
-          <div class="card-sub">~1,968,000 ft · ~373 mi</div>
+          <div class="card-value c-therm"><span class="h" data-km="600" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="600" data-us="ft" data-pre="~"></span></div>
         </div>
         <div class="card bg-therm glow-therm">
           <div class="card-label">Thermopause Range</div>
-          <div class="card-value c-therm">500–1000+ km</div>
-          <div class="card-sub">Expands/contracts with solar activity</div>
+          <div class="card-value c-therm"><span class="h" data-km="500-1000" data-us="mi"></span></div>
+          <div class="card-sub">Expands/contracts with solar activity · Can go higher at solar max</div>
         </div>
       </div>
 
       <div class="temp-section glow-therm" style="border-color:rgba(249,115,22,0.25)">
         <div class="temp-section-title">⟶ Temperature Gradient — RISES DRAMATICALLY (direct solar UV/X-ray absorption by individual atoms)</div>
         <div class="temp-row">
-          <div class="temp-label">Mesopause 85 km</div>
+          <div class="temp-label">Mesopause <span class="h" data-km="85" data-us="mi"></span></div>
           <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:3%"></div></div>
-          <div class="temp-val c-therm">-100°C / -148°F</div>
+          <div class="temp-val c-therm"><span class="t" data-c="-100|-96" data-pre="~"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">Kármán 100 km</div>
+          <div class="temp-label">Kármán <span class="h" data-km="100" data-us="mi"></span></div>
           <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:8%"></div></div>
-          <div class="temp-val c-therm">-50 to -70°C / -58 to -94°F</div>
+          <div class="temp-val c-therm"><span class="t" data-c="-50"></span> to <span class="t" data-c="-70"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">~200 km</div>
+          <div class="temp-label"><span class="h" data-km="200" data-us="mi" data-pre="~"></span></div>
           <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:45%"></div></div>
-          <div class="temp-val c-therm">~600°C / ~1,100°F</div>
+          <div class="temp-val c-therm"><span class="t" data-c="600" data-pre="~"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">ISS ~408 km</div>
+          <div class="temp-label">ISS <span class="h" data-km="408" data-us="mi" data-pre="~"></span></div>
           <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:75%"></div></div>
-          <div class="temp-val c-therm">~900°C / ~1,650°F</div>
+          <div class="temp-val c-therm"><span class="t" data-c="900" data-pre="~"></span></div>
         </div>
         <div class="temp-row">
-          <div class="temp-label">Thermopause ~600 km</div>
+          <div class="temp-label">Thermopause <span class="h" data-km="600" data-us="mi" data-pre="~"></span></div>
           <div class="temp-bar-wrap"><div class="temp-bar bar-therm" style="width:95%"></div></div>
-          <div class="temp-val c-therm">~1,100°C / ~2,010°F</div>
+          <div class="temp-val c-therm"><span class="t" data-c="1100" data-pre="~"></span></div>
         </div>
       </div>
 
       <div class="card-grid cols-4">
         <div class="card bg-therm glow-therm">
           <div class="card-label">Kármán Line (Space)</div>
-          <div class="card-value c-therm" style="font-size:16px">100 km</div>
-          <div class="card-sub">328,000 ft · 62.1 mi</div>
+          <div class="card-value c-therm" style="font-size:16px"><span class="h" data-km="100" data-us="mi"></span></div>
+          <div class="card-sub us-only"><span class="h" data-km="100" data-us="ft"></span></div>
         </div>
         <div class="card bg-therm glow-therm">
           <div class="card-label">Anacoustic Line</div>
-          <div class="card-value c-therm" style="font-size:16px">~160 km</div>
-          <div class="card-sub">~525,000 ft · ~99 mi · Sound cannot propagate</div>
+          <div class="card-value c-therm" style="font-size:16px"><span class="h" data-km="160" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub"><span class="us-only"><span class="h" data-km="160" data-us="ft" data-pre="~"></span> · </span>Sound cannot propagate</div>
         </div>
         <div class="card bg-therm glow-therm">
           <div class="card-label">ISS Orbit</div>
-          <div class="card-value c-therm" style="font-size:16px">~408 km</div>
-          <div class="card-sub">~1,339,000 ft · ~253 mi · F2 ionosphere layer</div>
+          <div class="card-value c-therm" style="font-size:16px"><span class="h" data-km="408" data-us="mi" data-pre="~"></span></div>
+          <div class="card-sub"><span class="us-only"><span class="h" data-km="408" data-us="ft" data-pre="~"></span> · </span>F2 ionosphere layer</div>
         </div>
         <div class="card bg-therm glow-therm">
           <div class="card-label">Pressure at ISS</div>
-          <div class="card-value c-therm" style="font-size:16px">~10⁻⁶ mb</div>
+          <div class="card-value c-therm" style="font-size:16px"><span class="p" data-mb="1e-06" data-pre="~"></span></div>
           <div class="card-sub">Still causes orbital drag · Reboost required</div>
         </div>
       </div>
@@ -898,17 +928,17 @@
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
           <div>
             <div class="card-label">E Layer</div>
-            <div class="card-sub" style="color:var(--therm);font-weight:600">90–150 km</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600"><span class="h" data-km="90-150" data-us="mi"></span></div>
             <div class="card-sub">Skywave daytime only</div>
           </div>
           <div>
             <div class="card-label">F1 Layer</div>
-            <div class="card-sub" style="color:var(--therm);font-weight:600">150–200 km</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600"><span class="h" data-km="150-200" data-us="mi"></span></div>
             <div class="card-sub">Skywave daytime only</div>
           </div>
           <div>
             <div class="card-label">F2 Layer</div>
-            <div class="card-sub" style="color:var(--therm);font-weight:600">200–500 km</div>
+            <div class="card-sub" style="color:var(--therm);font-weight:600"><span class="h" data-km="200-500" data-us="mi"></span></div>
             <div class="card-sub">24/7 Skywave (frequencies depend on solar activity)</div>
           </div>
         </div>
@@ -919,7 +949,7 @@
       <div class="slide-header">
         <div class="layer-badge" style="color:#fff;border-color:rgba(255,255,255,0.4)">Master</div>
         <div class="slide-title" style="color:white">Full Atmospheric Stack</div>
-        <div class="slide-subtitle">42°N · All Layers · Moderate Solar Activity</div>
+        <div class="slide-subtitle"><span data-lat="42°N · All Layers · Moderate Solar Activity|Tropics · All Layers · Moderate Solar Activity"></span></div>
       </div>
       <div class="glow-line" style="background:linear-gradient(90deg,white,transparent);opacity:0.3"></div>
 
@@ -927,99 +957,88 @@
         <div class="atm-row header">
           <div class="atm-cell">Layer / Pause</div>
           <div class="atm-cell">Height</div>
-          <div class="atm-cell">Temp °C</div>
-          <div class="atm-cell">Temp °F</div>
+          <div class="atm-cell">Temperature</div>
           <div class="atm-cell">Pressure</div>
           <div class="atm-cell">Air Mass / H₂O</div>
         </div>
 
         <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.35)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--tro)"></span><span class="atm-name c-tro">Sea Level</span></div>
-          <div class="atm-cell atm-mono">0 km · 0 ft · 0 mi</div>
-          <div class="atm-cell atm-mono c-tro">+15°C</div>
-          <div class="atm-cell atm-mono c-tro">+59°F</div>
-          <div class="atm-cell atm-mono c-tro">1,013 mb</div>
+          <div class="atm-cell atm-mono"><span class="h" data-km="0" data-us="ft"></span></div>
+          <div class="atm-cell atm-mono c-tro"><span class="t" data-c="15|26.5"></span></div>
+          <div class="atm-cell atm-mono c-tro"><span class="p" data-mb="1013.25"></span></div>
           <div class="atm-cell atm-mono" style="font-size:11px">— / —</div>
         </div>
 
         <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.25)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--tro);opacity:0.5"></span><span class="atm-name c-tro" style="font-size:10px;opacity:0.8">TROPOSPHERE</span></div>
-          <div class="atm-cell atm-mono" style="font-size:11px">0 – 11 km<br>0 – 36,000 ft<br>0 – 6.8 mi</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">+15°C → -56°C</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">+59°F → -69°F</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">1013 → 226 mb</div>
-          <div class="atm-cell atm-mono c-tro" style="font-size:11px">~78% air<br>~99% H₂O</div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="h" data-km="0-11|0-17" data-us="mi,ft" data-sep="&lt;br&gt;"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="t" data-c="15|26.5"></span> → <span class="t" data-c="-56.5|-78.4"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="p" data-mb="1013.25"></span> → <span class="p" data-mb="226|100"></span></div>
+          <div class="atm-cell atm-mono c-tro" style="font-size:11px">~<span data-lat="78%|90%"></span> air<br>~99% H₂O</div>
         </div>
 
         <div class="atm-row interactive glow-tro-row" style="background:rgba(0,15,40,0.45);border-left:3px solid var(--tro)">
           <div class="atm-cell"><span class="atm-name c-tro">⊱ TROPOPAUSE</span></div>
-          <div class="atm-cell atm-mono c-tro">11 km · 36,000 ft · 6.8 mi</div>
-          <div class="atm-cell atm-mono c-tro">-56°C</div>
-          <div class="atm-cell atm-mono c-tro">-69°F</div>
-          <div class="atm-cell atm-mono c-tro">~226 mb</div>
-          <div class="atm-cell atm-mono c-tro">Cumul: 78% / 99%</div>
+          <div class="atm-cell atm-mono c-tro"><span class="h" data-km="11|17" data-us="mi,ft"></span></div>
+          <div class="atm-cell atm-mono c-tro"><span class="t" data-c="-56.5|-78.4"></span></div>
+          <div class="atm-cell atm-mono c-tro"><span class="p" data-mb="226|100" data-pre="~"></span></div>
+          <div class="atm-cell atm-mono c-tro">Cumul: <span data-lat="78%|90%"></span> / 99%</div>
         </div>
 
         <div class="atm-row interactive glow-str-row" style="background:rgba(0,20,55,0.25)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--str);opacity:0.5"></span><span class="atm-name c-str" style="font-size:10px;opacity:0.8">STRATOSPHERE</span></div>
-          <div class="atm-cell atm-mono" style="font-size:11px">11 – 50 km<br>36k – 164k ft<br>6.8 – 31 mi</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">-56°C → +10°C</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">-69°F → +50°F</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">226 → 1 mb</div>
-          <div class="atm-cell atm-mono c-str" style="font-size:11px">21.9% air<br>~0.99% H₂O</div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="h" data-km="11-50|17-50" data-us="mi,ft" data-sep="&lt;br&gt;"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="t" data-c="-56.5|-78.4"></span> → <span class="t" data-c="-2.5|-3"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="p" data-mb="226|100"></span> → <span class="p" data-mb="1"></span></div>
+          <div class="atm-cell atm-mono c-str" style="font-size:11px"><span data-lat="21.9%|~10%"></span> air<br>~0.99% H₂O</div>
         </div>
 
         <div class="atm-row interactive glow-str-row" style="background:rgba(0,20,55,0.45);border-left:3px solid var(--str)">
           <div class="atm-cell"><span class="atm-name c-str">⊱ STRATOPAUSE</span></div>
-          <div class="atm-cell atm-mono c-str">50 km · 164,000 ft · 31 mi</div>
-          <div class="atm-cell atm-mono c-str">+10°C</div>
-          <div class="atm-cell atm-mono c-str">+50°F</div>
-          <div class="atm-cell atm-mono c-str">~1 mb</div>
+          <div class="atm-cell atm-mono c-str"><span class="h" data-km="50" data-us="mi,ft"></span></div>
+          <div class="atm-cell atm-mono c-str"><span class="t" data-c="-2.5|-3" data-pre="~"></span></div>
+          <div class="atm-cell atm-mono c-str"><span class="p" data-mb="1" data-pre="~"></span></div>
           <div class="atm-cell atm-mono c-str">Cumul: 99.9% / 99.99%</div>
         </div>
 
         <div class="atm-row interactive glow-mes-row" style="background:rgba(0,10,45,0.25)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--mes);opacity:0.5"></span><span class="atm-name c-mes" style="font-size:10px;opacity:0.8">MESOSPHERE</span></div>
-          <div class="atm-cell atm-mono" style="font-size:11px">50 – 85 km<br>164k – 279k ft<br>31 – 53 mi</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">+10°C → -100°C</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">+50°F → -148°F</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">1 → 0.004 mb</div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="h" data-km="50-85" data-us="mi,ft" data-sep="&lt;br&gt;"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="t" data-c="-2.5|-3"></span> → <span class="t" data-c="-100|-96"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="p" data-mb="1"></span> → <span class="p" data-mb="0.004"></span></div>
           <div class="atm-cell atm-mono c-mes" style="font-size:11px">~0.1% air<br>trace H₂O</div>
         </div>
 
         <div class="atm-row interactive glow-mes-row" style="background:rgba(0,10,45,0.45);border-left:3px solid var(--mes)">
           <div class="atm-cell"><span class="atm-name c-mes">⊱ MESOPAUSE</span></div>
-          <div class="atm-cell atm-mono c-mes">85 km · 279,000 ft · 53 mi</div>
-          <div class="atm-cell atm-mono c-mes">-100°C</div>
-          <div class="atm-cell atm-mono c-mes">-148°F</div>
-          <div class="atm-cell atm-mono c-mes">~0.004 mb</div>
+          <div class="atm-cell atm-mono c-mes"><span class="h" data-km="85" data-us="mi,ft"></span></div>
+          <div class="atm-cell atm-mono c-mes"><span class="t" data-c="-100|-96" data-pre="~"></span></div>
+          <div class="atm-cell atm-mono c-mes"><span class="p" data-mb="0.004" data-pre="~"></span></div>
           <div class="atm-cell atm-mono c-mes">Coldest on Earth</div>
         </div>
 
         <div class="atm-row interactive glow-therm-row" style="background:rgba(40,15,0,0.35)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--therm);opacity:0.5"></span><span class="atm-name c-therm" style="font-size:10px;opacity:0.8">THERMOSPHERE</span></div>
-          <div class="atm-cell atm-mono" style="font-size:11px">85 – 600 km<br>53 – 373 mi</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">-100°C → +1,100°C</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">-148°F → +2,010°F</div>
-          <div class="atm-cell atm-mono" style="font-size:11px">0.004 → 10⁻⁷ mb</div>
-          <div class="atm-cell atm-mono c-therm" style="font-size:11px">~0.001% air<br>ISS @ 408 km</div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="h" data-km="85-600" data-us="mi"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="t" data-c="-100|-96"></span> → <span class="t" data-c="1100"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px"><span class="p" data-mb="0.004"></span> → <span class="p" data-mb="1e-07"></span></div>
+          <div class="atm-cell atm-mono c-therm" style="font-size:11px">~0.001% air<br>ISS @ <span class="h" data-km="408" data-us="mi"></span></div>
         </div>
 
         <div class="atm-row interactive glow-therm-row" style="background:rgba(40,15,0,0.55);border-left:3px solid var(--therm)">
           <div class="atm-cell"><span class="atm-name c-therm">⊱ THERMOPAUSE</span></div>
-          <div class="atm-cell atm-mono c-therm">~600 km · ~373 mi<br><span style="font-size:9px;color:var(--dim)">(Low solar: ~500km · High: 1000km+)</span></div>
-          <div class="atm-cell atm-mono c-therm">~1,100°C</div>
-          <div class="atm-cell atm-mono c-therm">~2,010°F</div>
-          <div class="atm-cell atm-mono c-therm">~10⁻⁷ mb</div>
+          <div class="atm-cell atm-mono c-therm"><span class="h" data-km="600" data-us="mi" data-pre="~"></span><br><span style="font-size:9px;color:var(--dim)">(Low solar: <span class="h" data-km="500" data-us="mi" data-pre="~"></span> · High: over <span class="h" data-km="1000" data-us="mi"></span>)</span></div>
+          <div class="atm-cell atm-mono c-therm"><span class="t" data-c="1100" data-pre="~"></span></div>
+          <div class="atm-cell atm-mono c-therm"><span class="p" data-mb="1e-07" data-pre="~"></span></div>
           <div class="atm-cell atm-mono c-therm">Moderate solar</div>
         </div>
 
         <div class="atm-row interactive glow-exo-row" style="background:rgba(50,0,15,0.35);border-left:3px solid var(--exo)">
           <div class="atm-cell"><span class="layer-dot" style="background:var(--exo)"></span><span class="atm-name c-exo">EXOSPHERE ↑</span></div>
-          <div class="atm-cell atm-mono c-exo" style="font-size:11px">600 km → ~10,000 km<br>373 mi → ~6,214 mi</div>
-          <div class="atm-cell atm-mono" style="font-size:11px;color:var(--dim)">No defined T<br>(molecular escape)</div>
-          <div class="atm-cell atm-mono" style="font-size:11px;color:var(--dim)">—</div>
-          <div class="atm-cell atm-mono c-exo" style="font-size:11px">≪ 10⁻⁷ mb<br>→ interplanetary</div>
+          <div class="atm-cell atm-mono c-exo" style="font-size:11px"><span class="h" data-km="600" data-us="mi"></span> → <span class="h" data-km="10000" data-us="mi" data-pre="~"></span></div>
+          <div class="atm-cell atm-mono" style="font-size:11px;color:var(--dim)">No defined temperature<br>(molecular escape)</div>
+          <div class="atm-cell atm-mono c-exo" style="font-size:11px">≪ <span class="p" data-mb="1e-07"></span><br>→ interplanetary</div>
           <div class="atm-cell atm-mono" style="font-size:10px;color:var(--dim)">Molecules escape to space · Merges with solar wind</div>
         </div>
       </div>
@@ -1042,6 +1061,92 @@
 </div>
 
 <script>
+// ===== VIEW STATE: latitude + units =====
+let lat = 'mid';      // 'mid' | 'trop'
+let units = 'metric'; // 'metric' | 'us'
+
+// URL options: ?lat=tropics&units=us
+(function readParams() {
+  const q = new URLSearchParams(location.search);
+  const l = (q.get('lat') || '').toLowerCase();
+  const u = (q.get('units') || '').toLowerCase();
+  if (l.startsWith('trop')) lat = 'trop';
+  if (u === 'us' || u === 'imperial' || u === 'customary') units = 'us';
+})();
+
+const pick = s => { const p = String(s).split('|'); return (lat === 'trop' && p.length > 1) ? p[1] : p[0]; };
+const fmt = n => n.toLocaleString('en-US');
+
+// Heights (input km)
+function fmtKm(k) { return (k >= 10 || Number.isInteger(k)) ? fmt(Math.round(k)) : k.toFixed(1); }
+function fmtFt(k) { const f = k * 3280.84; return fmt(f >= 10000 ? Math.round(f / 1000) * 1000 : Math.round(f / 100) * 100); }
+function fmtMi(k) { const m = k * 0.621371; return m < 20 ? String(Math.round(m * 10) / 10) : fmt(Math.round(m)); }
+function heightText(spec, usUnits, pre, sep) {
+  const parts = spec.split('-').map(Number);
+  if (units === 'metric') return pre + parts.map(fmtKm).join(' – ') + ' km';
+  return usUnits.split(',').map(u =>
+    pre + parts.map(u === 'ft' ? fmtFt : fmtMi).join(' – ') + ' ' + u
+  ).join(sep);
+}
+
+// Temperatures (input °C)
+function fmtT(c) {
+  const v = units === 'us' ? c * 9 / 5 + 32 : c;
+  const r = Math.abs(v) >= 1000 ? Math.round(v / 10) * 10 : Math.round(v);
+  const sign = r > 0 ? '+' : (r < 0 ? '−' : '');
+  return sign + fmt(Math.abs(r)) + (units === 'us' ? '°F' : '°C');
+}
+
+// Pressures (input mb)
+const SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+function num(x) {
+  if (x >= 100) return fmt(Math.round(x));
+  if (x >= 10) return String(Number(x.toPrecision(4)));
+  if (x >= 0.001) return String(Number(x.toPrecision(x >= 1 ? 3 : 2)));
+  let e = Math.floor(Math.log10(x));
+  let m = Math.round(x / Math.pow(10, e) * 10) / 10;
+  if (m >= 10) { m /= 10; e++; }
+  const pow = '10' + String(e).split('').map(ch => SUP[ch]).join('');
+  return m === 1 ? pow : m + ' × ' + pow;
+}
+function fmtP(mb) { return units === 'us' ? num(mb * 0.02953) + ' inHg' : num(mb) + ' mb'; }
+
+// Lapse rate (input °C per km)
+function fmtLR(v) { return units === 'us' ? (v * 1.8 / 3.28084).toFixed(1) + '°F per 1,000 ft' : v + '°C per 1,000 m'; }
+
+function render() {
+  document.body.classList.toggle('lat-trop', lat === 'trop');
+  document.body.classList.toggle('units-us', units === 'us');
+
+  document.querySelectorAll('[data-lat]').forEach(el => { el.textContent = pick(el.dataset.lat); });
+  document.querySelectorAll('.h').forEach(el => {
+    el.innerHTML = heightText(pick(el.dataset.km), el.dataset.us || 'mi', el.dataset.pre || '', el.dataset.sep || ' · ');
+  });
+  document.querySelectorAll('.t').forEach(el => { el.textContent = (el.dataset.pre || '') + fmtT(parseFloat(pick(el.dataset.c))); });
+  document.querySelectorAll('.p').forEach(el => { el.textContent = (el.dataset.pre || '') + fmtP(parseFloat(pick(el.dataset.mb))); });
+  document.querySelectorAll('.lr').forEach(el => { el.textContent = fmtLR(parseFloat(pick(el.dataset.v))); });
+
+  // Temperature bars on a shared scale per section
+  document.querySelectorAll('[data-scale]').forEach(sec => {
+    const [lo, hi] = sec.dataset.scale.split(',').map(Number);
+    sec.querySelectorAll('.temp-row').forEach(row => {
+      const t = row.querySelector('.temp-val .t');
+      const bar = row.querySelector('.temp-bar');
+      if (!t || !bar) return;
+      const c = parseFloat(pick(t.dataset.c));
+      bar.style.width = Math.max(3, Math.min(100, (c - lo) / (hi - lo) * 100)) + '%';
+    });
+  });
+  document.querySelectorAll('[data-w]').forEach(el => { el.style.width = pick(el.dataset.w) + '%'; });
+
+  document.querySelectorAll('[data-set-lat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setLat === lat));
+  document.querySelectorAll('[data-set-units]').forEach(b => b.setAttribute('aria-pressed', b.dataset.setUnits === units));
+  closeMagnify();
+}
+
+document.querySelectorAll('[data-set-lat]').forEach(b => b.addEventListener('click', () => { lat = b.dataset.setLat; render(); }));
+document.querySelectorAll('[data-set-units]').forEach(b => b.addEventListener('click', () => { units = b.dataset.setUnits; render(); }));
+
 // SLIDESHOW
 let current = 0;
 const total = 5;
@@ -1050,7 +1155,8 @@ function goTo(n) {
   const slides = document.querySelectorAll('.slide');
   slides[current].classList.remove('active');
   slides[current].classList.add('exit');
-  setTimeout(() => slides[current].classList.remove('exit'), 500);
+  const leaving = slides[current];
+  setTimeout(() => leaving.classList.remove('exit'), 500);
   current = n;
   slides[current].classList.add('active');
   updateNav();
@@ -1073,11 +1179,13 @@ function toggleFullscreen() {
   }
 }
 
-// Keyboard nav
+// Keyboard: arrows = slides, L = latitude, U = units
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') closeMagnify();
   if(e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
   if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevSlide();
+  if(e.key === 'l' || e.key === 'L') { lat = lat === 'mid' ? 'trop' : 'mid'; render(); }
+  if(e.key === 'u' || e.key === 'U') { units = units === 'metric' ? 'us' : 'metric'; render(); }
 });
 
 // MAGNIFY: Click-to-pop-out for master slide rows
@@ -1092,32 +1200,26 @@ function magnifyRow(row) {
   const overlay = document.getElementById('magnifyOverlay');
   const content = document.getElementById('magnifyContent');
   const cells = row.querySelectorAll('.atm-cell');
-  
-  // Determine the glow color from the row's class
+
   let borderColor = 'rgba(255,255,255,0.3)';
   if (row.classList.contains('glow-tro-row')) borderColor = 'rgba(74,222,128,0.5)';
   else if (row.classList.contains('glow-str-row')) borderColor = 'rgba(250,204,21,0.5)';
   else if (row.classList.contains('glow-mes-row')) borderColor = 'rgba(165,243,252,0.5)';
   else if (row.classList.contains('glow-therm-row')) borderColor = 'rgba(249,115,22,0.5)';
   else if (row.classList.contains('glow-exo-row')) borderColor = 'rgba(244,63,94,0.5)';
-  
-  let shadowColor = borderColor;
+
   content.style.borderColor = borderColor;
-  content.style.boxShadow = `0 0 40px ${shadowColor}`;
-  
-  // Build magnified cells
+  content.style.boxShadow = `0 0 40px ${borderColor}`;
+
   content.innerHTML = '';
   cells.forEach((cell, i) => {
     const magCell = document.createElement('div');
-    magCell.className = 'mag-cell mag-mono';
-    if (i === 0) magCell.className = 'mag-cell mag-name';
+    magCell.className = i === 0 ? 'mag-cell mag-name' : 'mag-cell mag-mono';
     magCell.innerHTML = cell.innerHTML;
-    // Copy color from original
-    const computed = getComputedStyle(cell);
-    magCell.style.color = computed.color;
+    magCell.style.color = getComputedStyle(cell).color;
     content.appendChild(magCell);
   });
-  
+
   overlay.classList.add('visible');
 }
 
@@ -1125,8 +1227,8 @@ function closeMagnify() {
   document.getElementById('magnifyOverlay').classList.remove('visible');
 }
 
-// Initialize magnify on load
 initMagnify();
+render();
 </script>
 </body>
 </html>

@@ -72,7 +72,27 @@
         .login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
         #loginError { color:#ff6b6b; margin-top:12px; text-align:center; display:none; font-size:1em; }
         .login-icon { text-align:center; font-size:3.5em; margin-bottom:20px; }
+        /* Password field with show/hide eye */
+        .pw-wrap { position:relative; margin-bottom:16px; }
+        .pw-wrap input { margin-bottom:0; padding-right:52px; }
+        .pw-eye {
+            position:absolute; right:8px; top:50%; transform:translateY(-50%);
+            width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+            background:none; border:none; border-radius:6px; cursor:pointer; color:#8fa3bd;
+        }
+        .pw-eye:hover, .pw-eye:focus-visible { color:#4da6ff; outline:none; background:rgba(77,166,255,0.1); }
+        .pw-eye svg { width:22px; height:22px; }
+        .pw-eye .eye-off { display:none; }
+        .pw-eye.showing .eye-on  { display:none; }
+        .pw-eye.showing .eye-off { display:block; }
+        /* Keep browser autofill from painting fields yellow */
+        .login-box input:-webkit-autofill {
+            -webkit-text-fill-color:#e0e0e0;
+            -webkit-box-shadow:0 0 0 1000px rgba(20,20,35,1) inset;
+            transition: background-color 9999s ease-out 0s;
+        }
     </style>
+</head>
 <body>
     <div class="login-box">
         <div class="login-icon" style="margin-bottom:6px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110" width="110" height="110" style="display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(77,166,255,0.5));">
@@ -148,11 +168,22 @@
 </svg></div>
         <h2>Evolution of Terrestrial Life</h2>
         <p>Enter your information to begin the interactive journey</p>
-        <input type="text"     id="studentName"     placeholder="Enter your full name">
-        <input type="text"     id="studentID"       placeholder="Enter your Student ID">
-        <input type="password" id="studentPassword" placeholder="Enter class password">
+        <form id="loginForm" autocomplete="off" onsubmit="event.preventDefault(); startQuiz();">
+        <input type="text" id="studentName" name="evl-n-x" placeholder="Enter your full name"
+               autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" readonly>
+        <input type="text" id="studentID" name="evl-i-x" placeholder="Enter your Student ID"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric" readonly>
+        <div class="pw-wrap">
+            <input type="password" id="studentPassword" name="evl-p-x" placeholder="Enter class password"
+                   autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly>
+            <button type="button" class="pw-eye" id="pwEye" aria-label="Show password" title="Show password">
+                <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+        </div>
         <div id="loginError"></div>
-        <button class="login-btn" onclick="startQuiz()">Start Journey →</button>
+        <button type="submit" class="login-btn">Start Journey →</button>
+        </form>
     </div>
 
     <script>
@@ -164,6 +195,56 @@
             messagingSenderId: "84123424550",
             appId: "1:84123424550:web:f6eab6a447d480cedc13e7"
         };
+        // ── Fresh start every time the login page is shown ───────────────
+        // Clears any leftover session from an earlier run and wipes the fields,
+        // including when the page is restored by the Back button (bfcache) or
+        // filled in by the browser's saved-login autofill.
+        const LOGIN_FIELDS = ['studentName', 'studentID', 'studentPassword'];
+        function resetLogin() {
+            try { sessionStorage.clear(); } catch (e) {}
+            LOGIN_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                el.value = '';
+                el.setAttribute('readonly', '');   // blocks autofill until the student clicks in
+            });
+            const pw = document.getElementById('studentPassword');
+            pw.type = 'password';
+            const eye = document.getElementById('pwEye');
+            eye.classList.remove('showing');
+            eye.setAttribute('aria-label', 'Show password');
+            eye.title = 'Show password';
+            const err = document.getElementById('loginError');
+            err.style.display = 'none'; err.textContent = '';
+        }
+        LOGIN_FIELDS.forEach(id => {
+            const el = document.getElementById(id);
+            const unlock = () => el.removeAttribute('readonly');
+            el.addEventListener('focus', unlock);
+            el.addEventListener('pointerdown', unlock);
+        });
+        resetLogin();
+        window.addEventListener('pageshow', () => {
+            resetLogin();
+            // Some browsers autofill a moment after load — wipe once more.
+            setTimeout(() => LOGIN_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el.hasAttribute('readonly')) el.value = '';
+            }), 300);
+        });
+
+        // Show/hide password
+        document.getElementById('pwEye').addEventListener('click', () => {
+            const pw  = document.getElementById('studentPassword');
+            const eye = document.getElementById('pwEye');
+            const show = pw.type === 'password';
+            pw.type = show ? 'text' : 'password';
+            eye.classList.toggle('showing', show);
+            eye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            eye.title = show ? 'Hide password' : 'Show password';
+            pw.removeAttribute('readonly');
+            pw.focus();
+        });
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 

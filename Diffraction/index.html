@@ -2,324 +2,248 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 4A – Diffraction · Login</title>
+    <title>Lab 3A Diffraction - Login</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Nunito:wght@300;400;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Nunito', 'Segoe UI', sans-serif;
-            background: radial-gradient(ellipse at 30% 20%, #0d0d2b 0%, #050510 60%, #0a0010 100%);
-            color: #e0e0e0; min-height: 100vh;
-            display: flex; align-items: center; justify-content: center; padding: 24px;
-            position: relative; overflow-x: hidden;
-        }
-        /* faint starfield */
-        body::before {
-            content: ''; position: fixed; inset: 0; pointer-events: none;
-            background-image:
-                radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.55), transparent),
-                radial-gradient(1px 1px at 78% 15%, rgba(255,255,255,.45), transparent),
-                radial-gradient(1px 1px at 34% 74%, rgba(255,255,255,.40), transparent),
-                radial-gradient(1px 1px at 88% 62%, rgba(255,255,255,.35), transparent),
-                radial-gradient(1px 1px at 58% 40%, rgba(180,220,255,.45), transparent),
-                radial-gradient(1px 1px at 20% 88%, rgba(255,255,255,.30), transparent);
-        }
-
-        .login-card {
-            position: relative; z-index: 1;
-            background: rgba(6, 6, 18, 0.97);
-            border: 1px solid rgba(79,195,247,0.25);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(79,195,247,0.06);
-            padding: 48px 46px 42px;
-            max-width: 520px; width: 100%; text-align: center;
-        }
-
-        .lab-icon {
-            font-size: 3.2em; line-height: 1; margin-bottom: 14px;
-            filter: drop-shadow(0 0 14px rgba(79,195,247,0.55));
-        }
-        .lab-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.6em; font-weight: 700; letter-spacing: 4px;
-            background: linear-gradient(90deg, #4fc3f7, #e879f9);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
-        }
-        .lab-subtitle { font-size: 1.15em; color: #8a9abf; font-style: italic; margin-bottom: 22px; }
-        .lab-divider {
-            width: 110px; height: 3px; margin: 0 auto 22px; border-radius: 2px;
-            background: linear-gradient(90deg, #4fc3f7, #e879f9);
-        }
-        .lab-badge {
-            display: inline-block; margin-bottom: 30px;
-            padding: 10px 26px; border-radius: 26px;
-            border: 1px solid rgba(77,255,184,0.45);
-            font-family: 'Orbitron', monospace; font-size: .82em;
-            letter-spacing: 3px; color: #4dffb8;
-            text-shadow: 0 0 10px rgba(77,255,184,0.4);
-        }
-
-        .field { position: relative; margin-bottom: 16px; }
-        .field input {
-            width: 100%; padding: 16px 18px;
-            background: rgba(4,4,14,0.9); color: #e8f4ff;
-            border: 1px solid rgba(79,195,247,0.28); border-radius: 12px;
-            font-family: 'Nunito', sans-serif; font-size: 1.05em;
-        }
-        .field input::placeholder { color: #55627d; }
-        .field input:focus {
-            outline: none; border-color: #4fc3f7;
-            box-shadow: 0 0 0 3px rgba(79,195,247,0.15), 0 0 18px rgba(79,195,247,0.25);
-        }
-        .field.pw input { padding-right: 54px; }
-        .eye-btn {
-            position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            background: none; border: none; cursor: pointer; border-radius: 8px;
-            color: #6b7f9e; font-size: 1.2em; line-height: 1;
-        }
-        .eye-btn:hover { color: #4fc3f7; background: rgba(79,195,247,0.08); }
-
-        #loginError {
-            display: none; margin: 4px 0 16px; padding: 13px 16px; text-align: left;
-            background: rgba(255,80,80,0.10); border: 1px solid rgba(255,80,80,0.45);
-            border-radius: 10px; color: #ff8a8a; font-size: .96em; line-height: 1.5;
-        }
-
-        .begin-btn {
-            width: 100%; padding: 17px; margin-top: 6px;
-            background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
-            color: #03121f; border: none; border-radius: 14px; cursor: pointer;
-            font-family: 'Orbitron', monospace; font-size: 1.1em; font-weight: 700;
-            letter-spacing: 2px; transition: all .3s ease;
-            box-shadow: 0 6px 22px rgba(79,195,247,0.30);
-        }
-        .begin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(79,195,247,0.45); }
-        .begin-btn:disabled { opacity: .55; cursor: wait; transform: none; }
-
-        .copyright-line {
-            margin-top: 28px; font-size: .84em; letter-spacing: .5px;
-            color: #c4b5fd; text-shadow: 0 0 8px rgba(167,139,250,0.5);
-        }
-
-        @media (max-width: 560px) {
-            .login-card { padding: 34px 24px; }
-            .lab-title { font-size: 2em; letter-spacing: 2px; }
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%); color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: rgba(30, 30, 50, 0.95); padding: 50px 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(77, 166, 255, 0.3); text-align: center; max-width: 500px; width: 100%; }
+        .login-box h2 { color: #4da6ff; font-size: 2em; margin-bottom: 15px; text-shadow: 0 0 15px rgba(77, 166, 255, 0.4); }
+        .login-box p { color: #b0b0b0; margin-bottom: 30px; font-size: 1.1em; }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(10, 10, 20, 0.8); border: 2px solid rgba(77, 166, 255, 0.3); border-radius: 10px; color: #e0e0e0; font-size: 1em; }
+        .login-box input:focus { outline: none; border-color: #4da6ff; box-shadow: 0 0 15px rgba(77, 166, 255, 0.3); }
+        .login-box button { width: 100%; padding: 15px; background: linear-gradient(135deg, #4da6ff 0%, #357abd 100%); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3); transition: all 0.3s ease; }
+        .login-box button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(77, 166, 255, 0.5); }
+        .pw-wrap { position: relative; margin-bottom: 20px; }
+        .login-box .pw-wrap input { margin-bottom: 0; padding-right: 52px; }
+        .login-box .pw-toggle { position: absolute; top: 0; right: 0; height: 100%; width: 46px;
+            display: flex; align-items: center; justify-content: center; padding: 0;
+            background: none; border: none; box-shadow: none; border-radius: 0 10px 10px 0;
+            color: #7b8ba3; cursor: pointer; transition: color 0.2s ease; }
+        .login-box .pw-toggle:hover { color: #4da6ff; transform: none; box-shadow: none; }
+        .login-box .pw-toggle:focus-visible { outline: 2px solid #4da6ff; outline-offset: -3px; }
+        .login-box .pw-toggle svg { width: 21px; height: 21px; display: block; }
+        #loginError { color: #ff6b6b; margin-top: 15px; margin-bottom: 15px; display: none; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 8px; text-align: left; }
     </style>
 </head>
 <body>
-
-<div class="login-card">
-    <div class="lab-icon">🔬</div>
-    <h1 class="lab-title">Lab 4A</h1>
-    <p class="lab-subtitle">Diffraction &amp; Wavelength of Light</p>
-    <div class="lab-divider"></div>
-    <div class="lab-badge">PHYSICS LABORATORY</div>
-
-    <div class="field">
-        <input type="text" id="studentName" placeholder="Student Name" autocomplete="off">
+    <div class="login-box">
+        <h2>🔬 Lab 3A Diffraction</h2>
+        <p>Enter your information to begin</p>
+        <input type="text" id="studentName" placeholder="Student Name">
+        <input type="text" id="studentID" placeholder="Student ID">
+        <div class="pw-wrap">
+            <input type="password" id="studentPassword" placeholder="Lab Password">
+            <button type="button" class="pw-toggle" id="pwToggle" onclick="togglePassword()"
+                    aria-label="Show password" title="Show password">
+                <svg id="pwIconShow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg id="pwIconHide" style="display:none" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            </button>
+        </div>
+        <div id="loginError"></div>
+        <button onclick="startQuiz()">Start Lab</button>
     </div>
-    <div class="field">
-        <input type="text" id="studentID" placeholder="Student ID" autocomplete="off">
-    </div>
-    <div class="field pw">
-        <input type="password" id="studentPassword" placeholder="Lab Password">
-        <button type="button" class="eye-btn" id="eyeBtn" onclick="togglePassword()"
-                aria-label="Show password" title="Show password">👁</button>
-    </div>
-
-    <div id="loginError"></div>
-
-    <button class="begin-btn" id="beginBtn" onclick="startLab()">Begin Lab →</button>
-
-    <div class="copyright-line">
-        Lab 4A: Diffraction &amp; Wavelength of Light &nbsp;|&nbsp; © 2026 Magellica Press, R. Mahoney
-    </div>
-</div>
-
-<script src="lab4a-shared.js"></script>
-<script>
-    // ── Password reveal (same behaviour as video.html) ──────────────
-    function togglePassword() {
-        const input = document.getElementById('studentPassword');
-        const btn   = document.getElementById('eyeBtn');
-        const show  = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        btn.textContent = show ? '🙈' : '👁';
-        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-        btn.title = show ? 'Hide password' : 'Show password';
-        input.focus();
-    }
-
-    // Enter submits from any field.
-    ['studentName', 'studentID', 'studentPassword'].forEach(id => {
-        document.getElementById(id).addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); startLab(); }
+    
+    <script src="laser-shared.js"></script>
+    <script>
+        // Best-effort: replace the field labels with the teacher's custom ones.
+        window.addEventListener('load', async () => {
+            const ok = await loadLoginDescriptors();
+            if (!ok) return;
+            const n = document.getElementById('studentName');
+            const i = document.getElementById('studentID');
+            const p = document.getElementById('studentPassword');
+            if (n) n.placeholder = quizConfig.loginDescriptors.name || n.placeholder;
+            if (i) i.placeholder = quizConfig.loginDescriptors.id   || i.placeholder;
+            if (p) p.placeholder = quizConfig.loginDescriptors.pass || p.placeholder;
         });
-    });
 
-    // Best-effort: replace the field labels with the teacher's custom ones.
-    window.addEventListener('load', async () => {
-        const ok = await loadLoginDescriptors();
-        if (!ok) return;
-        const n = document.getElementById('studentName');
-        const i = document.getElementById('studentID');
-        const p = document.getElementById('studentPassword');
-        if (n) n.placeholder = quizConfig.loginDescriptors.name || n.placeholder;
-        if (i) i.placeholder = quizConfig.loginDescriptors.id   || i.placeholder;
-        if (p) p.placeholder = quizConfig.loginDescriptors.pass || p.placeholder;
-    });
+        // Reveal/hide the quiz password. Field returns to masked on submit, so a
+        // revealed password is never left on screen after login.
+        function togglePassword() {
+            const field = document.getElementById('studentPassword');
+            const showing = field.type === 'text';
+            field.type = showing ? 'password' : 'text';
+            document.getElementById('pwIconShow').style.display = showing ? 'block' : 'none';
+            document.getElementById('pwIconHide').style.display = showing ? 'none' : 'block';
+            const btn = document.getElementById('pwToggle');
+            const label = showing ? 'Show password' : 'Hide password';
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            field.focus();
+        }
 
-    function showError(msg) {
-        const el = document.getElementById('loginError');
-        el.textContent = msg;
-        el.style.display = 'block';
-        document.getElementById('beginBtn').disabled = false;
-    }
+        async function startQuiz() {
+            const name = document.getElementById('studentName').value.trim();
+            const studentID = document.getElementById('studentID').value.trim();
+            const password = document.getElementById('studentPassword').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
 
-    async function startLab() {
-        const name      = document.getElementById('studentName').value.trim();
-        const studentID = document.getElementById('studentID').value.trim();
-        const password  = document.getElementById('studentPassword').value.trim();
-        document.getElementById('loginError').style.display = 'none';
+            // Set inside the db branch below; read again when writing the session doc.
+            let creditClosed = false;
+            let reviewMode = '';
 
-        if (!name || !studentID || !password) { showError('Please fill in all fields.'); return; }
-        document.getElementById('beginBtn').disabled = true;
+            if (!name || !studentID || !password) { 
+                errorDiv.textContent = 'Please fill in all fields.'; 
+                errorDiv.style.display = 'block'; 
+                return; 
+            }
 
-        // Set inside the db branch below; read again when writing the session doc.
-        let creditClosed = false;
-        let reviewMode = '';
+            // The password now lives in the database and is verified against QUIZ_ID
+            // below, so there is nothing to pre-check here.
 
-        try {
-            if (db) {
-                // Verify QUIZ_ID + the typed password together. This resolves the
-                // exact class-quiz and blocks a password belonging to another quiz.
-                const resolved = await resolveQuizConfig(password);
-                if (!resolved) { showError('Invalid lab password.'); return; }
-
-                if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
-                    const valType  = quizConfig.idValidation.type;
-                    const valValue = quizConfig.idValidation.value;
-                    if (valType === 'digits') {
-                        const numDigits = parseInt(valValue, 10);
-                        if (!new RegExp(`^\\d{${numDigits}}$`).test(studentID)) {
-                            showError(`Invalid ID: Student ID must be exactly ${numDigits} digits long.`);
-                            return;
-                        }
-                    } else if (valType === 'startsWith') {
-                        if (!studentID.startsWith(valValue)) {
-                            showError(`Invalid ID: Student ID must start with "${valValue}".`);
-                            return;
-                        }
-                    }
-                }
-
-                // Availability has THREE dates:
-                //   startDateTime      — nothing before this
-                //   stopDateTime       — graded attempts end here (the due date)
-                //   reviewStopDateTime — ungraded review ends here (blank = same as stop)
-                const now = new Date();
-                const startStr    = quizConfig.restrictions.startDateTime;
-                const stopStr     = quizConfig.restrictions.stopDateTime;
-                const hardStopStr = quizConfig.restrictions.reviewStopDateTime || stopStr;
-
-                if (startStr) {
-                    const start = new Date(startStr);
-                    if (now < start) {
-                        showError(`Lab is not available yet. It opens on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`);
+            try {
+                if (db) {
+                    // Verify QUIZ_ID + the typed password together. This resolves the
+                    // exact class-quiz and blocks a password belonging to another quiz.
+                    const resolved = await resolveQuizConfig(password);
+                    if (!resolved) {
+                        errorDiv.textContent = 'Incorrect password for this quiz.';
+                        errorDiv.style.display = 'block';
                         return;
                     }
-                }
-                if (hardStopStr) {
-                    const hardStop = new Date(hardStopStr);
-                    if (now > hardStop) {
-                        showError(`Lab has closed. It was available until ${hardStop.toLocaleDateString()} at ${hardStop.toLocaleTimeString()}.`);
-                        return;
+
+                    if (quizConfig.idValidation && quizConfig.idValidation.type !== 'none') {
+                        const valType = quizConfig.idValidation.type;
+                        const valValue = quizConfig.idValidation.value;
+                        if (valType === 'digits') {
+                            const numDigits = parseInt(valValue, 10);
+                            const digitRegex = new RegExp(`^\\d{${numDigits}}$`);
+                            if (!digitRegex.test(studentID)) {
+                                errorDiv.textContent = `Invalid ID: Student ID must be exactly ${numDigits} digits long.`;
+                                errorDiv.style.display = 'block';
+                                return;
+                            }
+                        } else if (valType === 'startsWith') {
+                            if (!studentID.startsWith(valValue)) {
+                                errorDiv.textContent = `Invalid ID: Student ID must start with "${valValue}".`;
+                                errorDiv.style.display = 'block';
+                                return;
+                            }
+                        }
                     }
-                }
-                // Past the due date but still inside the review window: the lab opens,
-                // but nothing is graded — unused attempts are forfeit once credit closes.
-                creditClosed = !!(stopStr && now > new Date(stopStr));
 
-                // Attempt limits / review decision. Two ways into an ungraded review:
-                //   1. attempts are used up      2. the credit window has closed
-                const maxAttempts = parseInt(quizConfig.restrictions.attemptsAllowed, 10) || 0;
-                reviewMode = creditClosed ? 'closed' : '';
+                    // Availability has THREE dates:
+                    //   startDateTime      — nothing before this
+                    //   stopDateTime       — graded attempts end here (the due date)
+                    //   reviewStopDateTime — ungraded review ends here (blank = same as stop)
+                    const now = new Date();
+                    const startStr    = quizConfig.restrictions.startDateTime;
+                    const stopStr     = quizConfig.restrictions.stopDateTime;
+                    const hardStopStr = quizConfig.restrictions.reviewStopDateTime || stopStr;
 
-                if (maxAttempts > 0) {
-                    const snap = await db.collection('students')
-                                         .where('studentID', '==', studentID)
-                                         .where('databaseId', '==', quizConfig.databaseId)
-                                         .get();
-                    // Review sessions are NOT attempts and must never inflate the count.
-                    const priorAttempts = snap.docs.filter(d => d.data().review !== true).length;
-                    if (priorAttempts >= maxAttempts) reviewMode = reviewMode || 'attempts';
+                    if (startStr) {
+                        const start = new Date(startStr);
+                        if (now < start) {
+                            errorDiv.textContent = `Quiz is not available yet. It will open on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}.`;
+                            errorDiv.style.display = 'block';
+                            return;
+                        }
+                    }
+                    if (hardStopStr) {
+                        const hardStop = new Date(hardStopStr);
+                        if (now > hardStop) {
+                            errorDiv.textContent = `Quiz has closed. It was available until ${hardStop.toLocaleDateString()} at ${hardStop.toLocaleTimeString()}.`;
+                            errorDiv.style.display = 'block';
+                            return;
+                        }
+                    }
+                    // Past the due date but still inside the review window: the quiz opens,
+                    // but nothing is graded — unused attempts are forfeit once credit closes.
+                    creditClosed = !!(stopStr && now > new Date(stopStr));
 
-                    sessionStorage.setItem('attemptNumber', (reviewMode ? priorAttempts : priorAttempts + 1).toString());
-                    sessionStorage.setItem('maxAttempts', maxAttempts.toString());
+                    // Attempt limits / review decision. Two ways into an ungraded review:
+                    //   1. attempts are used up
+                    //   2. the credit window has closed
+                    // Neither locks the student out while the review window is open.
+                    const maxAttempts = parseInt(quizConfig.restrictions.attemptsAllowed, 10) || 0;
+                    reviewMode = creditClosed ? 'closed' : '';
+
+                    if (maxAttempts > 0) {
+                        const snap = await db.collection('students')
+                                             .where('studentID', '==', studentID)
+                                             .where('databaseId', '==', quizConfig.databaseId)
+                                             .get();
+                        // Review sessions are NOT attempts and must never inflate the count.
+                        const priorAttempts = snap.docs.filter(d => d.data().review !== true).length;
+                        if (priorAttempts >= maxAttempts) reviewMode = reviewMode || 'attempts';
+
+                        sessionStorage.setItem('attemptNumber', (reviewMode ? priorAttempts : priorAttempts + 1).toString());
+                        sessionStorage.setItem('maxAttempts', maxAttempts.toString());
+                    } else {
+                        sessionStorage.setItem('attemptNumber', '1');
+                        sessionStorage.setItem('maxAttempts', '0');
+                    }
                 } else {
+                    // Standalone mode (no Firebase, e.g. a local preview) — ungraded.
                     sessionStorage.setItem('attemptNumber', '1');
                     sessionStorage.setItem('maxAttempts', '0');
                 }
-            } else {
-                // Standalone mode (no Firebase, e.g. a local preview) — ungraded.
-                sessionStorage.setItem('attemptNumber', '1');
-                sessionStorage.setItem('maxAttempts', '0');
-            }
 
-            // Read by updateBanner() and outro.html: '' | 'attempts' | 'closed'
-            sessionStorage.setItem('reviewMode', reviewMode);
-            sessionStorage.setItem('creditCloseLabel',
-                creditClosed && quizConfig.restrictions.stopDateTime
-                    ? new Date(quizConfig.restrictions.stopDateTime).toLocaleString() : '');
+                // Read by updateBanner() and outro.html: '' | 'attempts' | 'closed'
+                sessionStorage.setItem('reviewMode', reviewMode);
+                sessionStorage.setItem('creditCloseLabel',
+                    creditClosed && quizConfig.restrictions.stopDateTime
+                        ? new Date(quizConfig.restrictions.stopDateTime).toLocaleString() : '');
 
-            const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('studentName', name);
-            sessionStorage.setItem('studentID', studentID);
-            sessionStorage.setItem('sessionId', sessionId);
-            sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
-            sessionStorage.setItem('labScore', '0');
-            sessionStorage.removeItem('labCompleted');
-            sessionStorage.removeItem('labState');
-
-            if (quizConfig.restrictions.timeLimit > 0) {
-                const nowMs = Date.now();
-                sessionStorage.setItem('quizStartTime', nowMs.toString());
-                sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
-            } else {
+                const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('studentName', name);
+                sessionStorage.setItem('studentID', studentID);
+                sessionStorage.setItem('sessionId', sessionId);
+                sessionStorage.setItem('quizConfig', JSON.stringify(quizConfig));
+                sessionStorage.setItem('answers', '{}');
+                sessionStorage.setItem('score', '0');
+                // A fresh login is a fresh lab: clear any earlier run left in this tab.
+                sessionStorage.removeItem('quizCompleted');
+                sessionStorage.removeItem('labState');
+                sessionStorage.removeItem('labSig');
                 sessionStorage.removeItem('timerEndTime');
+                
+                if (quizConfig.restrictions.timeLimit > 0) {
+                    const nowMs = Date.now();
+                    sessionStorage.setItem('quizStartTime', nowMs.toString());
+                    sessionStorage.setItem('timerEndTime', (nowMs + quizConfig.restrictions.timeLimit * 60000).toString());
+                }
+                
+                if (db) {
+                    await db.collection('students').doc(sessionId).set({
+                        name, 
+                        studentID,
+                        className: quizConfig.className || 'lab3a-diffraction',
+                        quizName: quizConfig.quizName || 'lab3a-diffraction',
+                        quizPassword: password,
+                        databaseId: quizConfig.databaseId || 'standalone',
+                        startTime: firebase.firestore.Timestamp.now(),
+                        answers: {}, 
+                        score: 0, 
+                        completed: false,
+                        // review:true marks an ungraded study run — the dashboard reports skip these.
+                        review: !!reviewMode,
+                        reviewReason: reviewMode || null
+                    });
+                }
+                
+                window.location.href = 'intro.html';
+                
+            } catch (e) {
+                errorDiv.textContent = 'Database connection error. Please notify your instructor.';
+                console.error(e);
+                errorDiv.style.display = 'block';
             }
-
-            if (db) {
-                await db.collection('students').doc(sessionId).set({
-                    name,
-                    studentID,
-                    className:    quizConfig.className || 'diffraction',
-                    quizName:     quizConfig.quizName  || 'diffraction-lab',
-                    quizPassword: password,
-                    databaseId:   quizConfig.databaseId || 'standalone',
-                    startTime:    firebase.firestore.Timestamp.now(),
-                    answers: {},
-                    score: 0,
-                    completed: false,
-                    // review:true marks an ungraded study run — dashboard reports skip these.
-                    review: !!reviewMode,
-                    reviewReason: reviewMode || null
-                });
-            }
-
-            window.location.href = 'intro.html';
-
-        } catch (e) {
-            console.error(e);
-            showError('Database connection error. Please notify your instructor.');
         }
-    }
-</script>
+    </script>
 </body>
 </html>

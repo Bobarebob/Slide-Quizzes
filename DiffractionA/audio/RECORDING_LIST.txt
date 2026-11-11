@@ -1,0 +1,69 @@
+LAB 3A DIFFRACTION - AUDIO RECORDING LIST
+Save each recording as an MP3 with exactly this file name, in this audio folder.
+Until a file is here, the lab reads that line with the browser voice instead.
+
+intro.mp3
+   When: Lab page opens (fresh start)
+   Line: Welcome to Lab 3A, Diffraction. Select a laser color to begin.
+
+laser_red.mp3
+   When: Red laser chosen
+   Line: The red laser has been selected. Click the laser body to turn it on.
+
+laser_green.mp3
+   When: Green laser chosen
+   Line: The green laser has been selected. Click the laser body to turn it on.
+
+laser_blue.mp3
+   When: Blue laser chosen
+   Line: The blue laser has been selected. Click the laser body to turn it on.
+
+on_ceiling.mp3
+   When: Laser on, upper dot hits the ceiling
+   Line: The upper dot is on the ceiling, which is not valid. Use the Table, Rack, and Holder controls to move the apparatus closer to the wall.
+
+on_wall.mp3
+   When: Laser on, both dots on the wall
+   Line: Both dots are on the wall. Click Next when you are satisfied with their positions.
+
+measure_L.mp3
+   When: Next clicked after positioning
+   Line: Measure L, the horizontal distance from the grating to the wall. Click the grating holder and drag to the right until you reach the central dot on the wall.
+
+measure_D.mp3
+   When: L entered in the data table
+   Line: L is recorded in your data table. Now measure D. Click the central dot on the wall and drag upward to the upper diffraction dot.
+
+complete_red.mp3
+   When: D entered for the red laser
+   Line: D is recorded. The red laser data is complete.
+
+complete_green.mp3
+   When: D entered for the green laser
+   Line: D is recorded. The green laser data is complete.
+
+complete_blue.mp3
+   When: D entered for the blue laser
+   Line: D is recorded. The blue laser data is complete.
+
+switch_next.mp3
+   When: Plays right after complete_*, while lasers remain
+   Line: Click Next to switch to another laser.
+
+select_next.mp3
+   When: Laser chooser reappears
+   Line: Now select your next laser.
+
+all_done.mp3
+   When: Plays right after complete_*, when all three lasers are done
+   Line: All measurements are complete. Click Next to proceed to calculations.
+
+calc_intro.mp3
+   When: Calculation table opens
+   Line: Calculations are now open. Click a Calculate button to begin each calculation.
+
+reset.mp3
+   When: Reset button or Escape key
+   Line: Lab reset. Select a laser color to begin.
+
+Copyright (c) Magellica Press - R. Mahoney - 2026, All Rights Reserved.

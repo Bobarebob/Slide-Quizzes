@@ -1,0 +1,17 @@
+Welcome.
+Today we will perform a lab on diffraction.
+Recall that diffraction is the bending of light around corners.
+We say that light is diffracted, or bent, not because it is going from one optical or transparent medium to another, but because it is encountering an edge or corner.
+The reason light bends around corners is that light is a wave.
+So when a light wave encounters an edge, it obeys Huygens' principle that states that each point on a wave's front can be considered a point source of circular wavelets.
+So when a light wave encounters an edge, it naturally migrates around that edge in a circular fashion.
+This is why shadows under tables are fuzzy, not sharply defined.
+Diffraction is amplified when coherent light passes through two narrow slits.
+Laser light is coherent light, meaning that all of its rays are of one frequency, and all of its rays travel in one direction.
+If the difference in the path lengths of two wavelets, coming out of two narrow slits and traveling to a faraway wall, equals one or more wavelengths of a laser's light, the two wavelets of light combine to be a bright spot.
+For a diffraction grating, basically many slits.
+The path differences of the two wavelets must be exactly one or more wavelengths, otherwise there will be no bright spot at all.
+In the animation that follows, we will look at just two dots coming out of a diffraction grating for each of three lasers, where the two dots land on a relatively far away wall.
+By knowing the distance between adjacent slits in the diffraction grating and measuring the angle between a specific laser's central dot and its one bright off-axis dot, we will be able to calculate the wavelength of that laser's light and compare it to the wavelength marked on the laser itself.
+We will do this for three different lasers, one red, one green, and one blue.
+Enjoy the lab.

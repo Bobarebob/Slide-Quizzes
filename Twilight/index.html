@@ -136,6 +136,27 @@
                         }
                     }
 
+                    // Class roster: when the instructor has turned enforcement on in the
+                    // dashboard, only Student IDs on the class roster may log in. This stops a
+                    // mistyped ID from becoming a second "student" with a fresh set of attempts.
+                    // The match is exact, because the ID typed here is the ID the attempts are
+                    // counted under. If the roster cannot be read, the check is skipped.
+                    if (db && quizConfig.className) {
+                        let rosterDoc = null;
+                        try { rosterDoc = await db.collection('classSettings').doc(quizConfig.className).get(); }
+                        catch (rosterErr) { console.warn('Roster check skipped:', rosterErr); }
+                        const rosterData = rosterDoc && rosterDoc.exists ? rosterDoc.data() : null;
+                        if (rosterData && rosterData.rosterEnforce === true &&
+                            Array.isArray(rosterData.roster) && rosterData.roster.length) {
+                            const onRoster = rosterData.roster.some(r => String(r).trim() === studentID);
+                            if (!onRoster) {
+                                errorDiv.textContent = 'That Student ID is not on the class roster. Check the ID and try again. If it is correct, contact your instructor.';
+                                errorDiv.style.display = 'block';
+                                return;
+                            }
+                        }
+                    }
+
                     // Availability has THREE dates:
                     //   startDateTime      — nothing before this
                     //   stopDateTime       — graded attempts end here (the due date)

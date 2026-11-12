@@ -151,6 +151,20 @@ async function startQuiz() {
             if (!onRoster) {
                 errorDiv.textContent = 'That Student ID is not on the class roster. Check the ID and try again. If it is correct, contact your instructor.';
                 errorDiv.style.display = 'block';
+                // Leave a record of the refused login for the instructor. It is never an
+                // attempt: it carries its own databaseId, so neither the attempt count
+                // nor the graded reports pick it up.
+                try {
+                    await db.collection('students').doc('refused_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)).set({
+                        refused: true,
+                        name,
+                        studentID,
+                        className: quizConfig.className,
+                        quizName: quizConfig.quizName || '',
+                        databaseId: (quizConfig.databaseId || '') + '::refused',
+                        startTime: firebase.firestore.Timestamp.now()
+                    });
+                } catch (logErr) { console.warn('Refused-login record not saved:', logErr); }
                 return;
             }
         }
